@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watt, the puck</title>
+<meta name="description" content="A dial that becomes whatever you're doing. A round screen on your desk, and an app in your Mac's notch.">
+<link rel="icon" href="assets/icon.png">
+<style>
+  :root { --y: #FFD60A; --w: #F5F5F7; --g1: #8E8E93; --g2: #5A5A5E; --g3: #2C2C2E; --g4: #1C1C1E; }
+  * { box-sizing: border-box; }
+  html { background: #000; }
+  body { margin: 0; background: #000; color: var(--w); -webkit-font-smoothing: antialiased;
+    font-family: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+  header { display: flex; align-items: center; gap: 10px; padding: 22px 0; font-weight: 800; font-size: 18px; }
+  header img { width: 30px; height: 30px; }
+  .y { color: var(--y); }
+  h1 { font-size: clamp(44px, 8vw, 84px); line-height: 1; letter-spacing: -0.02em; font-weight: 800; margin: 56px 0 14px; }
+  .lede { font-size: clamp(18px, 2.4vw, 24px); color: var(--g1); font-weight: 600; margin: 0 0 40px; }
+  video { display: block; width: 100%; border-radius: 22px; background: #0b0b0c; aspect-ratio: 1280 / 800; }
+  h2 { font-size: clamp(30px, 4.6vw, 48px); line-height: 1.05; letter-spacing: -0.02em; font-weight: 800; margin: 96px 0 28px; }
+  .becomes { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 28px;
+    font-size: 20px; font-weight: 800; margin: 44px 0 0; padding: 0; list-style: none; }
+  .steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
+  @media (max-width: 720px) { .steps { grid-template-columns: 1fr; } }
+  .steps li { background: var(--g4); border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+  .n { font-size: 13px; font-weight: 800; letter-spacing: 0.14em; color: var(--g1); }
+  .steps h3 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+  .steps p { margin: 0; color: var(--g1); font-weight: 600; font-size: 15.5px; line-height: 1.45; }
+  .steps .fine { color: var(--g2); font-size: 13.5px; }
+  .act { margin-top: auto; padding-top: 10px; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 9px 22px; border: 0; cursor: pointer; text-align: center;
+    border-radius: 21px; background: var(--y); color: #000; font: inherit; font-weight: 800; font-size: 15.5px; text-decoration: none;
+    box-shadow: 0 0 22px rgba(255, 214, 10, 0.3); }
+  .pill:hover { filter: brightness(1.06); }
+  .pill.quiet { background: var(--g3); color: var(--g1); box-shadow: none; cursor: default; }
+  code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  pre { background: var(--g4); border-radius: 16px; padding: 18px 20px; overflow-x: auto; font-size: 14.5px; line-height: 1.5; margin: 0 0 14px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; align-items: start; }
+  .two p { color: var(--g1); font-weight: 600; font-size: 17px; line-height: 1.5; margin: 0 0 16px; }
+  footer { color: var(--g2); font-weight: 600; font-size: 14px; padding: 96px 0 48px; }
+  footer a { color: var(--g1); }
+</style>
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body>
+<div class="wrap">
+  <header><img src="assets/icon.png" alt="">Watt</header>
+
+  <h1>Watt<span class="y">,</span> the puck.</h1>
+  <p class="lede">A dial that becomes whatever you're doing.</p>
+  <video src="assets/watt-reel.mp4" poster="assets/watt-reel.jpg" autoplay muted loop playsinline controls></video>
+
+  <ul class="becomes">
+    <li>On the desk, it's a <span class="y">volume knob.</span></li>
+    <li>Pick a face, it's a <span class="y">trackpad.</span></li>
+    <li>Open Claude, it <span class="y">listens.</span></li>
+    <li>In DialKit, it <span class="y">dials.</span></li>
+    <li>Claude Code asks? Tap to <span class="y">allow.</span></li>
+    <li>On a call? Flip it to <span class="y">mute.</span></li>
+    <li>Game night? <span class="y">Spin, teams, dice.</span></li>
+    <li>Head down? <span class="y">Focus.</span></li>
+  </ul>
+
+  <h2>Make <span class="y">one</span>.</h2>
+  <ol class="steps">
+    <li>
+      <div class="n">1 &nbsp;THE PUCK</div>
+      <h3>One board, no soldering</h3>
+      <p>Watt runs on the Waveshare ESP32-S3-Touch-AMOLED-1.75C: a round touch screen in an aluminium case, with a battery, a speaker and a motion sensor.</p>
+      <p class="fine">Plug it into your computer with a USB-C cable.</p>
+    </li>
+    <li>
+      <div class="n">2 &nbsp;THE FIRMWARE</div>
+      <h3>Install it from here</h3>
+      <p>Click the button and pick the puck's port. It takes about a minute, and updates keep the puck paired.</p>
+      <div class="act">
+        <esp-web-install-button manifest="firmware/manifest.json">
+          <button slot="activate" class="pill">Install Watt on the puck</button>
+          <span slot="unsupported" class="pill quiet">Open this page in Chrome or Edge</span>
+          <span slot="not-allowed" class="pill quiet">Needs a secure (https) page</span>
+        </esp-web-install-button>
+      </div>
+      <p class="fine">Chrome or Edge on a computer. If the puck doesn't show up, hold BOOT, tap PWR, let go, and try again.</p>
+    </li>
+    <li>
+      <div class="n">3 &nbsp;THE MAC APP</div>
+      <h3>Watt lives in the notch</h3>
+      <p>The app connects the puck to your Mac: volume, what's playing, the pointer, Claude, DialKit.</p>
+      <div class="act"><a class="pill" id="dmg" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download for Mac</a></div>
+      <p class="fine">macOS 15 or later, Apple silicon.</p>
+    </li>
+    <li>
+      <div class="n">4 &nbsp;PAIR</div>
+      <h3>Dial it in</h3>
+      <p>Open Watt. When the puck drops out of the notch, click Pair, then turn the puck to each of the three numbers, like a safe.</p>
+      <p class="fine">Click the puck's side button any time to pick a face.</p>
+    </li>
+  </ol>
+
+  <h2>In DialKit, it <span class="y">dials</span>.</h2>
+  <div class="two">
+    <div>
+      <p>If you tune interfaces with <a href="https://www.npmjs.com/package/dialkit">DialKit</a>, one line puts every knob on the puck: turn for the value, swipe for the next one, tap to flip a toggle.</p>
+      <p>It only follows the tab you're looking at, and only on your own machine.</p>
+    </div>
+    <div>
+      <pre>npm install dialkit-watt</pre>
+      <pre>import { WattBridge } from "dialkit-watt/react";
+
+&lt;DialRoot /&gt;
+&lt;WattBridge /&gt;</pre>
+    </div>
+  </div>
+
+  <footer>
+    Watt, the puck. &nbsp;<a href="https://github.com/gizmofalcon/watt-puck/releases">Releases</a> &nbsp;<a href="https://github.com/gizmofalcon/dialkit-watt">dialkit-watt</a>
+  </footer>
+</div>
+</body>
+</html>
