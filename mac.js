@@ -8,15 +8,15 @@ import { Puck, PICKS } from "./puck.js";
 
 const SCENES = {
   music: { chip: "Music", face: "home", app: "Music", win: "music",
-    say: "Turn it for volume. Tap it to pause, and its eyes become a play button." },
+    say: "Turn for volume. Tap to pause." },
   modes: { chip: "Faces", face: "picker", app: "Finder", win: null,
-    say: "Click the side button to switch faces: a focus timer, a trackpad, games. Turn to pick one, click to choose." },
+    say: "Click the side button, turn, click to switch faces." },
   claude: { chip: "Claude", face: "claude", app: "Claude", win: "chat",
-    say: "Tap it and talk to Claude. Your words appear in the notch as you speak. Tap again to send." },
+    say: "Tap and talk to Claude. Tap again to send." },
   code: { chip: "Claude Code", face: "allow", app: "Terminal", win: "term",
-    say: "When Claude Code wants to run something, the puck asks first. Tap to allow, turn back to deny." },
+    say: "Claude Code asks first. Tap to allow." },
   dialkit: { chip: "DialKit", face: "dialkit", app: "Safari", win: "web",
-    say: "Tuning a design in DialKit? Turn the puck to change the value, and the page follows." },
+    say: "Turn to tune a DialKit value." },
 };
 const ORDER = Object.keys(SCENES);
 
@@ -139,9 +139,10 @@ class Notch {
     const st = this.current;
     let [w, h, r] = SIZE[st];
     if (st === "transcript") h = NOTCH.h + 4 + this.textH + 18;
-    this.el.style.setProperty("--w", w);
-    this.el.style.setProperty("--h", h);
-    this.el.style.setProperty("--r", r);
+    // --nw, not --w: the page's white is --w, and the notch's children would inherit the size instead
+    this.el.style.setProperty("--nw", w);
+    this.el.style.setProperty("--nh", h);
+    this.el.style.setProperty("--nr", r);
     for (const [name, node] of Object.entries(this.states)) {
       node.classList.toggle("on", name === st);
       if (name === st) { node.style.width = `${w - 12}px`; node.style.height = `${h}px`; }
@@ -338,7 +339,7 @@ export function mountHero({ screen, canvas, side, chips, say, hint }) {
     for (const b of chips.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.scene === id));
     say.textContent = S.say;
     side.classList.toggle("hint", id === "modes" && !picking);
-    hint.textContent = id === "modes" ? "The side button is on the right of the case" : "Drag the puck to turn it. Click to tap.";
+    hint.textContent = id === "modes" ? "Side button on the right" : "Drag to turn. Click to tap.";
   }
 
   function openPicker() {
