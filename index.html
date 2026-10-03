@@ -41,14 +41,18 @@
   .pill.quiet { background: var(--g3); color: var(--g1); box-shadow: none; cursor: default; }
   .pill.ghost { background: var(--g3); color: var(--w); box-shadow: none; }
 
-  /* on a short screen the scene shrinks, so the Mac and the puck both stay in view */
-  .scene { position: relative; aspect-ratio: 1072 / 584; width: min(100%, max(680px, calc((100svh - 236px) * 1.8356))); margin: 28px auto 0; }
-  .mac { position: absolute; left: 0; top: 0; width: 73%; }
-  .try { position: absolute; right: 0; top: 1%; width: 24.5%; }
-  .desk { position: absolute; right: 0; bottom: 1%; width: 24.5%; }
+  /* The scene: the Mac at the back, the puck in front of its corner, on one desk.
+     On a short screen it shrinks, so the Mac, the puck and the controls all stay in view. */
+  .scene { position: relative; aspect-ratio: 1072 / 640; width: min(100%, max(640px, calc((100svh - 356px) * 1.675))); margin: 30px auto 0; }
+  .scene::before { content: ""; position: absolute; left: -12%; right: -12%; bottom: -16%; height: 46%; pointer-events: none;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0) 100%); }
+  .mac { position: absolute; left: 3%; top: 0; width: 75%; }
+  .desk { position: absolute; left: 69%; top: 62.5%; width: 22%; }
 
   .lid { position: relative; background: #0b0b0c; border-radius: 2.6% / 4%; padding: 1.9% 1.9% 2.6%;
     box-shadow: inset 0 0 0 1px #26262a, 0 0 0 1px #6a6c73, 0 0 0 2.5px #18181a, 0 50px 90px -40px rgba(0, 0, 0, 0.9); }
+  .lid::before { content: ""; position: absolute; left: 8%; right: 8%; top: -1px; height: 1px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0)); }
   .screen { position: relative; aspect-ratio: 800 / 520; overflow: hidden; border-radius: 1.2% / 1.8%; background: #111114; }
   .base { position: relative; width: 112%; margin-left: -6%; height: 0; padding-bottom: 3.2%;
     background: linear-gradient(#eceef1 0, #c3c5cb 14%, #9a9ca3 52%, #5f6168 100%); border-radius: 0 0 1.4% 1.4% / 0 0 70% 70%; }
@@ -58,22 +62,11 @@
   .mac::after { content: ""; position: absolute; left: 2%; right: 2%; bottom: -3.5%; height: 6%; z-index: -1;
     background: radial-gradient(closest-side, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0)); }
 
-  .try .label { font: 500 11px "Roboto Mono", ui-monospace, monospace; letter-spacing: 0.16em; color: var(--g2); margin: 0 0 12px; text-transform: uppercase; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-  .chip { font: inherit; font-weight: 800; font-size: 14.5px; color: var(--g1); background: var(--g4); border: 0; border-radius: 18px;
-    height: 36px; padding: 0 15px; cursor: pointer; transition: background 0.18s, color 0.18s, transform 0.18s; }
-  .chip:hover { color: var(--w); transform: translateY(-1px); }
-  .chip[aria-pressed="true"] { background: var(--y); color: #000; box-shadow: 0 0 20px rgba(255, 214, 10, 0.28); }
-  .say { margin: 16px 0 0; color: var(--w); font-weight: 700; font-size: 15.5px; line-height: 1.45; min-height: 46px; }
-
-  @media (min-width: 981px) {  /* the side panel shrinks with the scene */
-    .scene { container-type: inline-size; }
-    .chip { font-size: clamp(12.5px, 1.35cqw, 14.5px); height: clamp(30px, 3.36cqw, 36px); padding: 0 clamp(11px, 1.4cqw, 15px); }
-    .say { font-size: clamp(13px, 1.45cqw, 15.5px); margin-top: clamp(10px, 1.5cqw, 16px); }
-  }
   .pk { position: relative; }
+  .pk::after { content: ""; position: absolute; left: 8%; right: 8%; bottom: -9%; height: 16%; z-index: -1;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0)); }
   canvas.puck { position: relative; display: block; width: 100%; aspect-ratio: 1; border-radius: 50%; outline: none;
-    filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.85)); -webkit-tap-highlight-color: transparent; }
+    filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.8)); -webkit-tap-highlight-color: transparent; }
   canvas.puck:focus-visible { box-shadow: 0 0 0 3px var(--y); }
   .side { position: absolute; right: -2.4%; top: 50%; width: 3.8%; height: 12%; transform: translateY(-50%); border: 0; padding: 0; cursor: pointer;
     border-radius: 0 7px 7px 0; background: linear-gradient(90deg, #4f5157, #d3d5da 45%, #7d7f86); }
@@ -81,19 +74,45 @@
   .side.hint::after { animation: nudge 1.4s ease-out infinite; }
   .side:focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
   @keyframes nudge { 0% { opacity: 0.9; transform: scale(0.8); } 100% { opacity: 0; transform: scale(1.35); } }
-  .hint { text-align: center; color: var(--g2); font-weight: 700; font-size: 13.5px; margin: 14px 0 0; }
+  /* until it's been touched, two arrows circle the puck: it turns */
+  .turnhint { position: absolute; left: -13%; top: -13%; width: 126%; height: 126%; pointer-events: none; opacity: 0.85;
+    animation: swing 2.6s ease-in-out infinite; transition: opacity 0.5s; }
+  .pk.used .turnhint { opacity: 0; }
+  @keyframes swing { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(16deg); } }
+
+  /* the scenes, in one row under the desk; the one playing counts down to the next */
+  .ctrl { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 30px; }
+  .seg { display: flex; gap: 4px; max-width: 100%; padding: 5px; border-radius: 26px; background: #101012; box-shadow: inset 0 0 0 1px #222225;
+    overflow-x: auto; scrollbar-width: none; }
+  .seg::-webkit-scrollbar { display: none; }
+  .seg button { position: relative; flex: none; height: 38px; padding: 0 18px; border: 0; border-radius: 19px; background: none; cursor: pointer;
+    font: inherit; font-weight: 800; font-size: 14.5px; color: var(--g1); transition: color 0.2s, background 0.25s, box-shadow 0.25s; }
+  .seg button:hover { color: var(--w); }
+  .seg button.on { background: var(--y); color: #000; box-shadow: 0 0 18px rgba(255, 214, 10, 0.25); }
+  .seg button.on::after { content: ""; position: absolute; left: 16px; bottom: 6px; height: 2px; border-radius: 1px;
+    width: calc((100% - 32px) * var(--p, 0)); background: rgba(0, 0, 0, 0.5); }
+  .seg button:focus-visible { outline: 2px solid var(--y); outline-offset: 2px; }
+  .say { margin: 0; min-height: 24px; text-align: center; color: var(--w); font-weight: 700; font-size: 16px; line-height: 1.45; }
 
   /* ---- the Mac's screen, laid out in points on an 800 x 520 screen and scaled to fit */
   .pts { position: absolute; left: 0; top: 0; width: 800px; height: 520px; transform-origin: 0 0; color: var(--w);
     font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif; }
-  .wall { position: absolute; inset: 0; background: radial-gradient(110% 90% at 12% 118%, #2b2546 0%, rgba(43, 37, 70, 0) 62%),
-    radial-gradient(80% 70% at 94% -18%, #46370f 0%, rgba(70, 55, 15, 0) 58%), linear-gradient(#18181c, #0f0f12); }
+  .wall { position: absolute; inset: 0; background: radial-gradient(85% 75% at 90% -12%, rgba(255, 214, 10, 0.2) 0%, rgba(255, 214, 10, 0) 56%),
+    radial-gradient(105% 85% at 6% 114%, rgba(104, 78, 190, 0.34) 0%, rgba(104, 78, 190, 0) 60%), linear-gradient(#15151a, #0b0b0e); }
+  .dock { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 7px; padding: 6px; border-radius: 17px;
+    background: rgba(255, 255, 255, 0.09); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2); }
+  .dock i { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(#3b3b40, #242428); }
+  .dock i:nth-child(1) { background: linear-gradient(#5aa9f5, #2a62c9); }
+  .dock i:nth-child(2) { background: linear-gradient(#f5f5f7, #b9bbc1); }
+  .dock i:nth-child(3) { background: linear-gradient(#ff7a6b, #d83a55); }
+  .dock i:nth-child(5) { background: linear-gradient(#2c2c2e, #0e0e10); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.25); }
+  .dock i.watt { background: url(assets/icon.png) center / cover; }
   .menubar { position: absolute; left: 0; right: 0; top: 0; height: 34px; display: flex; align-items: center; gap: 16px; padding: 0 16px;
     font-size: 13px; font-weight: 600; color: rgba(245, 245, 247, 0.9); background: rgba(0, 0, 0, 0.3); }
   .menubar b { font-weight: 800; }
   .menubar .clock { margin-left: auto; }
 
-  .win { position: absolute; left: 100px; top: 62px; width: 600px; height: 410px; border-radius: 12px; background: var(--g4); overflow: hidden;
+  .win { position: absolute; left: 130px; top: 84px; width: 540px; height: 326px; border-radius: 12px; background: var(--g4); overflow: hidden;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 0.5px rgba(255, 255, 255, 0.16);
     opacity: 0; transform: translateY(10px) scale(0.98); transition: opacity 0.35s ease, transform 0.5s var(--sp); }
   .win.on { opacity: 1; transform: none; }
@@ -105,25 +124,25 @@
   .tl i + i + i { background: #28c840; }
   .url { background: var(--g3); border-radius: 7px; padding: 4px 70px; font-size: 12px; font-weight: 600; }
 
-  .music { display: flex; gap: 28px; padding: 34px; height: calc(100% - 36px); }
-  .art { position: relative; width: 220px; height: 220px; flex: none; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  .music { display: flex; gap: 26px; padding: 28px; height: calc(100% - 36px); }
+  .art { position: relative; width: 176px; height: 176px; flex: none; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     background: radial-gradient(circle at 32% 30%, #ffe27a, #ffb000 34%, #b4470a 70%, #3a1405); }
   .art i { position: absolute; inset: 24%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35);
     box-shadow: 0 0 0 18px rgba(255, 255, 255, 0.08), 0 0 0 38px rgba(255, 255, 255, 0.05); }
   .meta { flex: 1; display: flex; flex-direction: column; padding-top: 6px; }
-  .meta > b { font-size: 24px; font-weight: 800; }
+  .meta > b { font-size: 22px; font-weight: 800; }
   .meta > span { color: var(--g1); font-size: 15px; font-weight: 600; margin-top: 2px; }
-  .prog { margin-top: 34px; height: 5px; border-radius: 3px; background: #3a3a3c; overflow: hidden; }
+  .prog { margin-top: 22px; height: 5px; border-radius: 3px; background: #3a3a3c; overflow: hidden; }
   .prog i { display: block; height: 100%; width: 32%; background: var(--w); }
   .times { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--g1); font-variant-numeric: tabular-nums; }
-  .ctl { display: flex; align-items: center; justify-content: center; gap: 30px; margin-top: 18px; }
+  .ctl { display: flex; align-items: center; justify-content: center; gap: 30px; margin-top: 10px; }
   .vol { display: flex; align-items: center; gap: 10px; margin-top: auto; }
   .slider { flex: 1; height: 5px; border-radius: 3px; background: #3a3a3c; }
   .slider i { display: block; height: 100%; border-radius: 3px; background: var(--y); box-shadow: 0 0 10px rgba(255, 214, 10, 0.5); transition: width 0.08s; }
 
-  .chat { display: flex; flex-direction: column; height: calc(100% - 36px); padding: 18px 26px; }
+  .chat { display: flex; flex-direction: column; height: calc(100% - 36px); padding: 16px 22px; }
   .msgs { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; overflow: hidden; }
-  .msgs p { margin: 0; max-width: 86%; font-size: 14.5px; line-height: 1.5; font-weight: 600; color: #e8e8ed; }
+  .msgs p { margin: 0; max-width: 88%; font-size: 14px; line-height: 1.45; font-weight: 600; color: #e8e8ed; }
   .msgs .me { align-self: flex-end; background: var(--g3); color: var(--w); padding: 9px 14px; border-radius: 16px 16px 4px 16px; }
   .input { display: flex; align-items: center; height: 46px; margin-top: 14px; padding: 0 16px; border-radius: 14px; background: #141416;
     box-shadow: inset 0 0 0 1px var(--g3); color: var(--g2); font-size: 14px; font-weight: 600; }
@@ -138,13 +157,13 @@
   .term .p, .term .wait, .term .no { color: var(--g1); }
   .term .wait::after { content: " \258D"; animation: throb 1s steps(2) infinite; }
 
-  .web { display: flex; gap: 20px; height: calc(100% - 36px); padding: 24px; background: #0f0f11; }
+  .web { display: flex; gap: 18px; height: calc(100% - 36px); padding: 20px; background: #0f0f11; }
   .stagebox { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-  .stagebox .track { position: relative; height: 120px; border-radius: 18px; background: #18181b; box-shadow: inset 0 0 0 1px #232326; }
-  .stagebox .card { position: absolute; left: 12px; top: 20px; width: 80px; height: 80px; border-radius: 20px; background: var(--y);
+  .stagebox .track { position: relative; height: 104px; border-radius: 18px; background: #18181b; box-shadow: inset 0 0 0 1px #232326; }
+  .stagebox .card { position: absolute; left: 12px; top: 18px; width: 68px; height: 68px; border-radius: 18px; background: var(--y);
     box-shadow: 0 0 30px rgba(255, 214, 10, 0.35); will-change: transform; }
   .stagebox p { margin: 12px 0 0; text-align: center; color: var(--g2); font-size: 12px; font-weight: 700; }
-  .dk { width: 200px; align-self: center; padding: 14px; border-radius: 14px; background: var(--g4);
+  .dk { width: 186px; align-self: center; padding: 14px; border-radius: 14px; background: var(--g4);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px var(--g3); }
   .dkhead { margin-bottom: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; color: var(--g1); }
   .row { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; padding: 8px 0; border-top: 1px solid #262628; font-size: 12.5px; font-weight: 700; color: var(--g1); }
@@ -158,7 +177,8 @@
   .notch { position: absolute; top: 0; left: 50%; z-index: 10; width: calc(var(--nw) * 1px); height: calc(var(--nh) * 1px); transform: translateX(-50%);
     transition: width 0.5s var(--sp), height 0.5s var(--sp); }
   .nbody { position: absolute; top: 0; bottom: 0; left: 6px; right: 6px; overflow: hidden; background: #000;
-    border-radius: 0 0 calc(var(--nr) * 1px) calc(var(--nr) * 1px); transition: border-radius 0.5s var(--sp); }
+    border-radius: 0 0 calc(var(--nr) * 1px) calc(var(--nr) * 1px); transition: border-radius 0.5s var(--sp), box-shadow 0.5s; }
+  .notch.ping .nbody { box-shadow: 0 0 26px 3px rgba(255, 214, 10, 0.4); transition: border-radius 0.5s var(--sp), box-shadow 0.08s; }
   .ear { position: absolute; top: 0; width: 6px; height: 6px; }
   .ear.l { left: 0; background: radial-gradient(circle at 0 100%, rgba(0, 0, 0, 0) 5.6px, #000 6.2px); }
   .ear.r { right: 0; background: radial-gradient(circle at 100% 100%, rgba(0, 0, 0, 0) 5.6px, #000 6.2px); }
@@ -261,10 +281,9 @@
   footer a { color: var(--g1); }
 
   @media (max-width: 980px) {
-    .scene { aspect-ratio: auto; width: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
-    .mac { position: relative; width: 100%; grid-column: 1 / -1; }
-    .desk { position: relative; right: auto; width: auto; grid-column: 1; grid-row: 2; margin-top: -4%; padding: 0 8%; }
-    .try { position: relative; right: auto; width: auto; grid-column: 2; grid-row: 2; align-self: center; margin-top: 6%; }
+    .scene { aspect-ratio: 1000 / 860; width: auto; }
+    .mac { left: 0; width: 100%; }
+    .desk { left: 62%; top: 62%; width: 32%; }
     .feats, .does { grid-template-columns: repeat(2, 1fr); }
     .steps { grid-template-columns: 1fr; }
     .dkit { grid-template-columns: 1fr; gap: 8px; }
@@ -273,10 +292,10 @@
   @media (max-width: 640px) {
     .intro .act0 { flex: 1 1 100%; }
     .intro .cta { flex-wrap: wrap; }
-    .scene { display: flex; flex-direction: column; overflow: hidden; margin: 28px -24px 0; padding: 0 24px 4px; }
-    .mac { width: 145%; margin-left: -22.5%; }
-    .desk { order: 1; width: 66%; margin: 2% auto 0; padding: 0; }
-    .try { order: 2; margin-top: 26px; }
+    .scene { aspect-ratio: 1000 / 1240; overflow: hidden; margin: 28px -24px 0; }
+    .mac { left: -22.5%; width: 145%; }
+    .desk { left: 50%; top: 58%; width: 44%; }
+    .seg { justify-content: flex-start; }
     .feats, .steps { grid-template-columns: 1fr; }
     .does { grid-template-columns: 1fr; }
     .does li { display: grid; grid-template-columns: 84px 1fr; gap: 0 18px; align-items: start; padding: 20px; }
@@ -285,7 +304,7 @@
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
     html { scroll-behavior: auto; }
-    .side.hint::after, .eyes i, .bars.playing i { animation: none; }
+    .side.hint::after, .eyes i, .bars.playing i, .turnhint { animation: none; }
   }
 </style>
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -317,15 +336,20 @@
         <div class="lid"><div class="screen" id="screen"></div></div>
         <div class="base"><i></i></div>
       </div>
-      <div class="try">
-        <p class="label">Try it</p>
-        <ul class="chips" id="chips" aria-label="What to try"></ul>
-        <p class="say" id="say" aria-live="polite"></p>
-      </div>
       <div class="desk">
-        <div class="pk"><canvas class="puck" id="puck"></canvas><button class="side" id="side" type="button" aria-label="The puck's side button"></button></div>
-        <p class="hint" id="hint"></p>
+        <div class="pk" id="pk">
+          <canvas class="puck" id="puck"></canvas>
+          <svg class="turnhint" viewBox="-63 -63 126 126" fill="none" stroke="#FFD60A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M-39.6 -39.6A56 56 0 0 1 23.7 -50.75"/><path d="M28.2 -48.6L23.6 -55.2L20.2 -48Z" fill="#FFD60A" stroke-linejoin="round"/>
+            <g transform="rotate(180)"><path d="M-39.6 -39.6A56 56 0 0 1 23.7 -50.75"/><path d="M28.2 -48.6L23.6 -55.2L20.2 -48Z" fill="#FFD60A" stroke-linejoin="round"/></g>
+          </svg>
+          <button class="side" id="side" type="button" aria-label="The puck's side button"></button>
+        </div>
       </div>
+    </div>
+    <div class="ctrl">
+      <div class="seg" id="chips" role="tablist" aria-label="Try it"></div>
+      <p class="say" id="say" aria-live="polite"></p>
     </div>
   </section>
 
@@ -450,8 +474,8 @@
 </div>
 
 <script type="module">
-import { mountHero } from "./mac.js";
-import { Puck } from "./puck.js";
+import { mountHero } from "./mac.js?v=a5207a9377";
+import { Puck } from "./puck.js?v=a5207a9377";
 
 mountHero({
   screen: document.getElementById("screen"),
@@ -459,7 +483,6 @@ mountHero({
   side: document.getElementById("side"),
   chips: document.getElementById("chips"),
   say: document.getElementById("say"),
-  hint: document.getElementById("hint"),
 });
 
 // the faces in "What it does", drawn once

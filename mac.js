@@ -4,7 +4,8 @@
 // Everything on the screen is laid out in points on an 800 x 520 screen and scaled to fit, so the
 // notch keeps the app's own sizes and shapes (the Mac app's design snapshots were the reference).
 
-import { Puck, PICKS } from "./puck.js";
+// (the ?v= is stamped by tools/publish-site.sh, so a page never mixes scripts from two versions)
+import { Puck, PICKS } from "./puck.js?v=a5207a9377";
 
 const SCENES = {
   music: { chip: "Music", face: "home", app: "Music", win: "music",
@@ -90,6 +91,8 @@ function screenHTML() {
     </div>
   </div>
 
+  <div class="dock"><i></i><i></i><i></i><i class="watt"></i><i></i></div>
+
   <div class="notch" id="notch">
     <i class="ear l"></i><i class="ear r"></i>
     <div class="nbody">
@@ -150,7 +153,7 @@ class Notch {
   }
 }
 
-export function mountHero({ screen, canvas, side, chips, say, hint }) {
+export function mountHero({ screen, canvas, side, chips, say }) {
   screen.innerHTML = `<div class="pts">${screenHTML()}</div>`;
   const pts = screen.firstElementChild, $ = (id) => screen.querySelector("#" + id);
   new ResizeObserver(() => { pts.style.transform = `scale(${screen.clientWidth / 800})`; }).observe(screen);
@@ -336,10 +339,16 @@ export function mountHero({ screen, canvas, side, chips, say, hint }) {
       case "dialkit": puck.setFace("dialkit", byUser); ears(icon.dial, "stiffness", ""); web.update(); notch.setRest("ears"); break;
       case "modes": puck.setFace("home", byUser); notch.setRest("idle"); break;
     }
-    for (const b of chips.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.scene === id));
+    for (const b of chips.querySelectorAll("button")) {
+      const on = b.dataset.scene === id;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-selected", String(on));
+      b.style.setProperty("--p", 0);
+      // on a phone the row scrolls sideways: keep the scene that's playing in view
+      if (on) chips.scrollTo({ left: b.offsetLeft - (chips.clientWidth - b.offsetWidth) / 2, behavior: "smooth" });
+    }
     say.textContent = S.say;
     side.classList.toggle("hint", id === "modes" && !picking);
-    hint.textContent = id === "modes" ? "Side button on the right" : "Drag to turn. Click to tap.";
   }
 
   function openPicker() {
@@ -367,7 +376,14 @@ export function mountHero({ screen, canvas, side, chips, say, hint }) {
 
   // ---- what the puck does to the Mac
 
+  const notchEl = $("notch"), holder = canvas.parentElement;
+  let pingTimer = 0;
   puck.onInput = ({ type, auto }) => {
+    if (!auto) holder.classList.add("used");  // it's been touched: the turn arrows can go
+    // the notch glows for a moment: it heard the puck
+    notchEl.classList.add("ping");
+    clearTimeout(pingTimer);
+    pingTimer = setTimeout(() => notchEl.classList.remove("ping"), 180);
     if (type === "side") {
       if (picking) closePicker(true); else openPicker();
       return;
@@ -407,10 +423,10 @@ export function mountHero({ screen, canvas, side, chips, say, hint }) {
 
   // chips
   for (const id of ORDER) {
-    const li = document.createElement("li"), b = document.createElement("button");
-    b.type = "button"; b.className = "chip"; b.textContent = SCENES[id].chip; b.dataset.scene = id;
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = SCENES[id].chip; b.dataset.scene = id; b.setAttribute("role", "tab");
     b.addEventListener("click", () => { setScene(id, true); demoReset(); });
-    li.append(b); chips.append(li);
+    chips.append(b);
   }
 
   placeCoins();
@@ -465,8 +481,10 @@ export function mountHero({ screen, canvas, side, chips, say, hint }) {
   function demoReset() { enteredAt = puck.now; fired.clear(); }
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0.15 }).observe(screen);
   setInterval(() => {
-    if (calm || !visible || document.hidden || puck.idle < 8) { demoReset(); return; }
+    const active = chips.querySelector("button.on");
+    if (calm || !visible || document.hidden || puck.idle < 8) { demoReset(); active?.style.setProperty("--p", 0); return; }
     const t = puck.now - enteredAt;
+    active?.style.setProperty("--p", Math.min(1, t / DEMO[scene].len).toFixed(3));  // counting down to the next scene
     const first = (at) => { if (t >= at && !fired.has(at)) { fired.add(at); return true; } return false; };
     DEMO[scene].run(t, first);
     if (t > DEMO[scene].len) {
