@@ -2,9 +2,11 @@
 // (466 units across), turned by dragging it round and tapped by clicking it.
 //
 //   const puck = new Puck(canvas, { face: "home" });
-//   puck.setFace("pong");  puck.onChange = (state) => ...
+//   puck.setFace("pong");  puck.onChange = (puck) => ...;  puck.onInput = ({ type, deg, auto }) => ...
 //
-// Faces: home, trackpad, claude, dialkit, allow, call, focus, pong, spin.
+// Faces: home, trackpad, claude, dialkit, allow, call, focus, pong, spin, picker.
+// `live: false` draws once (call paint() again to redraw); `bare: true` leaves out the case,
+// for the little faces in the notch's picker.
 
 const C = { y: "#FFD60A", w: "#F5F5F7", g1: "#8E8E93", g2: "#5A5A5E", g3: "#2C2C2E", g4: "#1C1C1E" };
 const TOP = -Math.PI / 2;
@@ -49,29 +51,22 @@ function odo(c, v, x, y, size, col, minDigits = 1) {
   c.restore();
 }
 
-export const FACE_INFO = {
-  home: ["On the desk", "a volume knob.", "Drag it round. Click it to pause."],
-  trackpad: ["Pick a face", "a trackpad.", "Move over the glass."],
-  claude: ["Open Claude", "it listens.", "Click to talk, click again to send."],
-  dialkit: ["In DialKit", "it dials.", "Drag it round: one click a step."],
-  allow: ["Claude Code asks", "tap to allow.", "Click to allow. Turn it back to deny."],
-  call: ["On a call", "flip to mute.", "Click to mute and unmute."],
-  focus: ["Head down", "focus.", "Turn to set the time, click to start."],
-  pong: ["Bored?", "play.", "Drag it round to move both paddles."],
-  spin: ["Game night", "who goes first?", "Click to spin."],
-};
+// The faces the side button cycles through, in the order the puck lists them
+export const PICKS = [["home", "Home"], ["trackpad", "Trackpad"], ["claude", "Claude"], ["focus", "Focus"], ["spin", "Spin"], ["pong", "Pong"]];
 
 export class Puck {
-  constructor(canvas, { face = "home", interactive = true } = {}) {
+  constructor(canvas, { face = "home", interactive = true, live = true, bare = false } = {}) {
     this.cv = canvas;
     this.c = canvas.getContext("2d");
     this.face = face;
     this.prevFace = face;
+    this.bare = bare;
     this.wipeAt = -1e9;
     this.turnAngle = 0;          // how far the body has been turned (the rim shows it)
     this.lastTurn = -1e9;
     this.lastInput = -1e9;
     this.onChange = null;
+    this.onInput = null;
     this.s = {
       vol: 38, shownVol: 38, playing: true, morph: 0,
       look: 0, lookY: 0, lookTX: 0, lookTY: 0, blinkAt: 2, blinkStart: -9, hop: -9,
@@ -83,24 +78,36 @@ export class Puck {
       focusSet: 25 * 60, focusLeft: 25 * 60, focusRun: false, focusAcc: 0,
       pong: { paddle: 90, bx: 0, by: 0, vx: 0, vy: 0, score: 0, missAt: -9, flashAt: -9, hitAt: 0, trail: [], auto: true },
       spin: { deg: 30, vel: 0, stopAt: -9 },
+      pick: { idx: 0, acc: 0 },
     };
     this.pongServe();
-    this.resize();
-    new ResizeObserver(() => this.resize()).observe(canvas);
-    if (interactive) this.bind();
-    window.addEventListener("pointermove", (e) => this.lookAt(e.clientX, e.clientY), { passive: true });
     this.t0 = performance.now();
     this.last = 0;
+    this.now = 0;
+    this.resize();
+    new ResizeObserver(() => { this.resize(); if (!live) this.paint(); }).observe(canvas);
+    if (interactive) this.bind();
+    if (!live) {
+      this.paint();
+      document.fonts?.ready.then(() => this.paint());
+      return;
+    }
+    window.addEventListener("pointermove", (e) => this.lookAt(e.clientX, e.clientY), { passive: true });
     const loop = (now) => { this.frame((now - this.t0) / 1000); requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
   }
+
+  /// Draw once, for a puck that isn't running
+  paint() { this.draw(this.now, 0); }
 
   // ---- size and input
 
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2.5), r = this.cv.getBoundingClientRect();
-    this.cv.width = Math.round(r.width * dpr);
-    this.cv.height = Math.round(r.width * dpr);
+    // a little face in the notch is scaled by its page, so draw it with room to spare
+    const w = this.bare ? this.cv.offsetWidth * 1.6 : r.width;
+    this.cv.width = Math.round(w * dpr);
+    this.cv.height = Math.round(w * dpr);
   }
 
   angleAt(e) {
@@ -172,6 +179,7 @@ export class Puck {
     if (face === "pong") { this.s.pong.score = 0; this.s.pong.auto = true; this.pongServe(); }
     if (face === "allow") { this.s.deny = false; this.s.allowedAt = -9; }
     if (face === "claude") { this.s.listening = false; this.s.sentAt = -9; }
+    if (face === "picker") this.s.pick.acc = 0;
     this.onChange?.(this);
   }
 
@@ -209,8 +217,17 @@ export class Puck {
         break;
       case "pong": if (!auto) { s.pong.auto = false; s.pong.paddle = (s.pong.paddle + deg + 3600) % 360; } break;
       case "spin": s.spin.deg = (s.spin.deg + deg + 3600) % 360; break;
+      case "picker":  // one face per 24 degrees, and it stops at the ends, as on the puck
+        s.pick.acc += deg;
+        while (Math.abs(s.pick.acc) >= 24) {
+          const d = Math.sign(s.pick.acc);
+          s.pick.acc -= d * 24;
+          s.pick.idx = clamp(s.pick.idx + d, 0, PICKS.length - 1);
+        }
+        break;
     }
     this.onChange?.(this);
+    this.onInput?.({ type: "turn", deg, auto });
   }
 
   tap(auto = false) {
@@ -228,6 +245,14 @@ export class Puck {
       case "spin": s.spin.vel = 720 + Math.random() * 540; s.spin.stopAt = -9; break;
     }
     this.onChange?.(this);
+    this.onInput?.({ type: "tap", auto });
+  }
+
+  /// The button on the side of the case: opens the faces, and picks one
+  side(auto = false) {
+    if (!auto) this.lastInput = this.now;
+    this.s.hop = this.now;
+    this.onInput?.({ type: "side", auto });
   }
 
   // ---- pong, as on the puck: two paddles opposite each other, turning as one
@@ -303,6 +328,16 @@ export class Puck {
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.clearRect(0, 0, W, W);
     c.translate(half, half);
+
+    if (this.bare) {  // just the glass, edge to edge
+      c.k = half / 233;
+      c.save(); c.scale(c.k, c.k);
+      c.beginPath(); c.arc(0, 0, 233, 0, 7); c.clip();
+      c.fillStyle = "#000"; c.fillRect(-240, -240, 480, 480);
+      this.drawFace(this.face, now, blink);
+      c.restore();
+      return;
+    }
 
     // the body: turned aluminium, catching light as it turns
     const rim = c.createConicGradient(rad(this.turnAngle - 40), 0, 0);
@@ -430,11 +465,11 @@ export class Puck {
       case "allow": {
         const done = s.allowedAt > 0;
         glow(c, "rgba(255,214,10,0.5)", 12, () => arc(c, 214, 0, 7, "rgba(255,214,10,0.55)", 4));
-        text(c, "Claude wants to run", 0, -106, font(600, 22), C.g1);
+        text(c, "Claude Code wants to run", 0, -106, font(600, 22), C.g1);
         c.fillStyle = C.g4; c.beginPath(); c.roundRect(-140, -72, 280, 62, 16); c.fill();
-        text(c, "npm test", 0, -40, font(500, 32, true), C.w);
+        text(c, s.cmd ?? "npm test", 0, -40, font(500, 32, true), C.w);
         text(c, done ? (s.deny ? "Denied" : "Allowed") : s.deny ? "Deny?" : "Allow?", 0, 48, font(800, 66), s.deny ? C.w : C.y, -1);
-        if (!done) text(c, s.deny ? "tap to deny · turn back to allow" : "tap to allow · turn for more", 0, 114, font(600, 18), C.g2);
+        if (!done) text(c, s.deny ? "tap to deny · turn forward to allow" : "tap to allow · turn back to deny", 0, 114, font(600, 18), C.g2);
         break;
       }
       case "call": {
@@ -487,6 +522,24 @@ export class Puck {
         glow(c, "rgba(255,214,10,0.7)", 16, () => tick(c, a, 30, 182, C.y, 10));
         disc(c, 0, 0, 20, C.w);
         if (sp.vel === 0 && settle <= 0) text(c, "spin me, or tap", 0, 150, font(600, 18), C.g2);
+        break;
+      }
+      case "picker": {
+        // a dot for each face along the top, the chosen one in yellow; the face itself in the middle
+        const p = s.pick, n = PICKS.length;
+        PICKS.forEach((_, i) => {
+          const a = TOP + rad((i - (n - 1) / 2) * 12), on = i === p.idx;
+          disc(c, Math.cos(a) * 204, Math.sin(a) * 204, on ? 9 : 5.5, on ? C.y : C.g2);
+        });
+        const [id, name] = PICKS[p.idx];
+        c.save(); c.translate(0, -26);
+        c.beginPath(); c.arc(0, 0, 98, 0, 7); c.clip();
+        c.scale(0.42, 0.42);
+        this.drawFace(id, now, blink);
+        c.restore();
+        c.strokeStyle = C.g3; c.lineWidth = 3; c.beginPath(); c.arc(0, -26, 98, 0, 7); c.stroke();
+        text(c, name, 0, 112, font(800, 44), C.w, -0.5);
+        text(c, "turn to choose · click to switch", 0, 160, font(600, 18), C.g2);
         break;
       }
     }

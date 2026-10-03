@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Watt, the puck</title>
-<meta name="description" content="A dial that becomes whatever you're doing. A round screen on your desk, and an app in your Mac's notch.">
+<meta name="description" content="A dial with a round screen for your Mac, and an app that lives in the notch. Volume, Claude, Claude Code and DialKit, on a puck.">
 <link rel="icon" href="assets/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-  :root { --y: #FFD60A; --w: #F5F5F7; --g1: #8E8E93; --g2: #5A5A5E; --g3: #2C2C2E; --g4: #1C1C1E; }
+  :root { --y: #FFD60A; --w: #F5F5F7; --g1: #8E8E93; --g2: #5A5A5E; --g3: #2C2C2E; --g4: #1C1C1E; --sp: cubic-bezier(0.2, 1, 0.3, 1); }
   * { box-sizing: border-box; }
   html { background: #000; scroll-behavior: smooth; overflow-x: clip; }
   body { margin: 0; background: #000; color: var(--w); -webkit-font-smoothing: antialiased; overflow-x: hidden;
@@ -24,73 +24,239 @@
   header nav a:hover { color: var(--w); }
   .y { color: var(--y); }
 
-  /* the hero: words on the left, a live puck on the right */
-  .hero { display: grid; grid-template-columns: 1fr minmax(280px, 460px); gap: 48px; align-items: center; padding: 36px 0 24px; }
-  h1 { font-size: clamp(46px, 7.4vw, 92px); line-height: 0.98; letter-spacing: -0.02em; font-weight: 900; margin: 0 0 16px; }
-  .lede { font-size: clamp(18px, 2.2vw, 24px); color: var(--g1); font-weight: 700; margin: 0 0 30px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
-  .chip { font: inherit; font-weight: 800; font-size: 14.5px; color: var(--g1); background: var(--g4); border: 0; border-radius: 18px;
-    height: 36px; padding: 0 15px; cursor: pointer; transition: background 0.18s, color 0.18s, transform 0.18s; }
-  .chip:hover { color: var(--w); transform: translateY(-1px); }
-  .chip[aria-pressed="true"] { background: var(--y); color: #000; box-shadow: 0 0 20px rgba(255, 214, 10, 0.28); }
-  .stage { position: relative; }
-  .stage::before { content: ""; position: absolute; inset: -16% -16% -22%; border-radius: 50%; pointer-events: none;
-    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03) 60%, rgba(255, 255, 255, 0) 100%); }
-  canvas.puck { position: relative; display: block; width: 100%; aspect-ratio: 1; border-radius: 50%; outline: none;
-    filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.8)); -webkit-tap-highlight-color: transparent; }
-  canvas.puck:focus-visible { box-shadow: 0 0 0 3px var(--y); }
-  .says { position: relative; z-index: 1; text-align: center; margin-top: 22px; min-height: 64px; }
-  .says b { display: block; font-size: 22px; font-weight: 900; letter-spacing: -0.01em; }
-  .says span.hint { display: block; margin-top: 4px; font-size: 14.5px; font-weight: 700; color: var(--g2); }
-
-  h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.02; letter-spacing: -0.02em; font-weight: 900; margin: 110px 0 28px; }
-  video { display: block; width: 100%; border-radius: 24px; background: #0b0b0c; aspect-ratio: 1280 / 800; }
-  .steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
-  .steps li { background: var(--g4); border-radius: 24px; padding: 26px; display: flex; flex-direction: column; gap: 10px;
-    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.25s; }
-  .steps li:hover { transform: translateY(-3px); background: #212124; }
-  .n { font-size: 13px; font-weight: 900; letter-spacing: 0.14em; color: var(--g1); }
-  .steps h3 { font-size: 25px; font-weight: 900; margin: 0; letter-spacing: -0.01em; }
-  .steps p { margin: 0; color: var(--g1); font-weight: 700; font-size: 15.5px; line-height: 1.45; }
-  .steps .fine { color: var(--g2); font-size: 13.5px; }
-  .act { margin-top: auto; padding-top: 10px; }
+  /* ---- the hero: a title, then the Mac and the puck */
+  .intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 40px; flex-wrap: wrap; padding-top: 14px; }
+  .intro > div:first-child { flex: 1 1 520px; }
+  .intro .cta { flex: none; padding-bottom: 2px; }
+  h1 { font-size: clamp(44px, 6vw, 72px); line-height: 0.98; letter-spacing: -0.02em; font-weight: 900; margin: 0 0 12px; }
+  .lede { font-size: clamp(17px, 2vw, 22px); color: var(--g1); font-weight: 700; margin: 0; max-width: 34em; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; }
   .pill { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 24px; border: 0; cursor: pointer; text-align: center;
     border-radius: 22px; background: var(--y); color: #000; font: inherit; font-weight: 900; font-size: 15.5px; text-decoration: none;
     box-shadow: 0 0 22px rgba(255, 214, 10, 0.3); transition: transform 0.18s, filter 0.18s; }
   .pill:hover { filter: brightness(1.06); transform: translateY(-1px); }
   .pill.quiet { background: var(--g3); color: var(--g1); box-shadow: none; cursor: default; }
   .pill.ghost { background: var(--g3); color: var(--w); box-shadow: none; }
-  .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+
+  /* on a short screen the scene shrinks, so the Mac and the puck both stay in view */
+  .scene { position: relative; aspect-ratio: 1072 / 584; width: min(100%, max(680px, calc((100svh - 262px) * 1.8356))); margin: 30px auto 0; }
+  .mac { position: absolute; left: 0; top: 0; width: 73%; }
+  .try { position: absolute; right: 0; top: 1%; width: 24.5%; }
+  .desk { position: absolute; right: 0; bottom: 1%; width: 24.5%; }
+
+  .lid { position: relative; background: #0b0b0c; border-radius: 2.6% / 4%; padding: 1.9% 1.9% 2.6%;
+    box-shadow: inset 0 0 0 1px #26262a, 0 0 0 1px #6a6c73, 0 0 0 2.5px #18181a, 0 50px 90px -40px rgba(0, 0, 0, 0.9); }
+  .screen { position: relative; aspect-ratio: 800 / 520; overflow: hidden; border-radius: 1.2% / 1.8%; background: #111114; }
+  .base { position: relative; width: 112%; margin-left: -6%; height: 0; padding-bottom: 3.2%;
+    background: linear-gradient(#eceef1 0, #c3c5cb 14%, #9a9ca3 52%, #5f6168 100%); border-radius: 0 0 1.4% 1.4% / 0 0 70% 70%; }
+  .base::before { content: ""; position: absolute; left: 6%; right: 6%; top: 0; height: 18%; background: linear-gradient(#2a2b2f, rgba(42, 43, 47, 0)); }
+  .base i { position: absolute; left: 50%; top: 0; width: 12%; height: 40%; transform: translateX(-50%); border-radius: 0 0 10px 10px;
+    background: linear-gradient(#55575e, #a5a7ad); }
+  .mac::after { content: ""; position: absolute; left: 2%; right: 2%; bottom: -3.5%; height: 6%; z-index: -1;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0)); }
+
+  .try .label { font: 500 11px "Roboto Mono", ui-monospace, monospace; letter-spacing: 0.16em; color: var(--g2); margin: 0 0 12px; text-transform: uppercase; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .chip { font: inherit; font-weight: 800; font-size: 14.5px; color: var(--g1); background: var(--g4); border: 0; border-radius: 18px;
+    height: 36px; padding: 0 15px; cursor: pointer; transition: background 0.18s, color 0.18s, transform 0.18s; }
+  .chip:hover { color: var(--w); transform: translateY(-1px); }
+  .chip[aria-pressed="true"] { background: var(--y); color: #000; box-shadow: 0 0 20px rgba(255, 214, 10, 0.28); }
+  .say { margin: 16px 0 0; color: var(--w); font-weight: 700; font-size: 15.5px; line-height: 1.45; min-height: 68px; }
+
+  @media (min-width: 981px) {  /* the side panel shrinks with the scene */
+    .scene { container-type: inline-size; }
+    .chip { font-size: clamp(12.5px, 1.35cqw, 14.5px); height: clamp(30px, 3.36cqw, 36px); padding: 0 clamp(11px, 1.4cqw, 15px); }
+    .say { font-size: clamp(13px, 1.45cqw, 15.5px); margin-top: clamp(10px, 1.5cqw, 16px); }
+  }
+  .pk { position: relative; }
+  canvas.puck { position: relative; display: block; width: 100%; aspect-ratio: 1; border-radius: 50%; outline: none;
+    filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.85)); -webkit-tap-highlight-color: transparent; }
+  canvas.puck:focus-visible { box-shadow: 0 0 0 3px var(--y); }
+  .side { position: absolute; right: -2.4%; top: 50%; width: 3.8%; height: 12%; transform: translateY(-50%); border: 0; padding: 0; cursor: pointer;
+    border-radius: 0 7px 7px 0; background: linear-gradient(90deg, #4f5157, #d3d5da 45%, #7d7f86); }
+  .side::after { content: ""; position: absolute; inset: -9px -9px -9px -5px; border-radius: 12px; border: 2px solid var(--y); opacity: 0; pointer-events: none; }
+  .side.hint::after { animation: nudge 1.4s ease-out infinite; }
+  .side:focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
+  @keyframes nudge { 0% { opacity: 0.9; transform: scale(0.8); } 100% { opacity: 0; transform: scale(1.35); } }
+  .hint { text-align: center; color: var(--g2); font-weight: 700; font-size: 13.5px; margin: 14px 0 0; }
+
+  /* ---- the Mac's screen, laid out in points on an 800 x 520 screen and scaled to fit */
+  .pts { position: absolute; left: 0; top: 0; width: 800px; height: 520px; transform-origin: 0 0; color: var(--w);
+    font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif; }
+  .wall { position: absolute; inset: 0; background: radial-gradient(110% 90% at 12% 118%, #2b2546 0%, rgba(43, 37, 70, 0) 62%),
+    radial-gradient(80% 70% at 94% -18%, #46370f 0%, rgba(70, 55, 15, 0) 58%), linear-gradient(#18181c, #0f0f12); }
+  .menubar { position: absolute; left: 0; right: 0; top: 0; height: 34px; display: flex; align-items: center; gap: 16px; padding: 0 16px;
+    font-size: 13px; font-weight: 600; color: rgba(245, 245, 247, 0.9); background: rgba(0, 0, 0, 0.3); }
+  .menubar b { font-weight: 800; }
+  .menubar .clock { margin-left: auto; }
+
+  .win { position: absolute; left: 100px; top: 62px; width: 600px; height: 410px; border-radius: 12px; background: var(--g4); overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 0.5px rgba(255, 255, 255, 0.16);
+    opacity: 0; transform: translateY(10px) scale(0.98); transition: opacity 0.35s ease, transform 0.5s var(--sp); }
+  .win.on { opacity: 1; transform: none; }
+  .win .bar { position: relative; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--g1);
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.08); }
+  .tl { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); display: flex; gap: 8px; }
+  .tl i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+  .tl i + i { background: #febc2e; }
+  .tl i + i + i { background: #28c840; }
+  .url { background: var(--g3); border-radius: 7px; padding: 4px 70px; font-size: 12px; font-weight: 600; }
+
+  .music { display: flex; gap: 28px; padding: 34px; height: calc(100% - 36px); }
+  .art { position: relative; width: 220px; height: 220px; flex: none; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background: radial-gradient(circle at 32% 30%, #ffe27a, #ffb000 34%, #b4470a 70%, #3a1405); }
+  .art i { position: absolute; inset: 24%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 0 18px rgba(255, 255, 255, 0.08), 0 0 0 38px rgba(255, 255, 255, 0.05); }
+  .meta { flex: 1; display: flex; flex-direction: column; padding-top: 6px; }
+  .meta > b { font-size: 24px; font-weight: 800; }
+  .meta > span { color: var(--g1); font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .prog { margin-top: 34px; height: 5px; border-radius: 3px; background: #3a3a3c; overflow: hidden; }
+  .prog i { display: block; height: 100%; width: 32%; background: var(--w); }
+  .times { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--g1); font-variant-numeric: tabular-nums; }
+  .ctl { display: flex; align-items: center; justify-content: center; gap: 30px; margin-top: 18px; }
+  .vol { display: flex; align-items: center; gap: 10px; margin-top: auto; }
+  .slider { flex: 1; height: 5px; border-radius: 3px; background: #3a3a3c; }
+  .slider i { display: block; height: 100%; border-radius: 3px; background: var(--y); box-shadow: 0 0 10px rgba(255, 214, 10, 0.5); transition: width 0.08s; }
+
+  .chat { display: flex; flex-direction: column; height: calc(100% - 36px); padding: 18px 26px; }
+  .msgs { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; overflow: hidden; }
+  .msgs p { margin: 0; max-width: 86%; font-size: 14.5px; line-height: 1.5; font-weight: 600; color: #e8e8ed; }
+  .msgs .me { align-self: flex-end; background: var(--g3); color: var(--w); padding: 9px 14px; border-radius: 16px 16px 4px 16px; }
+  .input { display: flex; align-items: center; height: 46px; margin-top: 14px; padding: 0 16px; border-radius: 14px; background: #141416;
+    box-shadow: inset 0 0 0 1px var(--g3); color: var(--g2); font-size: 14px; font-weight: 600; }
+  .rec { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: #3a3a3c; }
+  .rec.on { background: var(--y); box-shadow: 0 0 10px var(--y); animation: throb 1s ease-in-out infinite; }
+  @keyframes throb { 50% { opacity: 0.45; } }
+
+  .win[data-win="term"] { background: #0e0e10; }
+  .term { display: flex; flex-direction: column; justify-content: flex-end; height: calc(100% - 36px); padding: 16px 20px 22px; font: 500 13px/1.7 "Roboto Mono", ui-monospace, monospace; color: #d1d1d6; }
+  .term p { margin: 0; white-space: pre-wrap; }
+  .term .dot { color: var(--y); }
+  .term .p, .term .wait, .term .no { color: var(--g1); }
+  .term .wait::after { content: " \258D"; animation: throb 1s steps(2) infinite; }
+
+  .web { display: flex; gap: 20px; height: calc(100% - 36px); padding: 24px; background: #0f0f11; }
+  .stagebox { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .stagebox .track { position: relative; height: 120px; border-radius: 18px; background: #18181b; box-shadow: inset 0 0 0 1px #232326; }
+  .stagebox .card { position: absolute; left: 12px; top: 20px; width: 80px; height: 80px; border-radius: 20px; background: var(--y);
+    box-shadow: 0 0 30px rgba(255, 214, 10, 0.35); will-change: transform; }
+  .stagebox p { margin: 12px 0 0; text-align: center; color: var(--g2); font-size: 12px; font-weight: 700; }
+  .dk { width: 200px; align-self: center; padding: 14px; border-radius: 14px; background: var(--g4);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px var(--g3); }
+  .dkhead { margin-bottom: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; color: var(--g1); }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; padding: 8px 0; border-top: 1px solid #262628; font-size: 12.5px; font-weight: 700; color: var(--g1); }
+  .row code { font: 500 12.5px "Roboto Mono", ui-monospace, monospace; color: var(--w); }
+  .row.on span, .row.on code { color: var(--y); }
+  .row .sl { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--g3); }
+  .row .sl i { display: block; height: 100%; border-radius: 2px; background: var(--g2); }
+  .row.on .sl i { background: var(--y); }
+
+  /* the notch: the app's own shapes and sizes, in points */
+  .notch { position: absolute; top: 0; left: 50%; z-index: 10; width: calc(var(--w) * 1px); height: calc(var(--h) * 1px); transform: translateX(-50%);
+    transition: width 0.5s var(--sp), height 0.5s var(--sp); }
+  .nbody { position: absolute; top: 0; bottom: 0; left: 6px; right: 6px; overflow: hidden; background: #000;
+    border-radius: 0 0 calc(var(--r) * 1px) calc(var(--r) * 1px); transition: border-radius 0.5s var(--sp); }
+  .ear { position: absolute; top: 0; width: 6px; height: 6px; }
+  .ear.l { left: 0; background: radial-gradient(circle at 0 100%, rgba(0, 0, 0, 0) 5.6px, #000 6.2px); }
+  .ear.r { right: 0; background: radial-gradient(circle at 100% 100%, rgba(0, 0, 0, 0) 5.6px, #000 6.2px); }
+  .st { position: absolute; top: 0; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.16s; }
+  .st.on { opacity: 1; transition: opacity 0.3s 0.12s; }
+  .wings { display: grid; grid-template-columns: 1fr 178px 1fr; align-items: center; }
+  .wings.top { width: 100%; height: 34px; }
+  .wl { display: flex; align-items: center; gap: 8px; padding-left: 16px; min-width: 0; }
+  .wr { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-right: 16px; min-width: 0; }
+  .vbar { width: 26px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
+  .vbar i { display: block; height: 100%; background: var(--y); }
+  [data-st="vol"] .wr b { width: 24px; text-align: right; font-size: 12px; font-weight: 700; color: rgba(245, 245, 247, 0.9); font-variant-numeric: tabular-nums; }
+  .appicon { width: 18px; height: 18px; border-radius: 4.5px; background: radial-gradient(circle at 32% 30%, #ffe27a, #ffb000 40%, #b4470a 85%); }
+  .bars { display: flex; align-items: center; gap: 2.5px; height: 16px; }
+  .bars i { width: 3.4px; height: 11px; border-radius: 2px; background: var(--g1); }
+  .bars i:first-child, .bars i:last-child { opacity: 0; }
+  .bars.playing i { width: 2.6px; opacity: 1; background: var(--w); animation: eq 0.8s ease-in-out infinite alternate; }
+  .bars.playing i:nth-child(2) { animation-delay: -0.3s; }
+  .bars.playing i:nth-child(3) { animation-delay: -0.55s; }
+  .bars.playing i:nth-child(4) { animation-delay: -0.15s; }
+  @keyframes eq { from { height: 5px; } to { height: 14px; } }
+  .t1 { display: block; margin-top: 5px; text-align: center; font-size: 14px; font-weight: 700; }
+  .t2 { display: block; margin-top: 2px; text-align: center; font-size: 12px; font-weight: 600; color: var(--g1); }
+  [data-st="ears"] .wl b { font-size: 16px; font-weight: 700; white-space: nowrap; }
+  [data-st="ears"] .wr { font-size: 15px; font-weight: 600; white-space: nowrap; }
+  .pts .dim { font-size: 13px; color: var(--g1); }
+  .pts .mono { font: 500 16px "Roboto Mono", ui-monospace, monospace; letter-spacing: -0.3px; }
+  .thead { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 12px 0 14px; }
+  .thead b { font-size: 16px; font-weight: 700; }
+  .thead span { margin-left: auto; font-size: 16px; font-weight: 700; color: var(--y); }
+  .thead span.sent { color: var(--w); }
+  .ttext { width: 450px; margin: 4px 0 0; padding: 0 16px; font-size: 14px; line-height: 19px; font-weight: 600; }
+  [data-st="allow"] { text-align: center; }
+  .ask { margin: 52px 0 0; font-size: 15px; font-weight: 600; color: var(--g1); }
+  [data-st="allow"] code { display: inline-block; margin-top: 9px; padding: 5px 16px; border-radius: 9px; background: var(--g4); font: 500 16px/22px "Roboto Mono", ui-monospace, monospace; }
+  .btns { display: flex; justify-content: center; gap: 12px; margin-top: 14px; }
+  .btns span { display: flex; align-items: center; justify-content: center; width: 110px; height: 32px; border-radius: 16px; font-size: 16px; font-weight: 800; transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
+  .deny { background: var(--g4); color: var(--g1); }
+  .yes { background: var(--y); color: #000; font-weight: 900; box-shadow: 0 0 14px rgba(255, 214, 10, 0.45); }
+  .deny.on { background: var(--w); color: #000; }
+  .deny.on + .yes { background: var(--g4); color: var(--g1); box-shadow: none; }
+  .coins { position: absolute; left: 0; right: 0; top: 0; height: 150px; }
+  .coin { position: absolute; left: calc(50% - 35px); top: 54px; width: 70px; height: 70px; border-radius: 50%; filter: grayscale(1);
+    box-shadow: 0 0 0 1px var(--g3); transition: transform 0.35s var(--sp), opacity 0.3s; }
+  .coin.on { filter: none; box-shadow: 0 0 0 4.5px #000, 0 0 0 6.5px var(--y), 0 0 18px 6px rgba(255, 214, 10, 0.3); }
+  .pname { position: absolute; left: 0; right: 0; top: 133px; text-align: center; font-size: 17px; font-weight: 900; }
+  .phint { position: absolute; left: 0; right: 0; top: 156px; text-align: center; font-size: 12px; font-weight: 600; color: #6e6e73; }
+  .mtext { display: block; margin-top: 2px; text-align: center; font-size: 13px; font-weight: 700; }
+  .eyes { position: absolute; left: 50%; top: 48.5px; width: 65.5px; height: 31px; margin-left: -32.75px; display: flex; justify-content: space-between;
+    transition: transform 0.25s ease-out; }
+  .eyes i { width: 13.5px; height: 31px; border-radius: 7px; background: var(--w); box-shadow: 0 0 7px rgba(255, 255, 255, 0.55); animation: blink 4.7s infinite; }
+  @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
+
+  /* ---- the rest of the page */
+  h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.02; letter-spacing: -0.02em; font-weight: 900; margin: 120px 0 28px; }
+  .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
+  .feats li { padding: 24px; border-radius: 24px; background: var(--g4); }
+  .feats svg { display: block; width: 30px; height: 30px; margin-bottom: 16px; }
+  .feats h3, .steps h3 { margin: 0 0 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.01em; }
+  .feats p { margin: 0; color: var(--g1); font-weight: 700; font-size: 15.5px; line-height: 1.45; }
+  video { display: block; width: 100%; border-radius: 24px; background: #0b0b0c; aspect-ratio: 1280 / 800; }
+  .steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
+  .steps li { display: flex; flex-direction: column; gap: 10px; padding: 26px; border-radius: 24px; background: var(--g4);
+    transition: transform 0.25s var(--sp), background 0.25s; }
+  .steps li:hover { transform: translateY(-3px); background: #212124; }
+  .steps h3 { font-size: 25px; margin: 0; }
+  .n { font-size: 13px; font-weight: 900; letter-spacing: 0.14em; color: var(--g1); }
+  .steps p { margin: 0; color: var(--g1); font-weight: 700; font-size: 15.5px; line-height: 1.45; }
+  .steps .fine { color: var(--g2); font-size: 13.5px; }
+  .act { margin-top: auto; padding-top: 10px; }
   code, pre { font-family: "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace; }
-  pre { background: var(--g4); border-radius: 18px; padding: 18px 20px; overflow-x: auto; font-size: 14.5px; line-height: 1.5; margin: 0 0 14px; }
-
-  /* DialKit: the puck on the left turns the card on the right */
-  .dk { display: grid; grid-template-columns: minmax(200px, 300px) 1fr; gap: 40px; align-items: center; }
-  .dk > div, .hero > div { min-width: 0; }  /* a long code line must scroll inside its box, not widen the page */
-  .dk p { color: var(--g1); font-weight: 700; font-size: 17px; line-height: 1.5; margin: 0 0 16px; }
-  .panel { background: var(--g4); border-radius: 24px; padding: 22px; }
-  .track { position: relative; height: 96px; border-radius: 16px; background: #0e0e10; overflow: hidden; }
-  .card { position: absolute; top: 18px; left: 18px; width: 60px; height: 60px; border-radius: 16px; background: var(--y);
-    box-shadow: 0 0 26px rgba(255, 214, 10, 0.35); will-change: transform; }
-  .readout { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; font-weight: 800; color: var(--g1); }
-  .readout code { color: var(--y); font-size: 20px; }
-
-  .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  pre { margin: 0 0 14px; padding: 18px 20px; overflow-x: auto; border-radius: 18px; background: var(--g4); font-size: 14.5px; line-height: 1.5; }
+  .dkit { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+  .dkit > div { min-width: 0; }  /* a long code line scrolls inside its box, not the page */
+  .dkit p { margin: 0 0 16px; color: var(--g1); font-weight: 700; font-size: 17px; line-height: 1.5; }
+  .dkit p a { color: var(--w); }
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.7s ease, transform 0.7s var(--sp); }
   .reveal.in { opacity: 1; transform: none; }
-  footer { color: var(--g2); font-weight: 700; font-size: 14px; padding: 110px 0 48px; }
+  footer { padding: 120px 0 48px; color: var(--g2); font-weight: 700; font-size: 14px; }
   footer a { color: var(--g1); }
 
-  @media (max-width: 860px) {
-    .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 12px; }
-    .stage { max-width: 360px; margin: 0 auto; width: 100%; }
-    .hero > div:last-child { order: -1; }
-    .steps, .dk { grid-template-columns: 1fr; }
-    .dk .mini { max-width: 240px; margin: 0 auto; width: 100%; }
+  @media (max-width: 980px) {
+    .scene { aspect-ratio: auto; width: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+    .mac { position: relative; width: 100%; grid-column: 1 / -1; }
+    .desk { position: relative; right: auto; width: auto; grid-column: 1; grid-row: 2; margin-top: -4%; padding: 0 8%; }
+    .try { position: relative; right: auto; width: auto; grid-column: 2; grid-row: 2; align-self: center; margin-top: 6%; }
+    .feats { grid-template-columns: repeat(2, 1fr); }
+    .dkit { grid-template-columns: 1fr; gap: 8px; }
     header nav { display: none; }
+  }
+  @media (max-width: 640px) {
+    .scene { display: flex; flex-direction: column; overflow: hidden; margin: 28px -24px 0; padding: 0 24px 4px; }
+    .mac { width: 145%; margin-left: -22.5%; }
+    .desk { order: 1; width: 66%; margin: 2% auto 0; padding: 0; }
+    .try { order: 2; margin-top: 26px; }
+    .feats, .steps { grid-template-columns: 1fr; }
   }
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
     html { scroll-behavior: auto; }
+    .side.hint::after, .eyes i, .bars.playing i { animation: none; }
   }
 </style>
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -99,24 +265,71 @@
 <div class="wrap">
   <header>
     <img src="assets/icon.png" alt="">Watt
-    <nav><a href="#make">Make one</a><a href="#dialkit">DialKit</a><a href="#reel">The reel</a></nav>
+    <nav><a href="#app">The app</a><a href="#make">Make one</a><a href="#dialkit">DialKit</a><a href="#reel">The reel</a></nav>
   </header>
 
-  <section class="hero">
-    <div>
-      <h1>Watt<span class="y">,</span><br>the puck.</h1>
-      <p class="lede">A dial that becomes whatever you're doing.<br>This one's live: drag it round, click it.</p>
-      <ul class="chips" id="chips" aria-label="What the puck becomes"></ul>
+  <section>
+    <div class="intro">
+      <div>
+        <h1>Watt<span class="y">,</span> the puck.</h1>
+        <p class="lede">A dial with a round screen for your Mac.<br>Its other half lives in the notch.</p>
+      </div>
       <div class="cta">
-        <a class="pill" href="#make">Make one</a>
-        <a class="pill ghost" href="#reel">Watch the reel</a>
+        <a class="pill" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download for Mac</a>
+        <a class="pill ghost" href="#make">Make one</a>
       </div>
     </div>
-    <div>
-      <div class="stage"><canvas class="puck" id="puck"></canvas></div>
-      <div class="says" aria-live="polite"><b id="says"></b><span class="hint" id="hint"></span></div>
+
+    <div class="scene">
+      <div class="mac" aria-hidden="true">
+        <div class="lid"><div class="screen" id="screen"></div></div>
+        <div class="base"><i></i></div>
+      </div>
+      <div class="try">
+        <p class="label">Try it</p>
+        <ul class="chips" id="chips" aria-label="What to try"></ul>
+        <p class="say" id="say" aria-live="polite"></p>
+      </div>
+      <div class="desk">
+        <div class="pk"><canvas class="puck" id="puck"></canvas><button class="side" id="side" type="button" aria-label="The puck's side button"></button></div>
+        <p class="hint" id="hint"></p>
+      </div>
     </div>
   </section>
+
+  <h2 id="app" class="reveal">More in the <span class="y">app</span>.</h2>
+  <ul class="feats reveal">
+    <li>
+      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="3" width="10" height="9" rx="2"/><path d="M12.5 12v4h5v-4M15 16v4M15 20a5 5 0 0 0 5 5h3"/></svg>
+      <h3>Installs Watt</h3>
+      <p>Plug a new puck in and click Install. The app puts Watt on it, no other tools needed.</p>
+    </li>
+    <li>
+      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round"><circle cx="15" cy="15" r="11"/><path d="M15 4v4M15 15l5-5"/><circle cx="15" cy="15" r="1.6" fill="#FFD60A"/></svg>
+      <h3>Pairs with a code</h3>
+      <p>A new puck drops out of the notch. Turn it to each of three numbers and tap.</p>
+    </li>
+    <li>
+      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linejoin="round"><rect x="3" y="8" width="17" height="13" rx="2.5"/><rect x="10" y="4" width="17" height="13" rx="2.5" fill="#1C1C1E"/></svg>
+      <h3>Follows the app in front</h3>
+      <p>DialKit when its tab is open, Claude when you're in Claude, a jog wheel in DaVinci Resolve.</p>
+    </li>
+    <li>
+      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21V13a7 7 0 0 1 14 0v8l2 2H6zM12.5 26h5"/></svg>
+      <h3>Waits for you</h3>
+      <p>Stepped away? Claude Code requests also arrive in Notification Center, with Allow and Deny.</p>
+    </li>
+    <li>
+      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h22v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M15 18l2 8 2.2-3 3.3 3.2 1.4-1.4-3.2-3.3 3-2.2z" fill="#FFD60A"/></svg>
+      <h3>Hover for more</h3>
+      <p>Hover over the notch for what's playing, the volume and every gesture.</p>
+    </li>
+    <li>
+      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2.2" stroke-linecap="round"><path d="M7 16h6M17 16h6"/></svg>
+      <h3>Stays quiet</h3>
+      <p>No puck nearby, nothing in your notch.</p>
+    </li>
+  </ul>
 
   <h2 id="make" class="reveal">Make <span class="y">one</span>.</h2>
   <ol class="steps reveal">
@@ -128,15 +341,15 @@
     </li>
     <li>
       <div class="n">2 &nbsp;THE MAC APP</div>
-      <h3>Watt lives in the notch</h3>
-      <p>The app connects the puck to your Mac, and puts Watt on a new puck for you: plug it in, click Install.</p>
-      <div class="act"><a class="pill" id="dmg" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download for Mac</a></div>
+      <h3>Download Watt</h3>
+      <p>Plug the puck in and the app installs Watt on it, pairs it, and stays in your notch from then on.</p>
+      <div class="act"><a class="pill" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download for Mac</a></div>
       <p class="fine">macOS 15 or later, Apple silicon. Signed and notarized by Apple.</p>
     </li>
     <li>
-      <div class="n">3 &nbsp;OR FROM HERE</div>
-      <h3>Install from the browser</h3>
-      <p>No Mac app yet? Plug the puck in, click the button and pick its port. It takes about a minute, and updates keep the puck paired.</p>
+      <div class="n">3 &nbsp;OR IN THE BROWSER</div>
+      <h3>Install from this page</h3>
+      <p>Plug the puck in, click Install and pick its port. It takes about a minute, and updates keep the puck paired.</p>
       <div class="act">
         <esp-web-install-button manifest="firmware/manifest.json">
           <button slot="activate" class="pill ghost">Install Watt on the puck</button>
@@ -149,21 +362,19 @@
     <li>
       <div class="n">4 &nbsp;PAIR</div>
       <h3>Dial it in</h3>
-      <p>Open Watt. When the puck drops out of the notch, click Pair, then turn the puck to each of the three numbers and tap.</p>
-      <p class="fine">Click the puck's side button any time to pick a face.</p>
+      <p>Open Watt and switch the puck on. When “New puck nearby” drops out of the notch, click Pair, then turn the puck to each number and tap.</p>
+      <p class="fine">Click the side button any time to switch faces.</p>
     </li>
   </ol>
 
   <h2 id="dialkit" class="reveal">In DialKit, it <span class="y">dials</span>.</h2>
-  <div class="dk reveal">
-    <div class="mini"><div class="stage"><canvas class="puck" id="puck-dk"></canvas></div></div>
+  <div class="dkit reveal">
     <div>
-      <p>If you tune interfaces with <a href="https://www.npmjs.com/package/dialkit">DialKit</a>, one line puts every knob on the puck. Try it: drag this one round and watch the spring change.</p>
-      <div class="panel">
-        <div class="track"><div class="card" id="card"></div></div>
-        <div class="readout"><span>stiffness</span><code id="stiff">180</code></div>
-      </div>
-      <pre style="margin-top:16px">npm install dialkit-watt</pre>
+      <p><a href="https://www.npmjs.com/package/dialkit" target="_blank" rel="noopener">DialKit</a>, by Josh Puckett, gives you live controls for tuning an interface. Add the Watt bridge and the puck turns them.</p>
+      <p>The control you're on shows up on the puck and in the notch. Turn to change it.</p>
+    </div>
+    <div>
+      <pre>npm install dialkit-watt</pre>
       <pre>import { WattBridge } from "dialkit-watt/react";
 
 &lt;DialRoot /&gt;
@@ -180,77 +391,16 @@
 </div>
 
 <script type="module">
-import { Puck, FACE_INFO } from "./puck.js";
+import { mountHero } from "./mac.js";
 
-const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const puck = new Puck(document.getElementById("puck"));
-const chips = document.getElementById("chips"), says = document.getElementById("says"), hint = document.getElementById("hint");
-const names = { home: "Home", trackpad: "Trackpad", claude: "Claude", dialkit: "DialKit", allow: "Claude Code", call: "On a call", focus: "Focus", pong: "Pong", spin: "Spin" };
-const order = Object.keys(names);
-
-for (const id of order) {
-  const li = document.createElement("li"), b = document.createElement("button");
-  b.className = "chip"; b.textContent = names[id]; b.dataset.face = id; b.type = "button";
-  b.addEventListener("click", () => { puck.setFace(id, true); puck.lastInput = puck.now; show(); });
-  li.append(b); chips.append(li);
-}
-
-function show() {
-  const [when, what, how] = FACE_INFO[puck.face];
-  says.innerHTML = `${when}, <span class="y">${what}</span>`;
-  hint.textContent = how;
-  for (const b of chips.querySelectorAll(".chip")) b.setAttribute("aria-pressed", String(b.dataset.face === puck.face));
-}
-puck.onChange = show;
-show();
-
-// Left alone, it shows itself off: the next face every few seconds, with a little of what it does
-const demo = {
-  home: (t) => { if (t < 1.2) puck.turn(1.6, true); else if (t > 2.4 && t < 3.6) puck.turn(-1.1, true); },
-  dialkit: (t) => { if (t > 0.6 && t < 2.2) puck.turn(2.2, true); },
-  claude: (t, first) => { if (first(0.7)) puck.tap(true); if (first(3.6)) puck.tap(true); },
-  allow: (t, first) => { if (first(2.4)) puck.tap(true); },
-  call: (t, first) => { if (first(1.6)) puck.tap(true); if (first(3.4)) puck.tap(true); },
-  focus: (t, first) => { if (first(0.8)) { if (!puck.s.focusRun) puck.tap(true); } },
-  spin: (t, first) => { if (first(0.6)) puck.tap(true); },
-};
-let enteredAt = 0, fired = new Set(), visible = true;
-new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0.2 }).observe(puck.cv);
-setInterval(() => {
-  if (calm || !visible || document.hidden || puck.idle < 9) { enteredAt = puck.now; fired.clear(); return; }
-  const t = puck.now - enteredAt;
-  const first = (at) => { if (t >= at && !fired.has(at)) { fired.add(at); return true; } return false; };
-  demo[puck.face]?.(t, first);
-  if (t > 5.2) {
-    puck.setFace(order[(order.indexOf(puck.face) + 1) % order.length]);
-    enteredAt = puck.now; fired.clear(); show();
-  }
-}, 33);
-
-// DialKit: a second puck, kept on the dial, and a card on a spring it tunes
-const dk = new Puck(document.getElementById("puck-dk"), { face: "dialkit" });
-const card = document.getElementById("card"), stiff = document.getElementById("stiff");
-let x = 0, v = 0, target = 0, flipAt = 0, last = performance.now();
-function spring(now) {
-  const dt = Math.min((now - last) / 1000, 0.032); last = now;
-  const track = card.parentElement.clientWidth - 96;
-  if (now > flipAt) { target = target ? 0 : 1; flipAt = now + 1500; }
-  const k = Math.max(dk.s.dk, 8), c = 14;  // stiffness from the puck, fixed damping
-  for (let i = 0; i < 4; i++) {            // a few small steps keep a stiff spring stable
-    const a = k * (target - x) - c * v;
-    v += a * dt / 4; x += v * dt / 4;
-  }
-  card.style.transform = `translateX(${x * track}px)`;
-  stiff.textContent = Math.round(dk.s.dkShown);
-  requestAnimationFrame(spring);
-}
-requestAnimationFrame(spring);
-// it shows itself off too, until someone takes over
-setInterval(() => {
-  if (calm || dk.idle < 8) return;
-  const want = 250 + 220 * Math.sin(dk.now * 0.45);  // sweep slowly between soft and stiff
-  dk.turn(Math.max(-3, Math.min(3, (want - dk.s.dk) * 0.05)), true);
-}, 33);
+mountHero({
+  screen: document.getElementById("screen"),
+  canvas: document.getElementById("puck"),
+  side: document.getElementById("side"),
+  chips: document.getElementById("chips"),
+  say: document.getElementById("say"),
+  hint: document.getElementById("hint"),
+});
 
 // sections rise in as they arrive
 const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
