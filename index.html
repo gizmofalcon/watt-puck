@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Watt, the puck</title>
-<meta name="description" content="A dial with a round screen for your Mac, and an app that lives in the notch. Volume, Claude, Claude Code and DialKit, on a puck.">
+<meta name="description" content="Watt, the puck: a palm-sized dial with a round screen for your Mac. Turn it for volume, tap to pause, switch it to a focus timer, a trackpad or Claude. Build it from a $40 board, no soldering.">
 <link rel="icon" href="assets/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,11 +25,15 @@
   .y { color: var(--y); }
 
   /* ---- the hero: a title, then the Mac and the puck */
-  .intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 40px; flex-wrap: wrap; padding-top: 14px; }
-  .intro > div:first-child { flex: 1 1 520px; }
-  .intro .cta { flex: none; padding-bottom: 2px; }
-  h1 { font-size: clamp(44px, 6vw, 72px); line-height: 0.98; letter-spacing: -0.02em; font-weight: 900; margin: 0 0 12px; }
-  .lede { font-size: clamp(17px, 2vw, 22px); color: var(--g1); font-weight: 700; margin: 0; max-width: 34em; }
+  .intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 48px; flex-wrap: wrap; padding-top: 10px; }
+  .intro > div:first-child { flex: 1 1 560px; }
+  .intro .act0 { flex: 0 1 360px; min-width: 0; padding-bottom: 4px; }
+  .intro .cta { flex-wrap: nowrap; }
+  .eyebrow { margin: 0 0 10px; font: 500 12px "Roboto Mono", ui-monospace, monospace; letter-spacing: 0.18em; text-transform: uppercase; color: var(--y); }
+  h1 { font-size: clamp(44px, 6vw, 72px); line-height: 0.98; letter-spacing: -0.02em; font-weight: 900; margin: 0 0 14px; }
+  .lede { font-size: clamp(17px, 1.9vw, 21px); line-height: 1.4; color: var(--g1); font-weight: 700; margin: 0; max-width: 31em; }
+  .lede b { color: var(--w); font-weight: 800; }
+  .diy { margin: 12px 0 0; color: var(--g2); font-weight: 700; font-size: 14px; line-height: 1.45; }
   .cta { display: flex; flex-wrap: wrap; gap: 10px; }
   .pill { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 24px; border: 0; cursor: pointer; text-align: center;
     border-radius: 22px; background: var(--y); color: #000; font: inherit; font-weight: 900; font-size: 15.5px; text-decoration: none;
@@ -39,7 +43,7 @@
   .pill.ghost { background: var(--g3); color: var(--w); box-shadow: none; }
 
   /* on a short screen the scene shrinks, so the Mac and the puck both stay in view */
-  .scene { position: relative; aspect-ratio: 1072 / 584; width: min(100%, max(680px, calc((100svh - 262px) * 1.8356))); margin: 30px auto 0; }
+  .scene { position: relative; aspect-ratio: 1072 / 584; width: min(100%, max(680px, calc((100svh - 292px) * 1.8356))); margin: 28px auto 0; }
   .mac { position: absolute; left: 0; top: 0; width: 73%; }
   .try { position: absolute; right: 0; top: 1%; width: 24.5%; }
   .desk { position: absolute; right: 0; bottom: 1%; width: 24.5%; }
@@ -210,14 +214,34 @@
   @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
 
   /* ---- the rest of the page */
-  h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.02; letter-spacing: -0.02em; font-weight: 900; margin: 120px 0 28px; }
+  h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.02; letter-spacing: -0.02em; font-weight: 900; margin: 120px 0 12px; }
+  .sub { margin: 0 0 30px; max-width: 46em; color: var(--g1); font-weight: 700; font-size: 18px; line-height: 1.45; }
+  .does { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
+  .does li { padding: 24px; border-radius: 24px; background: var(--g4); }
+  .does canvas { display: block; width: 116px; aspect-ratio: 1; margin: 0 0 20px; filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.7)); }
+  .does h3 { margin: 0 0 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.01em; }
+  .does p { margin: 0; color: var(--g1); font-weight: 700; font-size: 15.5px; line-height: 1.45; }
+  .faq { max-width: 760px; }
+  .faq details { border-top: 1px solid var(--g3); }
+  .faq details:last-child { border-bottom: 1px solid var(--g3); }
+  .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; cursor: pointer; list-style: none;
+    font-size: 19px; font-weight: 800; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; color: var(--y); font-size: 24px; font-weight: 700; transition: transform 0.25s var(--sp); }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { margin: 0 0 20px; color: var(--g1); font-weight: 700; font-size: 16px; line-height: 1.5; }
+  .or { margin-top: 2px; }
+  .or summary { cursor: pointer; color: var(--g1); font-weight: 700; font-size: 14px; list-style: none; }
+  .or summary::-webkit-details-marker { display: none; }
+  .or summary:hover { color: var(--w); }
+  .or[open] summary { margin-bottom: 12px; }
   .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
   .feats li { padding: 24px; border-radius: 24px; background: var(--g4); }
   .feats svg { display: block; width: 30px; height: 30px; margin-bottom: 16px; }
   .feats h3, .steps h3 { margin: 0 0 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.01em; }
   .feats p { margin: 0; color: var(--g1); font-weight: 700; font-size: 15.5px; line-height: 1.45; }
   video { display: block; width: 100%; border-radius: 24px; background: #0b0b0c; aspect-ratio: 1280 / 800; }
-  .steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
   .steps li { display: flex; flex-direction: column; gap: 10px; padding: 26px; border-radius: 24px; background: var(--g4);
     transition: transform 0.25s var(--sp), background 0.25s; }
   .steps li:hover { transform: translateY(-3px); background: #212124; }
@@ -242,16 +266,22 @@
     .mac { position: relative; width: 100%; grid-column: 1 / -1; }
     .desk { position: relative; right: auto; width: auto; grid-column: 1; grid-row: 2; margin-top: -4%; padding: 0 8%; }
     .try { position: relative; right: auto; width: auto; grid-column: 2; grid-row: 2; align-self: center; margin-top: 6%; }
-    .feats { grid-template-columns: repeat(2, 1fr); }
+    .feats, .does { grid-template-columns: repeat(2, 1fr); }
+    .steps { grid-template-columns: 1fr; }
     .dkit { grid-template-columns: 1fr; gap: 8px; }
     header nav { display: none; }
   }
   @media (max-width: 640px) {
+    .intro .act0 { flex: 1 1 100%; }
+    .intro .cta { flex-wrap: wrap; }
     .scene { display: flex; flex-direction: column; overflow: hidden; margin: 28px -24px 0; padding: 0 24px 4px; }
     .mac { width: 145%; margin-left: -22.5%; }
     .desk { order: 1; width: 66%; margin: 2% auto 0; padding: 0; }
     .try { order: 2; margin-top: 26px; }
     .feats, .steps { grid-template-columns: 1fr; }
+    .does { grid-template-columns: 1fr; }
+    .does li { display: grid; grid-template-columns: 84px 1fr; gap: 0 18px; align-items: start; padding: 20px; }
+    .does canvas { grid-row: span 2; width: 84px; margin: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
@@ -265,18 +295,22 @@
 <div class="wrap">
   <header>
     <img src="assets/icon.png" alt="">Watt
-    <nav><a href="#app">The app</a><a href="#make">Make one</a><a href="#dialkit">DialKit</a><a href="#reel">The reel</a></nav>
+    <nav><a href="#does">What it does</a><a href="#build">Build one</a><a href="#dialkit">DialKit</a><a href="#faq">Questions</a></nav>
   </header>
 
   <section>
     <div class="intro">
       <div>
+        <p class="eyebrow">A dial for your Mac</p>
         <h1>Watt<span class="y">,</span> the puck.</h1>
-        <p class="lede">A dial with a round screen for your Mac.<br>Its other half lives in the notch.</p>
+        <p class="lede">A palm-sized dial with a round screen that sits next to your Mac. Turn it for volume, tap it to pause, and click it over to a focus timer, a trackpad or Claude.</p>
       </div>
-      <div class="cta">
-        <a class="pill" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download for Mac</a>
-        <a class="pill ghost" href="#make">Make one</a>
+      <div class="act0">
+        <div class="cta">
+          <a class="pill" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download the app</a>
+          <a class="pill ghost" href="#build">Build the puck</a>
+        </div>
+        <p class="diy">You build it from a $40 board in a few minutes. No soldering, and the app is free.</p>
       </div>
     </div>
 
@@ -297,22 +331,51 @@
     </div>
   </section>
 
-  <h2 id="app" class="reveal">More in the <span class="y">app</span>.</h2>
+  <h2 id="does" class="reveal">What it <span class="y">does</span>.</h2>
+  <p class="sub reveal">One dial, a few faces. The puck shows what it's doing, and so does your notch.</p>
+  <ul class="does reveal">
+    <li>
+      <canvas data-face="volume" aria-hidden="true"></canvas>
+      <h3>Volume and music</h3>
+      <p>Turn it for volume. Tap it to play or pause, and the notch shows what's playing.</p>
+    </li>
+    <li>
+      <canvas data-face="focus" aria-hidden="true"></canvas>
+      <h3>A face for each job</h3>
+      <p>Click the side button for a focus timer, a trackpad, Pong, or a spinner for game night.</p>
+    </li>
+    <li>
+      <canvas data-face="claude" aria-hidden="true"></canvas>
+      <h3>Talk to Claude</h3>
+      <p>Tap, speak, tap again. Your words show up in the notch as you say them, then go to Claude.</p>
+    </li>
+    <li>
+      <canvas data-face="allow" aria-hidden="true"></canvas>
+      <h3>Approve Claude Code</h3>
+      <p>When Claude Code wants to run a command, the puck asks. Tap to allow, without switching windows.</p>
+    </li>
+  </ul>
+
+  <h2 id="reel" class="reveal">See it <span class="y">move</span>.</h2>
+  <video class="reveal" src="assets/watt-reel.mp4" poster="assets/watt-reel.jpg" muted loop playsinline controls preload="none"></video>
+
+  <h2 id="app" class="reveal">The app lives in your <span class="y">notch</span>.</h2>
+  <p class="sub reveal">It connects the puck to your Mac and shows what it's doing, right where you're already looking.</p>
   <ul class="feats reveal">
     <li>
       <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="3" width="10" height="9" rx="2"/><path d="M12.5 12v4h5v-4M15 16v4M15 20a5 5 0 0 0 5 5h3"/></svg>
-      <h3>Installs Watt</h3>
-      <p>Plug a new puck in and click Install. The app puts Watt on it, no other tools needed.</p>
+      <h3>Sets up the puck</h3>
+      <p>Plug a new puck in and click Install. No other tools needed.</p>
     </li>
     <li>
       <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round"><circle cx="15" cy="15" r="11"/><path d="M15 4v4M15 15l5-5"/><circle cx="15" cy="15" r="1.6" fill="#FFD60A"/></svg>
       <h3>Pairs with a code</h3>
-      <p>A new puck drops out of the notch. Turn it to each of three numbers and tap.</p>
+      <p>A new puck drops out of the notch. Turn it to three numbers to pair.</p>
     </li>
     <li>
       <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linejoin="round"><rect x="3" y="8" width="17" height="13" rx="2.5"/><rect x="10" y="4" width="17" height="13" rx="2.5" fill="#1C1C1E"/></svg>
       <h3>Follows the app in front</h3>
-      <p>DialKit when its tab is open, Claude when you're in Claude, a jog wheel in DaVinci Resolve.</p>
+      <p>A dial for DialKit when its tab is open, and a jog wheel in DaVinci Resolve.</p>
     </li>
     <li>
       <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21V13a7 7 0 0 1 14 0v8l2 2H6zM12.5 26h5"/></svg>
@@ -331,47 +394,43 @@
     </li>
   </ul>
 
-  <h2 id="make" class="reveal">Make <span class="y">one</span>.</h2>
+  <h2 id="build" class="reveal">Build one in a few <span class="y">minutes</span>.</h2>
+  <p class="sub reveal">No soldering. The puck is an off-the-shelf board that already comes in its case.</p>
   <ol class="steps reveal">
     <li>
-      <div class="n">1 &nbsp;THE PUCK</div>
-      <h3>One board, no soldering</h3>
-      <p>Watt runs on the Waveshare ESP32-S3-Touch-AMOLED-1.75C: a round touch screen in an aluminium case, with a battery, a speaker and a motion sensor.</p>
+      <div class="n">1 &nbsp;GET THE BOARD</div>
+      <h3>About $40</h3>
+      <p>Watt runs on the Waveshare ESP32-S3-Touch-AMOLED-1.75C: a round touch screen in an aluminium case. Pick the one with the battery so it can leave the cable.</p>
       <div class="act"><a class="pill ghost" href="https://www.waveshare.com/esp32-s3-touch-amoled-1.75c.htm" target="_blank" rel="noopener">Get the board</a></div>
     </li>
     <li>
-      <div class="n">2 &nbsp;THE MAC APP</div>
-      <h3>Download Watt</h3>
-      <p>Plug the puck in and the app installs Watt on it, pairs it, and stays in your notch from then on.</p>
+      <div class="n">2 &nbsp;INSTALL WATT</div>
+      <h3>From the app</h3>
+      <p>Download the app, plug the puck in with USB-C and click Install. It takes about a minute.</p>
       <div class="act"><a class="pill" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download for Mac</a></div>
       <p class="fine">macOS 15 or later, Apple silicon. Signed and notarized by Apple.</p>
-    </li>
-    <li>
-      <div class="n">3 &nbsp;OR IN THE BROWSER</div>
-      <h3>Install from this page</h3>
-      <p>Plug the puck in, click Install and pick its port. It takes about a minute, and updates keep the puck paired.</p>
-      <div class="act">
+      <details class="or">
+        <summary>Or install from this page</summary>
         <esp-web-install-button manifest="firmware/manifest.json">
           <button slot="activate" class="pill ghost">Install Watt on the puck</button>
           <span slot="unsupported" class="pill quiet">Open this page in Chrome or Edge</span>
           <span slot="not-allowed" class="pill quiet">Needs a secure (https) page</span>
         </esp-web-install-button>
-      </div>
-      <p class="fine">Chrome or Edge on a computer.</p>
+      </details>
     </li>
     <li>
-      <div class="n">4 &nbsp;PAIR</div>
-      <h3>Dial it in</h3>
-      <p>Open Watt and switch the puck on. When “New puck nearby” drops out of the notch, click Pair, then turn the puck to each number and tap.</p>
-      <p class="fine">Click the side button any time to switch faces.</p>
+      <div class="n">3 &nbsp;PAIR IT</div>
+      <h3>Dial in the code</h3>
+      <p>Open Watt with the puck nearby. When “New puck nearby” drops out of the notch, click Pair, then turn the puck to each number and tap.</p>
+      <p class="fine">After that, click the side button any time to switch faces.</p>
     </li>
   </ol>
 
   <h2 id="dialkit" class="reveal">In DialKit, it <span class="y">dials</span>.</h2>
   <div class="dkit reveal">
     <div>
-      <p><a href="https://www.npmjs.com/package/dialkit" target="_blank" rel="noopener">DialKit</a>, by Josh Puckett, gives you live controls for tuning an interface. Add the Watt bridge and the puck turns them.</p>
-      <p>The control you're on shows up on the puck and in the notch. Turn to change it.</p>
+      <p>If you tune interfaces with <a href="https://www.npmjs.com/package/dialkit" target="_blank" rel="noopener">DialKit</a>, by Josh Puckett, the puck can turn its controls. The one you're on shows up on the puck and in the notch.</p>
+      <p>Add the bridge to your app:</p>
     </div>
     <div>
       <pre>npm install dialkit-watt</pre>
@@ -382,8 +441,29 @@
     </div>
   </div>
 
-  <h2 id="reel" class="reveal">See it <span class="y">move</span>.</h2>
-  <video class="reveal" src="assets/watt-reel.mp4" poster="assets/watt-reel.jpg" muted loop playsinline controls preload="none"></video>
+  <h2 id="faq" class="reveal">Questions.</h2>
+  <div class="faq reveal">
+    <details>
+      <summary>Can I buy one ready-made?</summary>
+      <p>Not yet. You build it from an off-the-shelf board in a few minutes, with no soldering: buy the board, install Watt from the app, pair.</p>
+    </details>
+    <details>
+      <summary>Do I need Claude?</summary>
+      <p>No. Volume, music, the focus timer, the trackpad and the games all work on their own. Claude and Claude Code are there if you use them.</p>
+    </details>
+    <details>
+      <summary>Which Macs does it work with?</summary>
+      <p>Macs with Apple silicon on macOS 15 or later. On a Mac without a notch, the app appears at the top of the screen when it has something to show.</p>
+    </details>
+    <details>
+      <summary>How does it connect?</summary>
+      <p>Over Bluetooth. With the battery version it doesn't need a cable at all.</p>
+    </details>
+    <details>
+      <summary>Is my voice sent anywhere?</summary>
+      <p>It uses your Mac's own speech recognition, which runs on the device for English. Only the text goes to Claude.</p>
+    </details>
+  </div>
 
   <footer>
     Watt, the puck. &nbsp;<a href="https://github.com/gizmofalcon/watt-puck/releases">Releases</a> &nbsp;<a href="https://github.com/gizmofalcon/dialkit-watt">dialkit-watt</a>
@@ -392,6 +472,7 @@
 
 <script type="module">
 import { mountHero } from "./mac.js";
+import { Puck } from "./puck.js";
 
 mountHero({
   screen: document.getElementById("screen"),
@@ -401,6 +482,14 @@ mountHero({
   say: document.getElementById("say"),
   hint: document.getElementById("hint"),
 });
+
+// the faces in "What it does", drawn once
+for (const cv of document.querySelectorAll(".does canvas")) {
+  const p = new Puck(cv, { face: cv.dataset.face, interactive: false, live: false });
+  if (cv.dataset.face === "volume") { p.s.vol = p.s.shownVol = 62; }
+  if (cv.dataset.face === "claude") { p.s.listening = true; p.s.amp = 0.85; }
+  p.paint();
+}
 
 // sections rise in as they arrive
 const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });

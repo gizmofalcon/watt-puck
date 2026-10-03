@@ -8,15 +8,15 @@ import { Puck, PICKS } from "./puck.js";
 
 const SCENES = {
   music: { chip: "Music", face: "home", app: "Music", win: "music",
-    say: "Turn it for volume. Tap it to pause, and the eyes become a play button." },
+    say: "Turn it for volume. Tap it to pause, and its eyes become a play button." },
+  modes: { chip: "Faces", face: "picker", app: "Finder", win: null,
+    say: "Click the side button to switch faces: a focus timer, a trackpad, games. Turn to pick one, click to choose." },
   claude: { chip: "Claude", face: "claude", app: "Claude", win: "chat",
-    say: "Tap and talk. The notch shows every word as you say it. Tap again to send." },
+    say: "Tap it and talk to Claude. Your words appear in the notch as you speak. Tap again to send." },
   code: { chip: "Claude Code", face: "allow", app: "Terminal", win: "term",
-    say: "When Claude Code needs permission, the puck asks. Tap to allow, turn back to deny." },
+    say: "When Claude Code wants to run something, the puck asks first. Tap to allow, turn back to deny." },
   dialkit: { chip: "DialKit", face: "dialkit", app: "Safari", win: "web",
-    say: "Turn it to tune the value you're editing in DialKit. The page follows as you turn." },
-  modes: { chip: "Modes", face: "picker", app: "Finder", win: null,
-    say: "Click the side button, turn to pick a face, then click again to switch." },
+    say: "Tuning a design in DialKit? Turn the puck to change the value, and the page follows." },
 };
 const ORDER = Object.keys(SCENES);
 
@@ -338,7 +338,7 @@ export function mountHero({ screen, canvas, side, chips, say, hint }) {
     for (const b of chips.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.scene === id));
     say.textContent = S.say;
     side.classList.toggle("hint", id === "modes" && !picking);
-    hint.textContent = id === "modes" ? "The side button is on the right of the case" : "Drag to turn it, click to tap it";
+    hint.textContent = id === "modes" ? "The side button is on the right of the case" : "Drag the puck to turn it. Click to tap.";
   }
 
   function openPicker() {
@@ -414,8 +414,9 @@ export function mountHero({ screen, canvas, side, chips, say, hint }) {
 
   placeCoins();
   music.update();
-  // ?try=dialkit (or music, claude, code, modes) opens on that scene
-  const asked = new URLSearchParams(location.search).get("try");
+  // ?try=dialkit (or music, faces, claude, code) opens on that scene
+  let asked = new URLSearchParams(location.search).get("try");
+  if (asked === "faces") asked = "modes";
   if (SCENES[asked]) setScene(asked, true);
   else { setScene("music"); notch.show("eyes", 2400); }  // a hello on arrival
   puck.lastInput = -5;  // and the demo waits for it: it starts 3 s in
