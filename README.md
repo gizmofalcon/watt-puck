@@ -2,7 +2,7 @@
 
 A dial that becomes whatever you're doing: a round screen on your desk, and an app in your Mac's notch.
 
-**Site, with the installer:** https://gizmofalcon.github.io/watt-puck/
+**Site, with the installer:** https://watt.sourabhdaroji.com/
 
 - **The puck** is a Waveshare ESP32-S3-Touch-AMOLED-1.75C. Install the firmware from the site (Chrome or Edge), no tools needed.
 - **The Mac app** is under [Releases](https://github.com/gizmofalcon/watt-puck/releases): macOS 15 or later, Apple silicon.
