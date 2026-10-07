@@ -20,6 +20,23 @@
 <meta name="twitter:title" content="Watt, the puck">
 <meta name="twitter:description" content="A palm-sized dial for your Mac. Build it from a $40 board. No soldering.">
 <meta name="twitter:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<script>
+  // Google Analytics, on the same property as sourabhdaroji.com, so a visit that goes from one to the
+  // other is one visit. Only on the real site, and out of the page's way: what's counted waits in a
+  // queue, and gtag.js itself loads once the page has finished loading and the browser is idle.
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
@@ -293,6 +310,7 @@
   .reveal.in { opacity: 1; transform: none; }
   footer { padding: 120px 0 48px; color: var(--g2); font-weight: 700; font-size: 14px; }
   footer a { color: var(--g1); }
+  footer span { white-space: nowrap; }  /* on a phone the two links drop to their own line together */
 
   @media (max-width: 980px) {
     .scene { aspect-ratio: 1000 / 860; width: auto; }
@@ -327,7 +345,7 @@
 <div class="wrap">
   <header>
     <img src="assets/icon.png" alt="">Watt
-    <nav><a href="#does">What it does</a><a href="#build">Build one</a><a href="#dialkit">DialKit</a><a href="#faq">Questions</a></nav>
+    <nav><a href="#does">What it does</a><a href="#build">Build one</a><a href="#dialkit">DialKit</a><a href="#faq">Questions</a><a href="https://sourabhdaroji.com">by Sourabh Daroji</a></nav>
   </header>
 
   <section>
@@ -483,13 +501,14 @@
   </div>
 
   <footer>
-    Watt, the puck. &nbsp;<a href="https://github.com/gizmofalcon/watt-puck/releases">Releases</a> &nbsp;<a href="https://github.com/gizmofalcon/dialkit-watt">dialkit-watt</a>
+    Watt, the puck. Made by <a href="https://sourabhdaroji.com">Sourabh Daroji</a>.&nbsp;
+    <span><a href="https://github.com/gizmofalcon/watt-puck/releases">Releases</a> &nbsp;<a href="https://github.com/gizmofalcon/dialkit-watt">dialkit-watt</a></span>
   </footer>
 </div>
 
 <script type="module">
-import { mountHero } from "./mac.js?v=0313ebddf9";
-import { Puck } from "./puck.js?v=0313ebddf9";
+import { mountHero } from "./mac.js?v=c1047ab66c";
+import { Puck } from "./puck.js?v=c1047ab66c";
 
 mountHero({
   screen: document.getElementById("screen"),
@@ -506,6 +525,18 @@ for (const cv of document.querySelectorAll(".does canvas")) {
   if (cv.dataset.face === "claude") { p.s.listening = true; p.s.amp = 0.85; }
   p.paint();
 }
+
+// What's counted beyond page views: which button, never anything about the visitor
+const count = (name, params = {}) => gtag("event", name, params);
+document.querySelectorAll('a[href$="/Watt.dmg"]').forEach((a) =>
+  a.addEventListener("click", () => count("app_download", { source: a.closest(".intro") ? "hero" : "build" })));
+document.querySelector('esp-web-install-button [slot="activate"]')?.addEventListener("click", () => count("firmware_install"));
+document.querySelector('a[href*="waveshare.com"]')?.addEventListener("click", () => count("board_click"));
+document.querySelectorAll('a[href="https://sourabhdaroji.com"]').forEach((a) =>
+  a.addEventListener("click", () => count("portfolio_click", { context: a.closest("header") ? "header" : "footer" })));
+const pk = document.querySelector(".pk");  // the puck in the hero, the first time someone works it by hand
+if (pk) new MutationObserver((_, o) => { if (pk.classList.contains("used")) { count("puck_used"); o.disconnect(); } })
+  .observe(pk, { attributes: true, attributeFilter: ["class"] });
 
 // sections rise in as they arrive
 const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });

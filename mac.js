@@ -5,7 +5,7 @@
 // notch keeps the app's own sizes and shapes (the Mac app's design snapshots were the reference).
 
 // (the ?v= is stamped by tools/publish-site.sh, so a page never mixes scripts from two versions)
-import { Puck, PICKS } from "./puck.js?v=0313ebddf9";
+import { Puck, PICKS } from "./puck.js?v=c1047ab66c";
 
 const SCENES = {
   music: { chip: "Music", face: "home", app: "Music", win: "music",
