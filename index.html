@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Watt, the puck</title>
 <meta name="description" content="Watt, the puck: a palm-sized dial with a round screen for your Mac. Turn it for volume, tap to pause, switch it to a focus timer, a trackpad or Claude. Build it from a $40 board, no soldering.">
+<meta name="theme-color" content="#0a0a0b">
 <link rel="icon" href="assets/icon.png">
 <link rel="canonical" href="https://watt.sourabhdaroji.com/">
 <meta property="og:type" content="website">
@@ -39,508 +40,267 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
-  :root { --y: #FFD60A; --w: #F5F5F7; --g1: #8E8E93; --g2: #5A5A5E; --g3: #2C2C2E; --g4: #1C1C1E; --sp: cubic-bezier(0.2, 1, 0.3, 1); }
+  :root { --bg: #0A0A0B; --card: #141416; --lift: #1A1A1D; --w: #F5F5F7; --mute: rgba(245, 245, 247, 0.56); --faint: rgba(245, 245, 247, 0.48);
+    --y: #FFD60A; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
   * { box-sizing: border-box; }
-  html { background: #000; scroll-behavior: smooth; overflow-x: clip; }
-  body { margin: 0; background: #000; color: var(--w); -webkit-font-smoothing: antialiased; overflow-x: hidden;
-    font-family: "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
-  a { color: inherit; }
-  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
-  header { display: flex; align-items: center; gap: 10px; padding: 22px 0; font-weight: 800; font-size: 19px; }
-  header img { width: 30px; height: 30px; }
-  header nav { margin-left: auto; display: flex; gap: 22px; font-size: 15px; font-weight: 700; color: var(--g1); }
-  header nav a { text-decoration: none; }
-  header nav a:hover { color: var(--w); }
-  .y { color: var(--y); }
+  html { background: var(--bg); color-scheme: dark; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; color: var(--w); -webkit-font-smoothing: antialiased;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--w); }
 
-  /* ---- the hero: a title, then the Mac and the puck */
-  .intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px 48px; flex-wrap: wrap; padding-top: 10px; }
-  .intro > div:first-child { flex: 1 1 560px; }
-  .intro .act0 { flex: 0 1 360px; min-width: 0; padding-bottom: 4px; }
-  .intro .cta { flex-wrap: nowrap; }
-  h1 { font-size: clamp(44px, 6vw, 72px); line-height: 0.98; letter-spacing: -0.02em; font-weight: 900; margin: 0 0 14px; }
-  .lede { font-size: clamp(17px, 1.9vw, 21px); line-height: 1.4; color: var(--g1); font-weight: 700; margin: 0; max-width: 31em; }
-  .lede b { color: var(--w); font-weight: 800; }
-  .diy { margin: 12px 0 0; color: var(--g2); font-weight: 700; font-size: 14px; line-height: 1.45; }
-  .cta { display: flex; flex-wrap: wrap; gap: 10px; }
-  .pill { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 24px; border: 0; cursor: pointer; text-align: center;
-    border-radius: 22px; background: var(--y); color: #000; font: inherit; font-weight: 900; font-size: 15.5px; text-decoration: none;
-    box-shadow: 0 0 22px rgba(255, 214, 10, 0.3); transition: transform 0.18s, filter 0.18s; }
-  .pill:hover { filter: brightness(1.06); transform: translateY(-1px); }
-  .pill.quiet { background: var(--g3); color: var(--g1); box-shadow: none; cursor: default; }
-  .pill.ghost { background: var(--g3); color: var(--w); box-shadow: none; }
+  /* one column, the width of a paragraph */
+  header, section, footer { max-width: 760px; margin: 0 auto; padding: 0 40px; }
+  header { display: flex; align-items: center; justify-content: space-between; padding-top: 28px; }
+  .name { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; }
+  .name img { display: block; width: 26px; height: 26px; }
 
-  /* The scene: the Mac at the back, the puck in front of its corner, on one desk.
-     On a short screen it shrinks, so the Mac, the puck and the controls all stay in view. */
-  .scene { position: relative; aspect-ratio: 1072 / 640; width: min(100%, max(640px, calc((100svh - 356px) * 1.675))); margin: 30px auto 0; }
-  .scene::before { content: ""; position: absolute; left: -12%; right: -12%; bottom: -16%; height: 46%; pointer-events: none;
-    background: radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0) 100%); }
-  .mac { position: absolute; left: 3%; top: 0; width: 75%; }
-  .desk { position: absolute; left: 69%; top: 62.5%; width: 22%; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: rgba(255, 255, 255, 0.08); color: var(--w); font-weight: 700; }
+  .btn.quiet:hover { filter: none; background: rgba(255, 255, 255, 0.13); }
+  .btn.small { height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; }
+  .btn svg { width: 9px; height: 9px; margin-left: 7px; opacity: 0.6; }
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
 
-  .lid { position: relative; background: #0b0b0c; border-radius: 2.6% / 4%; padding: 1.9% 1.9% 2.6%;
-    box-shadow: inset 0 0 0 1px #26262a, 0 0 0 1px #6a6c73, 0 0 0 2.5px #18181a, 0 50px 90px -40px rgba(0, 0, 0, 0.9); }
-  .lid::before { content: ""; position: absolute; left: 8%; right: 8%; top: -1px; height: 1px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0)); }
-  .screen { position: relative; aspect-ratio: 800 / 520; overflow: hidden; border-radius: 1.2% / 1.8%; background: #111114; }
-  .base { position: relative; width: 112%; margin-left: -6%; height: 0; padding-bottom: 3.2%;
-    background: linear-gradient(#eceef1 0, #c3c5cb 14%, #9a9ca3 52%, #5f6168 100%); border-radius: 0 0 1.4% 1.4% / 0 0 70% 70%; }
-  .base::before { content: ""; position: absolute; left: 6%; right: 6%; top: 0; height: 18%; background: linear-gradient(#2a2b2f, rgba(42, 43, 47, 0)); }
-  .base i { position: absolute; left: 50%; top: 0; width: 12%; height: 40%; transform: translateX(-50%); border-radius: 0 0 10px 10px;
-    background: linear-gradient(#55575e, #a5a7ad); }
-  .mac::after { content: ""; position: absolute; left: 2%; right: 2%; bottom: -3.5%; height: 6%; z-index: -1;
-    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0)); }
+  /* said in sentences: the first one in white, the rest in grey */
+  .say { margin: 0; font-size: 20px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; color: var(--mute); text-wrap: pretty; }
+  .intro { margin-top: 117px; }
+  .intro .say + .say { margin-top: 20px; }
+  .go { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 32px; }
+  .note { font-size: 14px; line-height: 20px; color: var(--faint); }
 
-  .pk { position: relative; }
-  .pk::after { content: ""; position: absolute; left: 8%; right: 8%; bottom: -9%; height: 16%; z-index: -1;
-    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0)); }
-  canvas.puck { position: relative; display: block; width: 100%; aspect-ratio: 1; border-radius: 50%; outline: none;
-    filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.8)); -webkit-tap-highlight-color: transparent; }
-  canvas.puck:focus-visible { box-shadow: 0 0 0 3px var(--y); }
-  .side { position: absolute; right: -2.4%; top: 50%; width: 3.8%; height: 12%; transform: translateY(-50%); border: 0; padding: 0; cursor: pointer;
-    border-radius: 0 7px 7px 0; background: linear-gradient(90deg, #4f5157, #d3d5da 45%, #7d7f86); }
-  .side::after { content: ""; position: absolute; inset: -9px -9px -9px -5px; border-radius: 12px; border: 2px solid var(--y); opacity: 0; pointer-events: none; }
-  .side.hint::after { animation: nudge 1.4s ease-out infinite; }
-  .side:focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
-  @keyframes nudge { 0% { opacity: 0.9; transform: scale(0.8); } 100% { opacity: 0; transform: scale(1.35); } }
-  /* until it's been touched, two arrows circle the puck: it turns */
-  .turnhint { position: absolute; left: -13%; top: -13%; width: 126%; height: 126%; pointer-events: none; opacity: 0.85;
-    animation: swing 2.6s ease-in-out infinite; transition: opacity 0.5s; }
-  .pk.used .turnhint { opacity: 0; }
-  @keyframes swing { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(16deg); } }
+  /* the demo */
+  .film, .does, .build { margin-top: 81px; }
+  .player { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; padding: 0; border: 0; border-radius: 18px; overflow: hidden;
+    background: var(--card) center / cover no-repeat; cursor: pointer; }
+  .player video { position: absolute; inset: 0; width: 100%; height: 100%; background: #000; }
+  .watch { position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 16px 0 13px; border-radius: 19px;
+    background: rgba(22, 22, 24, 0.62); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    color: #fff; font: inherit; font-size: 14px; font-weight: 700; transition: background-color 0.2s, transform 0.2s var(--ease); }
+  .watch svg { width: 11px; height: 12px; }
+  .watch i { font-style: normal; color: rgba(255, 255, 255, 0.6); }
+  .player:hover .watch { background: rgba(34, 34, 37, 0.8); transform: scale(1.03); }
 
-  /* the scenes, in one row under the desk; the one playing counts down to the next */
-  .ctrl { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 30px; }
-  .seg { display: flex; gap: 4px; max-width: 100%; padding: 5px; border-radius: 26px; background: #101012; box-shadow: inset 0 0 0 1px #222225;
-    overflow-x: auto; scrollbar-width: none; }
-  .seg::-webkit-scrollbar { display: none; }
-  .seg button { position: relative; flex: none; height: 38px; padding: 0 18px; border: 0; border-radius: 19px; background: none; cursor: pointer;
-    font: inherit; font-weight: 800; font-size: 14.5px; color: var(--g1); transition: color 0.2s, background 0.25s, box-shadow 0.25s; }
-  .seg button:hover { color: var(--w); }
-  .seg button.on { background: var(--y); color: #000; box-shadow: 0 0 18px rgba(255, 214, 10, 0.25); }
-  .seg button.on::after { content: ""; position: absolute; left: 16px; bottom: 6px; height: 2px; border-radius: 1px;
-    width: calc((100% - 32px) * var(--p, 0)); background: rgba(0, 0, 0, 0.5); }
-  .seg button:focus-visible { outline: 2px solid var(--y); outline-offset: 2px; }
-  .say { margin: 0; min-height: 24px; text-align: center; color: var(--w); font-weight: 700; font-size: 16px; line-height: 1.45; }
+  /* what it does */
+  .does ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .does li { display: flex; flex-direction: column; justify-content: space-between; gap: 24px; min-height: 172px; padding: 24px; border-radius: 18px;
+    background: var(--card); transition: background-color 0.16s var(--ease); }
+  .does li:hover { background: var(--lift); }
+  .does canvas { display: block; width: 52px; height: 52px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.09); }
+  .does li p { margin: 0; color: var(--mute); letter-spacing: -0.005em; text-wrap: pretty; }
+  .does li b { display: block; }
+  .credit { margin: 20px 0 0; font-size: 14px; line-height: 22px; color: var(--faint); text-wrap: pretty; }
+  .credit a, footer a { color: var(--mute); transition: color 0.16s; }
+  .credit a:hover, footer a:hover { color: var(--w); }
 
-  /* ---- the Mac's screen, laid out in points on an 800 x 520 screen and scaled to fit */
-  .pts { position: absolute; left: 0; top: 0; width: 800px; height: 520px; transform-origin: 0 0; color: var(--w);
-    font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif; }
-  .wall { position: absolute; inset: 0; background: radial-gradient(85% 75% at 90% -12%, rgba(255, 214, 10, 0.2) 0%, rgba(255, 214, 10, 0) 56%),
-    radial-gradient(105% 85% at 6% 114%, rgba(104, 78, 190, 0.34) 0%, rgba(104, 78, 190, 0) 60%), linear-gradient(#15151a, #0b0b0e); }
-  .dock { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; gap: 7px; padding: 6px; border-radius: 17px;
-    background: rgba(255, 255, 255, 0.09); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2); }
-  .dock i { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(#3b3b40, #242428); }
-  .dock i:nth-child(1) { background: linear-gradient(#5aa9f5, #2a62c9); }
-  .dock i:nth-child(2) { background: linear-gradient(#f5f5f7, #b9bbc1); }
-  .dock i:nth-child(3) { background: linear-gradient(#ff7a6b, #d83a55); }
-  .dock i:nth-child(5) { background: linear-gradient(#2c2c2e, #0e0e10); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.25); }
-  .dock i.watt { background: url(assets/icon.png) center / cover; }
-  .menubar { position: absolute; left: 0; right: 0; top: 0; height: 34px; display: flex; align-items: center; gap: 16px; padding: 0 16px;
-    font-size: 13px; font-weight: 600; color: rgba(245, 245, 247, 0.9); background: rgba(0, 0, 0, 0.3); }
-  .menubar b { font-weight: 800; }
-  .menubar .clock { margin-left: auto; }
+  /* building one */
+  .build { scroll-margin-top: 40px; }
+  .build ol { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 12px; counter-reset: step; }
+  .build li { display: flex; align-items: center; gap: 18px; min-height: 84px; padding: 20px 24px; border-radius: 18px; background: var(--card); counter-increment: step; }
+  .build li::before { content: counter(step); flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 214, 10, 0.4); color: var(--y); font-size: 14px; font-weight: 800; }
+  .build p { flex: 1; margin: 0; color: var(--mute); text-wrap: pretty; }
+  .build .btn { flex: none; height: 36px; padding: 0 16px; border-radius: 18px; font-size: 14px; }
+  .model { white-space: nowrap; }
+  esp-web-install-button { display: inline; }
+  esp-web-install-button:not(:defined) { display: none; }
+  .inline { display: inline; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; color: var(--w); text-decoration: underline;
+    text-decoration-color: rgba(245, 245, 247, 0.3); text-underline-offset: 3px; }
+  .inline:hover { text-decoration-color: var(--w); }
 
-  .win { position: absolute; left: 130px; top: 84px; width: 540px; height: 326px; border-radius: 12px; background: var(--g4); overflow: hidden;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 0.5px rgba(255, 255, 255, 0.16);
-    opacity: 0; transform: translateY(10px) scale(0.98); transition: opacity 0.35s ease, transform 0.5s var(--sp); }
-  .win.on { opacity: 1; transform: none; }
-  .win .bar { position: relative; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--g1);
-    border-bottom: 0.5px solid rgba(255, 255, 255, 0.08); }
-  .tl { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); display: flex; gap: 8px; }
-  .tl i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
-  .tl i + i { background: #febc2e; }
-  .tl i + i + i { background: #28c840; }
-  .url { background: var(--g3); border-radius: 7px; padding: 4px 70px; font-size: 12px; font-weight: 600; }
+  footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 99px; padding-bottom: 40px; font-size: 14px; line-height: 20px; color: var(--faint); }
 
-  .music { display: flex; gap: 26px; padding: 28px; height: calc(100% - 36px); }
-  .art { position: relative; width: 176px; height: 176px; flex: none; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    background: radial-gradient(circle at 32% 30%, #ffe27a, #ffb000 34%, #b4470a 70%, #3a1405); }
-  .art i { position: absolute; inset: 24%; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35);
-    box-shadow: 0 0 0 18px rgba(255, 255, 255, 0.08), 0 0 0 38px rgba(255, 255, 255, 0.05); }
-  .meta { flex: 1; display: flex; flex-direction: column; padding-top: 6px; }
-  .meta > b { font-size: 22px; font-weight: 800; }
-  .meta > span { color: var(--g1); font-size: 15px; font-weight: 600; margin-top: 2px; }
-  .prog { margin-top: 22px; height: 5px; border-radius: 3px; background: #3a3a3c; overflow: hidden; }
-  .prog i { display: block; height: 100%; width: 32%; background: var(--w); }
-  .times { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--g1); font-variant-numeric: tabular-nums; }
-  .ctl { display: flex; align-items: center; justify-content: center; gap: 30px; margin-top: 10px; }
-  .vol { display: flex; align-items: center; gap: 10px; margin-top: auto; }
-  .slider { flex: 1; height: 5px; border-radius: 3px; background: #3a3a3c; }
-  .slider i { display: block; height: 100%; border-radius: 3px; background: var(--y); box-shadow: 0 0 10px rgba(255, 214, 10, 0.5); transition: width 0.08s; }
-
-  .chat { display: flex; flex-direction: column; height: calc(100% - 36px); padding: 16px 22px; }
-  .msgs { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; overflow: hidden; }
-  .msgs p { margin: 0; max-width: 88%; font-size: 14px; line-height: 1.45; font-weight: 600; color: #e8e8ed; }
-  .msgs .me { align-self: flex-end; background: var(--g3); color: var(--w); padding: 9px 14px; border-radius: 16px 16px 4px 16px; }
-  .input { display: flex; align-items: center; height: 46px; margin-top: 14px; padding: 0 16px; border-radius: 14px; background: #141416;
-    box-shadow: inset 0 0 0 1px var(--g3); color: var(--g2); font-size: 14px; font-weight: 600; }
-  .rec { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: #3a3a3c; }
-  .rec.on { background: var(--y); box-shadow: 0 0 10px var(--y); animation: throb 1s ease-in-out infinite; }
-  @keyframes throb { 50% { opacity: 0.45; } }
-
-  .win[data-win="term"] { background: #0e0e10; }
-  .term { display: flex; flex-direction: column; justify-content: flex-end; height: calc(100% - 36px); padding: 16px 20px 22px; font: 500 13px/1.7 "Roboto Mono", ui-monospace, monospace; color: #d1d1d6; }
-  .term p { margin: 0; white-space: pre-wrap; }
-  .term .dot { color: var(--y); }
-  .term .p, .term .wait, .term .no { color: var(--g1); }
-  .term .wait::after { content: " \258D"; animation: throb 1s steps(2) infinite; }
-
-  .web { display: flex; gap: 18px; height: calc(100% - 36px); padding: 20px; background: #0f0f11; }
-  .stagebox { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-  .stagebox .track { position: relative; height: 104px; border-radius: 18px; background: #18181b; box-shadow: inset 0 0 0 1px #232326; }
-  .stagebox .card { position: absolute; left: 12px; top: 18px; width: 68px; height: 68px; border-radius: 18px; background: var(--y);
-    box-shadow: 0 0 30px rgba(255, 214, 10, 0.35); will-change: transform; }
-  .stagebox p { margin: 12px 0 0; text-align: center; color: var(--g2); font-size: 12px; font-weight: 700; }
-  .dk { width: 186px; align-self: center; padding: 14px; border-radius: 14px; background: var(--g4);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px var(--g3); }
-  .dkhead { margin-bottom: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; color: var(--g1); }
-  .row { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; padding: 8px 0; border-top: 1px solid #262628; font-size: 12.5px; font-weight: 700; color: var(--g1); }
-  .row code { font: 500 12.5px "Roboto Mono", ui-monospace, monospace; color: var(--w); }
-  .row.on span, .row.on code { color: var(--y); }
-  .row .sl { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--g3); }
-  .row .sl i { display: block; height: 100%; border-radius: 2px; background: var(--g2); }
-  .row.on .sl i { background: var(--y); }
-
-  /* the notch: the app's own shapes and sizes, in points */
-  .notch { position: absolute; top: 0; left: 50%; z-index: 10; width: calc(var(--nw) * 1px); height: calc(var(--nh) * 1px); transform: translateX(-50%);
-    transition: width 0.5s var(--sp), height 0.5s var(--sp); }
-  .nbody { position: absolute; top: 0; bottom: 0; left: 6px; right: 6px; overflow: hidden; background: #000;
-    border-radius: 0 0 calc(var(--nr) * 1px) calc(var(--nr) * 1px); transition: border-radius 0.5s var(--sp), box-shadow 0.5s; }
-  .notch.ping .nbody { box-shadow: 0 0 26px 3px rgba(255, 214, 10, 0.4); transition: border-radius 0.5s var(--sp), box-shadow 0.08s; }
-  .ear { position: absolute; top: 0; width: 6px; height: 6px; }
-  .ear.l { left: 0; background: radial-gradient(circle at 0 100%, rgba(0, 0, 0, 0) 5.6px, #000 6.2px); }
-  .ear.r { right: 0; background: radial-gradient(circle at 100% 100%, rgba(0, 0, 0, 0) 5.6px, #000 6.2px); }
-  .st { position: absolute; top: 0; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.16s; }
-  .st.on { opacity: 1; transition: opacity 0.3s 0.12s; }
-  .wings { display: grid; grid-template-columns: 1fr 178px 1fr; align-items: center; }
-  .wings.top { width: 100%; height: 34px; }
-  .wl { display: flex; align-items: center; gap: 8px; padding-left: 16px; min-width: 0; }
-  .wr { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding-right: 16px; min-width: 0; }
-  .vbar { width: 26px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
-  .vbar i { display: block; height: 100%; background: var(--y); }
-  [data-st="vol"] .wr b { width: 24px; text-align: right; font-size: 12px; font-weight: 700; color: rgba(245, 245, 247, 0.9); font-variant-numeric: tabular-nums; }
-  .appicon { width: 18px; height: 18px; border-radius: 4.5px; background: radial-gradient(circle at 32% 30%, #ffe27a, #ffb000 40%, #b4470a 85%); }
-  .bars { display: flex; align-items: center; gap: 2.5px; height: 16px; }
-  .bars i { width: 3.4px; height: 11px; border-radius: 2px; background: var(--g1); }
-  .bars i:first-child, .bars i:last-child { opacity: 0; }
-  .bars.playing i { width: 2.6px; opacity: 1; background: var(--w); animation: eq 0.8s ease-in-out infinite alternate; }
-  .bars.playing i:nth-child(2) { animation-delay: -0.3s; }
-  .bars.playing i:nth-child(3) { animation-delay: -0.55s; }
-  .bars.playing i:nth-child(4) { animation-delay: -0.15s; }
-  @keyframes eq { from { height: 5px; } to { height: 14px; } }
-  .t1 { display: block; margin-top: 5px; text-align: center; font-size: 14px; font-weight: 700; }
-  .t2 { display: block; margin-top: 2px; text-align: center; font-size: 12px; font-weight: 600; color: var(--g1); }
-  [data-st="ears"] .wl b { font-size: 16px; font-weight: 700; white-space: nowrap; }
-  [data-st="ears"] .wr { font-size: 15px; font-weight: 600; white-space: nowrap; }
-  .pts .dim { font-size: 13px; color: var(--g1); }
-  .pts .mono { font: 500 16px "Roboto Mono", ui-monospace, monospace; letter-spacing: -0.3px; }
-  .thead { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 12px 0 14px; }
-  .thead b { font-size: 16px; font-weight: 700; }
-  .thead span { margin-left: auto; font-size: 16px; font-weight: 700; color: var(--y); }
-  .thead span.sent { color: var(--w); }
-  .ttext { width: 450px; margin: 4px 0 0; padding: 0 16px; font-size: 14px; line-height: 19px; font-weight: 600; }
-  [data-st="allow"] { text-align: center; }
-  .ask { margin: 52px 0 0; font-size: 15px; font-weight: 600; color: var(--g1); }
-  [data-st="allow"] code { display: inline-block; margin-top: 9px; padding: 5px 16px; border-radius: 9px; background: var(--g4); font: 500 16px/22px "Roboto Mono", ui-monospace, monospace; }
-  .btns { display: flex; justify-content: center; gap: 12px; margin-top: 14px; }
-  .btns span { display: flex; align-items: center; justify-content: center; width: 110px; height: 32px; border-radius: 16px; font-size: 16px; font-weight: 800; transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
-  .deny { background: var(--g4); color: var(--g1); }
-  .yes { background: var(--y); color: #000; font-weight: 900; box-shadow: 0 0 14px rgba(255, 214, 10, 0.45); }
-  .deny.on { background: var(--w); color: #000; }
-  .deny.on + .yes { background: var(--g4); color: var(--g1); box-shadow: none; }
-  .coins { position: absolute; left: 0; right: 0; top: 0; height: 150px; }
-  .coin { position: absolute; left: calc(50% - 35px); top: 54px; width: 70px; height: 70px; border-radius: 50%; filter: grayscale(1);
-    box-shadow: 0 0 0 1px var(--g3); transition: transform 0.35s var(--sp), opacity 0.3s; }
-  .coin.on { filter: none; box-shadow: 0 0 0 4.5px #000, 0 0 0 6.5px var(--y), 0 0 18px 6px rgba(255, 214, 10, 0.3); }
-  .pname { position: absolute; left: 0; right: 0; top: 133px; text-align: center; font-size: 17px; font-weight: 900; }
-  .phint { position: absolute; left: 0; right: 0; top: 156px; text-align: center; font-size: 12px; font-weight: 600; color: #6e6e73; }
-  .mtext { display: block; margin-top: 2px; text-align: center; font-size: 13px; font-weight: 700; }
-  .eyes { position: absolute; left: 50%; top: 48.5px; width: 65.5px; height: 31px; margin-left: -32.75px; display: flex; justify-content: space-between;
-    transition: transform 0.25s ease-out; }
-  .eyes i { width: 13.5px; height: 31px; border-radius: 7px; background: var(--w); box-shadow: 0 0 7px rgba(255, 255, 255, 0.55); animation: blink 4.7s infinite; }
-  @keyframes blink { 0%, 96% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
-
-  /* ---- the rest of the page */
-  h2 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.02; letter-spacing: -0.02em; font-weight: 900; margin: 120px 0 28px; }
-  .does { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
-  .does li { padding: 24px; border-radius: 24px; background: var(--g4); }
-  .does canvas { display: block; width: 116px; aspect-ratio: 1; margin: 0 0 20px; filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.7)); }
-  .does h3 { margin: 0 0 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.01em; }
-  .does p { margin: 0; color: var(--g1); font-weight: 700; font-size: 15.5px; line-height: 1.45; }
-  .faq { max-width: 760px; }
-  .faq details { border-top: 1px solid var(--g3); }
-  .faq details:last-child { border-bottom: 1px solid var(--g3); }
-  .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; cursor: pointer; list-style: none;
-    font-size: 19px; font-weight: 800; }
-  .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: "+"; color: var(--y); font-size: 24px; font-weight: 700; transition: transform 0.25s var(--sp); }
-  .faq details[open] summary::after { transform: rotate(45deg); }
-  .faq details p { margin: 0 0 20px; color: var(--g1); font-weight: 700; font-size: 16px; line-height: 1.5; }
-  .or { margin-top: 2px; }
-  .or summary { cursor: pointer; color: var(--g1); font-weight: 700; font-size: 14px; list-style: none; }
-  .or summary::-webkit-details-marker { display: none; }
-  .or summary:hover { color: var(--w); }
-  .or[open] summary { margin-bottom: 12px; }
-  .feats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
-  .feats li { padding: 24px; border-radius: 24px; background: var(--g4); }
-  .feats svg { display: block; width: 30px; height: 30px; margin-bottom: 16px; }
-  .feats h3, .steps h3 { margin: 0 0 8px; font-size: 21px; font-weight: 900; letter-spacing: -0.01em; }
-  .feats p { margin: 0; color: var(--g1); font-weight: 700; font-size: 15.5px; line-height: 1.45; }
-  video { display: block; width: 100%; border-radius: 24px; background: #0b0b0c; aspect-ratio: 1280 / 800; }
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0; margin: 0; list-style: none; }
-  .steps li { display: flex; flex-direction: column; gap: 10px; padding: 26px; border-radius: 24px; background: var(--g4);
-    transition: transform 0.25s var(--sp), background 0.25s; }
-  .steps li:hover { transform: translateY(-3px); background: #212124; }
-  .steps h3 { font-size: 25px; margin: 0; }
-  .n { font-size: 15px; font-weight: 900; color: var(--y); }
-  .steps p { margin: 0; color: var(--g1); font-weight: 700; font-size: 15.5px; line-height: 1.45; }
-  .steps .fine { color: var(--g2); font-size: 13.5px; }
-  .act { margin-top: auto; padding-top: 10px; }
-  code, pre { font-family: "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace; }
-  pre { margin: 0 0 14px; padding: 18px 20px; overflow-x: auto; border-radius: 18px; background: var(--g4); font-size: 14.5px; line-height: 1.5; }
-  .dkit { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
-  .dkit > div { min-width: 0; }  /* a long code line scrolls inside its box, not the page */
-  .dkit p { margin: 0 0 16px; color: var(--g1); font-weight: 700; font-size: 17px; line-height: 1.5; }
-  .dkit p a { color: var(--w); }
-  .dkit .credit { color: var(--g2); font-size: 14px; }
-  .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.7s ease, transform 0.7s var(--sp); }
-  .reveal.in { opacity: 1; transform: none; }
-  footer { padding: 120px 0 48px; color: var(--g2); font-weight: 700; font-size: 14px; }
-  footer a { color: var(--g1); }
-  footer span { white-space: nowrap; }  /* on a phone the two links drop to their own line together */
-
-  @media (max-width: 980px) {
-    .scene { aspect-ratio: 1000 / 860; width: auto; }
-    .mac { left: 0; width: 100%; }
-    .desk { left: 62%; top: 62%; width: 32%; }
-    .feats, .does { grid-template-columns: repeat(2, 1fr); }
-    .steps { grid-template-columns: 1fr; }
-    .dkit { grid-template-columns: 1fr; gap: 8px; }
-    header nav { display: none; }
+  /* the page arrives a part at a time */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+    .rise { opacity: 0; transform: translateY(10px); animation: rise 0.7s var(--ease) forwards; animation-delay: calc(var(--i, 0) * 70ms); }
+    @keyframes rise { to { opacity: 1; transform: none; } }
   }
+
   @media (max-width: 640px) {
-    .intro .act0 { flex: 1 1 100%; }
-    .intro .cta { flex-wrap: wrap; }
-    .scene { aspect-ratio: 1000 / 1240; overflow: hidden; margin: 28px -24px 0; }
-    .mac { left: -22.5%; width: 145%; }
-    .desk { left: 50%; top: 58%; width: 44%; }
-    .seg { justify-content: flex-start; }
-    .feats, .steps { grid-template-columns: 1fr; }
-    .does { grid-template-columns: 1fr; }
-    .does li { display: grid; grid-template-columns: 84px 1fr; gap: 0 18px; align-items: start; padding: 20px; }
-    .does canvas { grid-row: span 2; width: 84px; margin: 0; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .reveal { opacity: 1; transform: none; transition: none; }
-    html { scroll-behavior: auto; }
-    .side.hint::after, .eyes i, .bars.playing i, .turnhint { animation: none; }
+    header, section, footer { padding: 0 20px; }
+    header { padding-top: 28px; }
+    footer { padding-bottom: 40px; }
+    .intro { margin-top: 96px; }
+    .film, .does, .build { margin-top: 72px; }
+    footer { margin-top: 88px; }
+    .watch { left: 12px; bottom: 12px; height: 32px; padding: 0 13px 0 11px; font-size: 13px; gap: 7px; }
+    .does ul { grid-template-columns: 1fr; }
+    .does li { min-height: 160px; }
+    .build li { flex-wrap: wrap; row-gap: 14px; }
+    .model { white-space: normal; }
+    .build p { flex-basis: calc(100% - 46px); }
+    .build .btn { margin-left: 46px; }
   }
 </style>
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <img src="assets/icon.png" alt="">Watt
-    <nav><a href="#does">What it does</a><a href="#build">Build one</a><a href="#dialkit">DialKit</a><a href="#faq">Questions</a><a href="https://sourabhdaroji.com">by Sourabh Daroji</a></nav>
-  </header>
+<header class="rise">
+  <div class="name"><img src="assets/icon.png" alt="" width="26" height="26">Watt</div>
+  <a class="btn quiet small" href="#build" data-from="header">Build one</a>
+</header>
 
-  <section>
-    <div class="intro">
-      <div>
-        <h1>Watt<span class="y">,</span> the puck.</h1>
-        <p class="lede">A palm-sized dial for your Mac.</p>
-      </div>
-      <div class="act0">
-        <div class="cta">
-          <a class="pill" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download the app</a>
-          <a class="pill ghost" href="#build">Build the puck</a>
-        </div>
-        <p class="diy">Build it from a $40 board. No soldering.</p>
-      </div>
-    </div>
-
-    <div class="scene">
-      <div class="mac" aria-hidden="true">
-        <div class="lid"><div class="screen" id="screen"></div></div>
-        <div class="base"><i></i></div>
-      </div>
-      <div class="desk">
-        <div class="pk" id="pk">
-          <canvas class="puck" id="puck"></canvas>
-          <svg class="turnhint" viewBox="-63 -63 126 126" fill="none" stroke="#FFD60A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-            <path d="M-39.6 -39.6A56 56 0 0 1 23.7 -50.75"/><path d="M28.2 -48.6L23.6 -55.2L20.2 -48Z" fill="#FFD60A" stroke-linejoin="round"/>
-            <g transform="rotate(180)"><path d="M-39.6 -39.6A56 56 0 0 1 23.7 -50.75"/><path d="M28.2 -48.6L23.6 -55.2L20.2 -48Z" fill="#FFD60A" stroke-linejoin="round"/></g>
-          </svg>
-          <button class="side" id="side" type="button" aria-label="The puck's side button"></button>
-        </div>
-      </div>
-    </div>
-    <div class="ctrl">
-      <div class="seg" id="chips" role="tablist" aria-label="Try it"></div>
-      <p class="say" id="say" aria-live="polite"></p>
+<main>
+  <section class="intro rise" style="--i: 1">
+    <h1 class="say"><b>Watt is a palm-sized dial for your Mac.</b> It has a round touchscreen and sits by your keyboard. Turn it for volume, then switch it to a trackpad, a focus timer or Claude.</h1>
+    <p class="say"><b>You build it yourself.</b> It runs on a $40 board, with nothing to solder. The Mac app is free and lives in your notch.</p>
+    <div class="go">
+      <a class="btn" href="#build" data-from="intro">Build one</a>
+      <span class="note">Apple silicon, macOS 15 or later</span>
     </div>
   </section>
 
-  <h2 id="does" class="reveal">What it <span class="y">does</span>.</h2>
-  <ul class="does reveal">
-    <li>
-      <canvas data-face="volume" aria-hidden="true"></canvas>
-      <h3>Volume and music</h3>
-      <p>Turn for volume. Tap to pause.</p>
-    </li>
-    <li>
-      <canvas data-face="focus" aria-hidden="true"></canvas>
-      <h3>Faces</h3>
-      <p>A timer, a trackpad, Pong. Click the side button to switch.</p>
-    </li>
-    <li>
-      <canvas data-face="claude" aria-hidden="true"></canvas>
-      <h3>Talk to Claude</h3>
-      <p>Tap, talk, tap to send.</p>
-    </li>
-    <li>
-      <canvas data-face="allow" aria-hidden="true"></canvas>
-      <h3>Approve Claude Code</h3>
-      <p>Tap to allow. No window switching.</p>
-    </li>
-  </ul>
+  <section class="film rise" style="--i: 2">
+    <a class="player" id="player" href="assets/watt-demo.mp4" style="background-image: url(assets/watt-demo.jpg)" aria-label="Watch the demo, 3 minutes 36 seconds">
+      <span class="watch"><svg viewBox="0 0 11 12" aria-hidden="true"><path d="M1.5 0.4 10.2 5.1a1 1 0 0 1 0 1.8L1.5 11.6A1 1 0 0 1 0 10.7V1.3A1 1 0 0 1 1.5 0.4Z" fill="currentColor"/></svg>Watch the demo <i>3:36</i></span>
+    </a>
+  </section>
 
-  <h2 id="reel" class="reveal">See it <span class="y">move</span>.</h2>
-  <video class="reveal" src="assets/watt-reel.mp4" poster="assets/watt-reel.jpg" muted loop playsinline controls preload="none"></video>
+  <section class="does rise" style="--i: 3">
+    <ul>
+      <li><canvas data-face="volume" aria-hidden="true"></canvas><p><b>Turn for volume.</b> Tap to pause whatever is playing.</p></li>
+      <li><canvas data-face="focus" aria-hidden="true"></canvas><p><b>The side button switches faces.</b> A focus timer, a spinner, dice.</p></li>
+      <li><canvas data-face="trackpad" aria-hidden="true"></canvas><p><b>Flat on the desk, it's a trackpad.</b> The glass moves your pointer.</p></li>
+      <li><canvas data-face="pointer" aria-hidden="true"></canvas><p><b>Lift it up, it's a pointer.</b> Aim at the screen and tap to click.</p></li>
+      <li><canvas data-face="dialkit" aria-hidden="true"></canvas><p><b>In your dev server, it's a dial.</b> Pick a DialKit control, turn to tune.</p></li>
+      <li><canvas data-face="claude" aria-hidden="true"></canvas><p><b>Talk to Claude.</b> Tap, talk, tap to send.</p></li>
+      <li><canvas data-face="allow" aria-hidden="true"></canvas><p><b>Approve Claude Code.</b> It asks, you answer from the puck.</p></li>
+      <li><canvas data-face="pong" aria-hidden="true"></canvas><p><b>No Mac connected?</b> It plays circular Pong.</p></li>
+    </ul>
+    <p class="credit">Your voice becomes text on your Mac, and only the text goes to Claude. <a href="https://www.npmjs.com/package/dialkit" target="_blank" rel="noopener">DialKit</a> is by Josh Puckett; to turn its controls from the puck, add <a href="https://github.com/gizmofalcon/dialkit-watt" target="_blank" rel="noopener">dialkit-watt</a>.</p>
+  </section>
 
-  <h2 id="app" class="reveal">The app lives in your <span class="y">notch</span>.</h2>
-  <ul class="feats reveal">
-    <li>
-      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="3" width="10" height="9" rx="2"/><path d="M12.5 12v4h5v-4M15 16v4M15 20a5 5 0 0 0 5 5h3"/></svg>
-      <h3>Sets up the puck</h3>
-      <p>Plug it in, click Install.</p>
-    </li>
-    <li>
-      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linejoin="round"><rect x="3" y="8" width="17" height="13" rx="2.5"/><rect x="10" y="4" width="17" height="13" rx="2.5" fill="#1C1C1E"/></svg>
-      <h3>Follows your apps</h3>
-      <p>A dial in DialKit, a jog wheel in Resolve.</p>
-    </li>
-    <li>
-      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h22v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M15 18l2 8 2.2-3 3.3 3.2 1.4-1.4-3.2-3.3 3-2.2z" fill="#FFD60A"/></svg>
-      <h3>Hover for more</h3>
-      <p>What's playing, and every gesture.</p>
-    </li>
-    <li>
-      <svg viewBox="0 0 30 30" fill="none" stroke="#FFD60A" stroke-width="2.2" stroke-linecap="round"><path d="M7 16h6M17 16h6"/></svg>
-      <h3>Stays quiet</h3>
-      <p>No puck, nothing in your notch.</p>
-    </li>
-  </ul>
+  <section class="build rise" id="build" style="--i: 4">
+    <h2 class="say"><b>Build one.</b> It takes a few minutes once the board arrives.</h2>
+    <ol>
+      <li>
+        <p><b>Get the board.</b> Waveshare <span class="model">ESP32-S3-Touch-AMOLED-1.75C</span>, about $40.</p>
+        <a class="btn quiet" href="https://www.waveshare.com/esp32-s3-touch-amoled-1.75c.htm" target="_blank" rel="noopener">Waveshare<svg viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8 8 1M2.6 1H8v5.4"/></svg></a>
+      </li>
+      <li>
+        <p><b>Download the app.</b> It finds the board when you plug it in.</p>
+        <a class="btn" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download</a>
+      </li>
+      <li>
+        <p><b>Plug the board in.</b> Click Install in the app. To pair, turn the puck to each number it shows and tap.
+          <esp-web-install-button manifest="firmware/manifest.json">
+            <button slot="activate" class="inline" type="button">Or install from this page.</button>
+            <span slot="unsupported">Or install from this page, in Chrome or Edge.</span>
+            <span slot="not-allowed">Installing from this page needs https.</span>
+          </esp-web-install-button>
+        </p>
+      </li>
+    </ol>
+  </section>
+</main>
 
-  <h2 id="build" class="reveal">Build <span class="y">one</span>.</h2>
-  <ol class="steps reveal">
-    <li>
-      <div class="n">1</div>
-      <h3>Get the board</h3>
-      <p>Waveshare ESP32-S3-Touch-AMOLED-1.75C, about $40.</p>
-      <div class="act"><a class="pill ghost" href="https://www.waveshare.com/esp32-s3-touch-amoled-1.75c.htm" target="_blank" rel="noopener">Get the board</a></div>
-    </li>
-    <li>
-      <div class="n">2</div>
-      <h3>Install Watt</h3>
-      <p>Plug it in and click Install in the app.</p>
-      <div class="act"><a class="pill" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download for Mac</a></div>
-      <details class="or">
-        <summary>Or install from this page</summary>
-        <esp-web-install-button manifest="firmware/manifest.json">
-          <button slot="activate" class="pill ghost">Install Watt on the puck</button>
-          <span slot="unsupported" class="pill quiet">Open this page in Chrome or Edge</span>
-          <span slot="not-allowed" class="pill quiet">Needs a secure (https) page</span>
-        </esp-web-install-button>
-      </details>
-    </li>
-    <li>
-      <div class="n">3</div>
-      <h3>Pair it</h3>
-      <p>Turn the puck to each number and tap.</p>
-    </li>
-  </ol>
-
-  <h2 id="dialkit" class="reveal">In DialKit, it <span class="y">dials</span>.</h2>
-  <div class="dkit reveal">
-    <div>
-      <p>Turn <a href="https://www.npmjs.com/package/dialkit" target="_blank" rel="noopener">DialKit</a> controls from the puck.</p>
-      <p class="credit">DialKit is by Josh Puckett.</p>
-    </div>
-    <div>
-      <pre>npm install dialkit-watt</pre>
-      <pre>import { WattBridge } from "dialkit-watt/react";
-
-&lt;DialRoot /&gt;
-&lt;WattBridge /&gt;</pre>
-    </div>
-  </div>
-
-  <h2 id="faq" class="reveal">Questions.</h2>
-  <div class="faq reveal">
-    <details>
-      <summary>Can I buy one ready-made?</summary>
-      <p>Not yet. You build it from a $40 board in a few minutes.</p>
-    </details>
-    <details>
-      <summary>Do I need Claude?</summary>
-      <p>No. Volume, music, the timer and the games work on their own.</p>
-    </details>
-    <details>
-      <summary>Which Macs?</summary>
-      <p>Apple silicon, macOS 15 or later.</p>
-    </details>
-    <details>
-      <summary>Is my voice sent anywhere?</summary>
-      <p>English speech becomes text on your Mac. Only the text goes to Claude.</p>
-    </details>
-  </div>
-
-  <footer>
-    Watt, the puck. Made by <a href="https://sourabhdaroji.com">Sourabh Daroji</a>.&nbsp;
-    <span><a href="https://github.com/gizmofalcon/watt-puck/releases">Releases</a> &nbsp;<a href="https://github.com/gizmofalcon/dialkit-watt">dialkit-watt</a></span>
-  </footer>
-</div>
+<footer class="rise" style="--i: 5">
+  <span>Made by <a href="https://sourabhdaroji.com">Sourabh Daroji</a></span>
+  <a href="https://github.com/gizmofalcon/watt-puck">GitHub</a>
+</footer>
 
 <script type="module">
-import { mountHero } from "./mac.js?v=c1047ab66c";
-import { Puck } from "./puck.js?v=c1047ab66c";
+import { Puck } from "./puck.js?v=48ec967df3";
 
-mountHero({
-  screen: document.getElementById("screen"),
-  canvas: document.getElementById("puck"),
-  side: document.getElementById("side"),
-  chips: document.getElementById("chips"),
-  say: document.getElementById("say"),
-});
-
-// the faces in "What it does", drawn once
+// The little faces on the cards are drawn the way the puck draws them. Each is a still until its
+// card is pointed at; then it does what the card says, and goes back when the pointer leaves.
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
+const FACES = {
+  volume: {
+    rest: (p) => { p.s.vol = p.s.shownVol = 62; },
+    run: (p, t) => { p.s.vol = 62 + 24 * Math.sin(t * 2.3) * clamp01(t * 2); },
+  },
+  focus: {  // one click of the side button after another
+    rest: (p) => { p.face = p.prevFace = p.lastShown = "focus"; p.wipeAt = -1e9; p.s.spin.vel = 0; p.s.spin.deg = 30; p.s.spin.stopAt = -9; },
+    run: (p, t) => {
+      const face = ["focus", "home", "spin", "pong"][Math.floor(t / 1.3 + 0.8) % 4];
+      if (face === p.face) return;
+      p.setFace(face);
+      if (face === "spin") p.tap(true);
+    },
+  },
+  trackpad: {
+    rest: (p) => { p.hover = false; p.s.touch = [46, 30]; p.s.touchA = 1; },
+    run: (p, t) => { p.hover = true; p.s.touch = [46 + 80 * Math.sin(t * 2.1), 30 * Math.cos(t * 2.1) + 50 * Math.sin(t * 3.3)]; },
+  },
+  pointer: {
+    rest: (p) => { p.s.clickAt = -9; },
+    run: (p, t, st) => { const n = Math.floor(t / 1.3 + 0.6); if (n !== st.n) { st.n = n; if (n) p.tap(true); } },
+  },
+  dialkit: {
+    rest: (p) => { p.s.dk = p.s.dkShown = 180; },
+    run: (p, t) => { p.s.dk = 180 + 10 * Math.round(13 * Math.sin(t * 1.7) * clamp01(t * 2)); },
+  },
+  claude: {  // listening, sent, listening again
+    rest: (p) => { p.s.listening = true; p.s.sentAt = -9; p.s.amp = 0.85; },
+    run: (p, t, st) => { const n = Math.floor(t / 2.2); if (n !== st.n) { st.n = n; if (n) p.tap(true); } },
+  },
+  allow: {
+    rest: (p) => { p.s.allowedAt = -9; p.s.deny = false; },
+    run: (p, t, st) => { const n = Math.floor(t / 2.6 + 0.7); if (n !== st.n) { st.n = n; if (n) p.tap(true); } },
+  },
+  pong: {  // it plays itself
+    rest: (p) => { const g = p.s.pong; g.paddle = 90; g.score = 0; g.missAt = g.flashAt = -9; g.auto = true; p.pongServe(); },
+  },
+};
+const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let running = 0;
 for (const cv of document.querySelectorAll(".does canvas")) {
-  const p = new Puck(cv, { face: cv.dataset.face, interactive: false, live: false });
-  if (cv.dataset.face === "volume") { p.s.vol = p.s.shownVol = 62; }
-  if (cv.dataset.face === "claude") { p.s.listening = true; p.s.amp = 0.85; }
-  p.paint();
+  const act = FACES[cv.dataset.face];
+  const p = new Puck(cv, { face: cv.dataset.face, interactive: false, live: false, bare: true });
+  const rest = () => { act.rest(p); p.paint(); };
+  rest();
+  if (calm) continue;
+  const card = cv.closest("li");
+  let id = 0;
+  card.addEventListener("pointerenter", () => {
+    const mine = id = ++running, t0 = performance.now(), st = {};
+    const step = (now) => {
+      if (id !== mine) return;
+      act.run?.(p, Math.max(0, now - t0) / 1000, st);  // a frame's clock can be a moment behind the pointer's
+      p.frame(now / 1000);
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+  const stop = () => { id = 0; rest(); };
+  card.addEventListener("pointerleave", stop);
+  card.addEventListener("pointercancel", stop);
 }
 
 // What's counted beyond page views: which button, never anything about the visitor
 const count = (name, params = {}) => gtag("event", name, params);
-document.querySelectorAll('a[href$="/Watt.dmg"]').forEach((a) =>
-  a.addEventListener("click", () => count("app_download", { source: a.closest(".intro") ? "hero" : "build" })));
-document.querySelector('esp-web-install-button [slot="activate"]')?.addEventListener("click", () => count("firmware_install"));
-document.querySelector('a[href*="waveshare.com"]')?.addEventListener("click", () => count("board_click"));
-document.querySelectorAll('a[href="https://sourabhdaroji.com"]').forEach((a) =>
-  a.addEventListener("click", () => count("portfolio_click", { context: a.closest("header") ? "header" : "footer" })));
-const pk = document.querySelector(".pk");  // the puck in the hero, the first time someone works it by hand
-if (pk) new MutationObserver((_, o) => { if (pk.classList.contains("used")) { count("puck_used"); o.disconnect(); } })
-  .observe(pk, { attributes: true, attributeFilter: ["class"] });
+const on = (sel, fn) => document.querySelectorAll(sel).forEach((el) => el.addEventListener("click", () => fn(el)));
+on('a[href="#build"]', (a) => count("build_click", { source: a.dataset.from }));
+on('a[href$="/Watt.dmg"]', () => count("app_download", { source: "build" }));
+on('esp-web-install-button [slot="activate"]', () => count("firmware_install"));
+on('a[href*="waveshare.com"]', () => count("board_click"));
+on('a[href="https://sourabhdaroji.com"]', () => count("portfolio_click", { context: "footer" }));
 
-// sections rise in as they arrive
-const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
-document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+// The demo is a still that links to the film; here, asked for, the film takes its place and plays
+const player = document.getElementById("player");
+player.addEventListener("click", (e) => {
+  e.preventDefault();
+  const v = document.createElement("video");
+  v.controls = v.playsInline = true;
+  v.poster = "assets/watt-demo.jpg";
+  v.innerHTML = '<source src="assets/watt-demo.av1.mp4" type=\'video/mp4; codecs="av01.0.08M.08"\'><source src="assets/watt-demo.mp4" type="video/mp4">';
+  const frame = document.createElement("div");
+  frame.className = "player";
+  frame.style.cursor = "auto";
+  frame.append(v);
+  player.replaceWith(frame);
+  v.play().catch(() => {});
+  v.focus({ preventScroll: true });
+  count("video_play");
+}, { once: true });
 </script>
 </body>
 </html>

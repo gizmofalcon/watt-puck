@@ -4,7 +4,7 @@
 //   const puck = new Puck(canvas, { face: "home" });
 //   puck.setFace("pong");  puck.onChange = (puck) => ...;  puck.onInput = ({ type, deg, auto }) => ...
 //
-// Faces: home, trackpad, claude, dialkit, allow, call, focus, pong, spin, picker.
+// Faces: home, volume, trackpad, pointer, claude, dialkit, allow, call, focus, pong, spin, picker.
 // `live: false` draws once (call paint() again to redraw); `bare: true` leaves out the case,
 // for the little faces in the notch's picker.
 
@@ -70,7 +70,7 @@ export class Puck {
     this.s = {
       vol: 38, shownVol: 38, playing: true, morph: 0,
       look: 0, lookY: 0, lookTX: 0, lookTY: 0, blinkAt: 2, blinkStart: -9, hop: -9,
-      touch: [0, 0], touchA: 0, scrollAt: -9,
+      touch: [0, 0], touchA: 0, scrollAt: -9, clickAt: -9,
       listening: false, sentAt: -9, amp: 0,
       dk: 180, dkShown: 180, dkAcc: 0,
       deny: false, allowedAt: -9,
@@ -236,6 +236,7 @@ export class Puck {
     s.hop = now;
     switch (this.face) {
       case "home": s.playing = !s.playing; break;
+      case "pointer": s.clickAt = now; break;
       case "claude":
         if (s.listening) { s.listening = false; s.sentAt = now; } else { s.listening = true; s.sentAt = -9; }
         break;
@@ -329,15 +330,7 @@ export class Puck {
     c.clearRect(0, 0, W, W);
     c.translate(half, half);
 
-    if (this.bare) {  // just the glass, edge to edge
-      c.k = half / 233;
-      c.save(); c.scale(c.k, c.k);
-      c.beginPath(); c.arc(0, 0, 233, 0, 7); c.clip();
-      c.fillStyle = "#000"; c.fillRect(-240, -240, 480, 480);
-      this.drawFace(this.face, now, blink);
-      c.restore();
-      return;
-    }
+    if (this.bare) { this.glass(half / 233, now, blink); return; }  // just the glass, edge to edge
 
     // the body: turned aluminium, catching light as it turns
     const rim = c.createConicGradient(rad(this.turnAngle - 40), 0, 0);
@@ -350,12 +343,23 @@ export class Puck {
     c.fillStyle = "rgba(0,0,0,0.38)"; c.beginPath(); c.roundRect(half * 0.928, -half * 0.05, half * 0.044, half * 0.1, half * 0.022); c.fill();
     c.restore();
 
-    // the glass
-    const k = (half * 0.79) / 233;
+    this.glass((half * 0.79) / 233, now, blink);
+
+    // a soft reflection across the glass
+    const sheen = c.createLinearGradient(-half, -half, half * 0.4, half * 0.6);
+    sheen.addColorStop(0, "rgba(255,255,255,0.07)"); sheen.addColorStop(0.45, "rgba(255,255,255,0)");
+    c.fillStyle = sheen; c.beginPath(); c.arc(0, 0, half * 0.905, 0, 7); c.fill();
+  }
+
+  // The glass, `k` canvas pixels to a face unit: the face, and for a moment after a change the new
+  // one sweeping in over the old
+  glass(k, now, blink) {
+    const c = this.c;
     c.k = k;
     c.save();
     c.scale(k, k);
     c.beginPath(); c.arc(0, 0, 233, 0, 7); c.clip();
+    if (this.bare) { c.fillStyle = "#000"; c.fillRect(-240, -240, 480, 480); }
     const shown = this.shownFace();
     if (shown !== this.lastShown) {  // home <-> volume wipes too
       if (this.lastShown && this.wipeAt < now - 0.42) { this.prevFace = this.lastShown; this.wipeAt = now; }
@@ -375,11 +379,6 @@ export class Puck {
       this.drawFace(shown, now, blink);
     }
     c.restore();
-
-    // a soft reflection across the glass
-    const sheen = c.createLinearGradient(-half, -half, half * 0.4, half * 0.6);
-    sheen.addColorStop(0, "rgba(255,255,255,0.07)"); sheen.addColorStop(0.45, "rgba(255,255,255,0)");
-    c.fillStyle = sheen; c.beginPath(); c.arc(0, 0, half * 0.905, 0, 7); c.fill();
   }
 
   drawFace(face, now, blink) {
@@ -434,6 +433,17 @@ export class Puck {
         text(c, "TRACKPAD", 0, -176, font(700, 20), C.g1, 3.5);
         const sa = clamp01(1 - (now - s.scrollAt) / 0.8);
         if (sa > 0.01) { c.globalAlpha = sa; const a = rad(this.turnAngle - 90); glow(c, "rgba(255,214,10,0.6)", 12, () => arc(c, 214, a - rad(14), a + rad(14), C.y, 10)); c.globalAlpha = 1; }
+        break;
+      }
+      case "pointer": {
+        const tap = clamp01(1 - (now - s.clickAt) / 0.42);  // a click rings out from the dot
+        arc(c, 64, 0, 7, "rgba(245,245,247,0.5)", 3);
+        arc(c, 122, 0, 7, "rgba(245,245,247,0.16)", 3);
+        for (let i = 0; i < 4; i++) tick(c, (i * Math.PI) / 2, 82, 104, C.w, 5);
+        if (tap > 0) arc(c, 20 + 120 * (1 - tap), 0, 7, `rgba(255,214,10,${tap})`, 6);
+        glow(c, "rgba(255,214,10,0.8)", 22, () => disc(c, 0, 0, 17 * (1 + 0.5 * tap), C.y));
+        text(c, "POINTER", 0, -164, font(700, 20), C.g1, 3.5);
+        text(c, "tap to click · hold for menu", 0, 166, font(600, 18), C.g2);
         break;
       }
       case "claude": {
