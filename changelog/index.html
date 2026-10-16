@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changelog · Watt, the puck</title>
+<meta name="description" content="What's new in Watt: each release of the Mac app and the puck's firmware, newest first.">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../assets/icon.png">
+<link rel="canonical" href="https://watt.sourabhdaroji.com/changelog/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Watt, the puck">
+<meta property="og:title" content="What's new in Watt">
+<meta property="og:description" content="Each release of the Mac app and the puck's firmware, newest first.">
+<meta property="og:url" content="https://watt.sourabhdaroji.com/changelog/">
+<meta property="og:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Watt, the puck: a small round aluminum puck whose screen shows two eyes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="What's new in Watt">
+<meta name="twitter:description" content="Each release of the Mac app and the puck's firmware, newest first.">
+<meta name="twitter:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<script>
+  // Google Analytics, as on the home page: only on the real site, and loaded once the page is idle
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0A0A0B; --card: #141416; --lift: #1A1A1D; --w: #F5F5F7; --mute: rgba(245, 245, 247, 0.56); --faint: rgba(245, 245, 247, 0.48);
+    --y: #FFD60A; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color-scheme: dark; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; color: var(--w); -webkit-font-smoothing: antialiased;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--w); }
+
+  /* one column, the width of a paragraph, as on the home page */
+  header, section, article, footer { max-width: 760px; margin: 0 auto; padding: 0 40px; }
+  header { display: flex; align-items: center; justify-content: space-between; padding-top: 28px; }
+  .name { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; }
+  .name img { display: block; width: 26px; height: 26px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: rgba(255, 255, 255, 0.08); color: var(--w); font-weight: 700; }
+  .btn.quiet:hover { filter: none; background: rgba(255, 255, 255, 0.13); }
+  .btn.small { height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; }
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
+
+  /* said in sentences: the first one in white, the rest in grey */
+  .say { margin: 0; font-size: 20px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; color: var(--mute); text-wrap: pretty; }
+  .intro { margin-top: 117px; }
+
+  /* a release: its number and day, what it is in a sentence, what changed */
+  .release { margin-top: 81px; scroll-margin-top: 40px; }
+  .when { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; font-size: 14px; line-height: 20px; color: var(--faint); }
+  .v { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 13px; background: rgba(255, 214, 10, 0.12);
+    color: var(--y); font: 500 13px/1 "Roboto Mono", ui-monospace, Menlo, monospace; }
+  .changes { list-style: none; margin: 24px 0 0; padding: 4px 0; border-radius: 18px; background: var(--card); }
+  .changes li { padding: 14px 24px; color: var(--mute); text-wrap: pretty; }
+  .changes li + li { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+  .changes a, .steps a:not(.btn) { color: var(--w); text-decoration: underline; text-decoration-color: rgba(245, 245, 247, 0.3);
+    text-underline-offset: 3px; transition: text-decoration-color 0.16s; }
+  .changes a:hover { text-decoration-color: var(--w); }
+
+  /* coming from an older one: the steps, numbered as on the home page */
+  .label { margin: 32px 0 0; font-size: 14px; line-height: 20px; font-weight: 700; color: var(--faint); }
+  .steps { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 12px; counter-reset: step; }
+  .steps li { display: flex; align-items: center; gap: 18px; min-height: 84px; padding: 20px 24px; border-radius: 18px; background: var(--card); counter-increment: step; }
+  .steps li::before { content: counter(step); flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 214, 10, 0.4); color: var(--y); font-size: 14px; font-weight: 800; }
+  .steps p { flex: 1; margin: 0; color: var(--mute); text-wrap: pretty; }
+  .steps .btn { flex: none; height: 36px; padding: 0 16px; border-radius: 18px; font-size: 14px; }
+
+  footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 99px; padding-bottom: 40px; font-size: 14px; line-height: 20px; color: var(--faint); }
+  footer a { color: var(--mute); transition: color 0.16s; }
+  footer a:hover { color: var(--w); }
+
+  /* the page arrives a part at a time */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+    .rise { opacity: 0; transform: translateY(10px); animation: rise 0.7s var(--ease) forwards; animation-delay: calc(var(--i, 0) * 70ms); }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+  }
+
+  @media (max-width: 640px) {
+    header, section, article, footer { padding: 0 20px; }
+    header { padding-top: 28px; }
+    footer { padding-bottom: 40px; }
+    .intro { margin-top: 96px; }
+    .release { margin-top: 72px; }
+    footer { margin-top: 88px; }
+    .changes li { padding: 14px 20px; }
+    .steps li { flex-wrap: wrap; row-gap: 14px; padding: 20px; }
+    .steps p { flex-basis: calc(100% - 46px); }
+    .steps .btn { margin-left: 46px; }
+  }
+</style>
+</head>
+<body>
+<header class="rise">
+  <a class="name" href="../"><img src="../assets/icon.png" alt="" width="26" height="26">Watt</a>
+  <a class="btn quiet small" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg" data-from="header">Download</a>
+</header>
+
+<main>
+  <section class="intro rise" style="--i: 1">
+    <h1 class="say"><b>What's new in Watt.</b> Each release of the Mac app and the puck's firmware, newest first.</h1>
+  </section>
+
+  <article class="release rise" id="v0.2.0" style="--i: 2">
+    <p class="when"><span class="v">0.2.0</span><time datetime="2026-10-16">October 16, 2026</time></p>
+    <h2 class="say"><b>Watt keeps itself and the puck up to date.</b> The app checks for a new version once a day, and sends the puck its updates over Bluetooth.</h2>
+    <ul class="changes">
+      <li><b>Updates for Watt itself.</b> Check for Updates... is in the menu.</li>
+      <li><b>Puck updates over Bluetooth.</b> About 30 seconds for a whole firmware.</li>
+      <li><b>An update that doesn't finish changes nothing.</b> The puck keeps the firmware it had, and goes back to it if the new one can't reconnect to your Mac.</li>
+      <li><b>Updates wait out calls.</b> While AirPods or another Bluetooth headset is on a call, an update waits until it's over.</li>
+      <li><b>Enough charge first.</b> The puck takes an update with 25% battery, or on USB power.</li>
+      <li><b>Firmware 0.2.0.</b> A new flash layout, with room for updates.</li>
+    </ul>
+    <h3 class="label">Coming from 0.1.0</h3>
+    <ol class="steps">
+      <li>
+        <p><b>Download Watt and drag it to Applications,</b> replacing the old one. 0.1.0 can't update itself, so this is the last time you do it by hand.</p>
+        <a class="btn" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg" data-from="upgrade">Download</a>
+      </li>
+      <li>
+        <p><b>Choose Update Puck over USB... in Watt's menu,</b> then plug in the puck. It takes about 20 seconds, and the pairing stays.</p>
+      </li>
+    </ol>
+  </article>
+
+  <article class="release rise" id="v0.1.0" style="--i: 3">
+    <p class="when"><span class="v">0.1.0</span><time datetime="2026-10-02">October 2, 2026</time></p>
+    <h2 class="say"><b>The first release.</b> The Mac app, and the firmware it installs on the puck.</h2>
+    <ul class="changes">
+      <li><b>Home.</b> Volume on the dial, tap to play or pause, and a face that reacts to you.</li>
+      <li><b>Trackpad and pointer.</b> Flat on the desk, the glass moves your pointer. Lift it up and aim at the screen.</li>
+      <li><b>Claude.</b> Talk to it from the puck, and allow or deny Claude Code requests.</li>
+      <li><b>DialKit.</b> Turn real values in the page you're working on, with <a href="https://github.com/gizmofalcon/dialkit-watt" target="_blank" rel="noopener">dialkit-watt</a>.</li>
+      <li><b>Faces on the side button.</b> Focus timer, Spin, Teams, Dice and Pong.</li>
+      <li><b>A firmware installer in the app.</b> Plug the board in and click Install.</li>
+    </ul>
+  </article>
+</main>
+
+<footer class="rise" style="--i: 4">
+  <span>Made by <a href="https://sourabhdaroji.com">Sourabh Daroji</a></span>
+  <a href="https://github.com/gizmofalcon/watt-puck/releases">All releases on GitHub</a>
+</footer>
+
+<script>
+  // As on the home page: which button, never anything about the visitor
+  document.querySelectorAll('a[href$="/Watt.dmg"]').forEach((a) =>
+    a.addEventListener("click", () => gtag("event", "app_download", { source: "changelog_" + a.dataset.from })));
+  document.querySelectorAll('a[href="https://sourabhdaroji.com"]').forEach((a) =>
+    a.addEventListener("click", () => gtag("event", "portfolio_click", { context: "changelog" })));
+</script>
+</body>
+</html>

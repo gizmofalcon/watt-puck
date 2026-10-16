@@ -115,6 +115,7 @@
   .inline:hover { text-decoration-color: var(--w); }
 
   footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 99px; padding-bottom: 40px; font-size: 14px; line-height: 20px; color: var(--faint); }
+  footer nav { display: flex; gap: 20px; }
 
   /* the page arrives a part at a time */
   @media (prefers-reduced-motion: no-preference) {
@@ -203,11 +204,11 @@
 
 <footer class="rise" style="--i: 5">
   <span>Made by <a href="https://sourabhdaroji.com">Sourabh Daroji</a></span>
-  <a href="https://github.com/gizmofalcon/watt-puck">GitHub</a>
+  <nav><a href="changelog/">Changelog</a><a href="https://github.com/gizmofalcon/watt-puck">GitHub</a></nav>
 </footer>
 
 <script type="module">
-import { Puck } from "./puck.js?v=48ec967df3";
+import { Puck } from "./puck.js?v=bb852aaf86";
 
 // The little faces on the cards are drawn the way the puck draws them. Each is a still until its
 // card is pointed at; then it does what the card says, and goes back when the pointer leaves.
