@@ -1,0 +1,1519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tasks · Puck games</title>
+<meta name="description" content="A small station, six tasks and two and a half minutes. A little bot walks to each one, and the puck does the work. Played with Watt, the puck, or with keys.">
+<meta name="theme-color" content="#0A0A0B">
+<link rel="icon" href="../../assets/icon.png">
+<link rel="canonical" href="https://watt.sourabhdaroji.com/games/tasks/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Watt, the puck">
+<meta property="og:title" content="Tasks">
+<meta property="og:description" content="A small station, six tasks and two and a half minutes. The bot walks, the puck does the work.">
+<meta property="og:url" content="https://watt.sourabhdaroji.com/games/tasks/">
+<meta property="og:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  // Google Analytics, as on the home page: only on the real site, and loaded once the page is idle
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0A0A0B; --w: #F5F5F7; --mute: rgba(245, 245, 247, 0.56); --faint: rgba(245, 245, 247, 0.4); --y: #FFD60A; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color-scheme: dark; overflow: hidden; }
+  body { color: var(--w); -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; touch-action: none;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--w); }
+  #station { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: rgba(255, 255, 255, 0.08); color: var(--w); font-weight: 700; }
+  .btn.quiet:hover { filter: none; background: rgba(255, 255, 255, 0.13); }
+  .btn.small { height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; }
+  .btn svg { width: 8px; height: 12px; margin-right: 8px; opacity: 0.6; }
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
+
+  /* the way back, and the time left */
+  .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; pointer-events: none; }
+  .hud > * { pointer-events: auto; }
+  .clock { display: flex; align-items: center; gap: 12px; font: 500 15px/1 "Roboto Mono", ui-monospace, Menlo, monospace; color: var(--mute); transition: color 0.3s; }
+  .clock b { color: var(--w); transition: color 0.3s; }
+  .clock.low b { color: var(--y); }
+  .clock .cost { color: var(--y); opacity: 0; transform: translateX(6px); transition: opacity 0.4s, transform 0.6s var(--ease); }
+  .clock .cost.show { opacity: 1; transform: none; }
+
+  /* the level's tasks, ticked as they're done */
+  .list { position: fixed; left: 24px; top: 84px; width: 236px; pointer-events: none; transition: opacity 0.5s var(--ease); }
+  .list h2 { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 6px; font-size: 12px; line-height: 20px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+  .list h2 span { font-weight: 700; letter-spacing: 0; text-transform: none; }
+  .list ol { margin: 0; padding: 0; list-style: none; }
+  .list li { position: relative; padding: 6px 0 6px 28px; font-size: 15px; line-height: 20px; color: var(--mute); transition: color 0.3s; }
+  .list li small { display: block; font-size: 12px; line-height: 17px; color: var(--faint); transition: color 0.3s; }
+  .list li i { position: absolute; left: 0; top: 8px; width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(245, 245, 247, 0.28);
+    transition: background-color 0.3s, box-shadow 0.3s; }
+  .list li.now { color: var(--w); }
+  .list li.now i { box-shadow: inset 0 0 0 1.5px var(--y); }
+  .list li.now i::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--y); }
+  .list li.done { color: var(--faint); }
+  .list li.done i { background: var(--y); box-shadow: none; }
+  .list li.done i::after { content: ""; position: absolute; left: 5.5px; top: 3px; width: 4px; height: 8px; border: solid #0A0A0B; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .list li.fresh i { animation: pop 0.5s var(--ease); }
+  .list li.urgent, .list li.urgent small { color: var(--y); }
+  @keyframes pop { 40% { transform: scale(1.3); } }
+
+  /* the puck on the page: what the puck shows, and a controller of its own */
+  .pad { position: fixed; right: 16px; bottom: 50px; width: 272px; display: flex; flex-direction: column; align-items: center; }
+  #mirror { display: block; width: 252px; height: 252px; touch-action: none; cursor: grab; -webkit-tap-highlight-color: transparent; }
+  #mirror:active { cursor: grabbing; }
+  .pad .how { height: 57px; margin: 0; max-width: 260px; text-align: center; font-size: 13px; line-height: 19px; color: var(--mute); text-wrap: balance; }
+
+  /* between rounds */
+  .panel { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; pointer-events: none; opacity: 0; transition: opacity 0.5s var(--ease);
+    background: radial-gradient(ellipse at center, rgba(10, 10, 11, 0.88), rgba(10, 10, 11, 0.6) 60%, rgba(10, 10, 11, 0.25)); }
+  .panel.show { opacity: 1; }
+  .panel.show .card { pointer-events: auto; }
+  .card { max-width: 480px; text-align: center; transform: translateY(8px); transition: transform 0.6s var(--ease); }
+  .panel.show .card { transform: none; }
+  .card h1 { margin: 0; font-size: 44px; line-height: 52px; font-weight: 800; letter-spacing: -0.02em; }
+  .card p { margin: 14px 0 0; font-size: 18px; line-height: 28px; color: var(--mute); text-wrap: pretty; }
+  .card .how { margin-top: 18px; font-size: 15px; line-height: 23px; color: var(--faint); }
+  .card .go { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; margin-top: 28px; }
+  .card .or { font-size: 14px; color: var(--faint); }
+
+  .hint { position: fixed; left: 0; right: 0; bottom: 22px; margin: 0; text-align: center; font-size: 14px; line-height: 20px; color: var(--faint); pointer-events: none;
+    transition: opacity 0.4s; }
+  .conn { position: fixed; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 24px; color: var(--faint); }
+  .conn i { width: 7px; height: 7px; border-radius: 50%; background: rgba(245, 245, 247, 0.25); transition: background-color 0.3s, box-shadow 0.3s; }
+  .conn.puck i { background: var(--y); box-shadow: 0 0 10px rgba(255, 214, 10, 0.6); }
+
+  /* a phone, or a tablet held upright: the station in the middle, the puck below it, only the task at hand in the list */
+  @media (max-width: 760px), (max-width: 1024px) and (orientation: portrait) {
+    .hud { padding: 16px; }
+    .list { left: 16px; right: 16px; top: 62px; width: auto; }
+    .list li { display: none; }
+    .list li.now, .list li.urgent { display: block; }
+    .pad { left: 0; right: 0; bottom: 34px; width: auto; }
+    #mirror { width: 232px; height: 232px; }
+    .card h1 { font-size: 36px; line-height: 44px; }
+    .card p { font-size: 17px; line-height: 26px; }
+    .conn { right: 16px; bottom: 8px; }
+    .hint { bottom: auto; top: 128px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .panel, .card, .clock .cost, .list li i { transition: none; animation: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="station" aria-label="A small round space station seen from above, and a little bot that walks from task to task"></canvas>
+
+<div class="hud">
+  <a class="btn quiet small" href="../"><svg viewBox="0 0 8 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 1 1.5 6l5 5"/></svg>Games</a>
+  <div class="clock" id="clock"><span class="cost" id="cost">&minus;20 s</span><span><b id="time">2:30</b> left</span></div>
+</div>
+
+<aside class="list" id="list"><h2>Tasks <span id="tally" aria-live="polite">0 of 6</span></h2><ol id="items"></ol></aside>
+
+<div class="pad" id="pad">
+  <canvas id="mirror" role="img" aria-label="The puck: drag round it to turn it, click it to tap, flick across it to swipe"></canvas>
+  <p class="how" id="how"></p>
+</div>
+
+<div class="panel" id="panel"><div class="card" id="card"></div></div>
+<p class="hint" id="hint"></p>
+<div class="conn" id="conn"><i></i><span id="connText">Keys</span></div>
+
+<script>
+// Tasks: a small station, six tasks and two and a half minutes. A little bot walks to each one; the
+// puck does the work.
+//
+// The puck plays it through Watt on this Mac: the page joins Watt's local bridge as a game and, at
+// each task, asks for the "panel" face built for it (a needle and its mark, a ring to tap in time,
+// an arrow, slots round the rim). Turns, taps, swipes and flips come back as input; held in the air,
+// its pointing ("aim") says how still it is. Between tasks it shows the "meter" face: the tasks left,
+// and the time on its ring. Switching faces also clears the last panel's parts, which the puck
+// otherwise keeps. Keys play it too, and the puck drawn on the page is a controller of its own.
+
+const LEVEL_S = 150;       // the level's time, in seconds
+const OUT_S = 15;          // lights out: the time to reset the breaker
+const OUT_COST = 20;       // and what missing it costs
+const BEAT_S = 0.75;       // a done task's moment before the bot walks on
+const WALK = 0.85;         // the bot's pace in station radii a second (each walk is kept to 1 to 2 s)
+const PUCK_LAG = 0.07;     // a tap on the puck arrives about this late, for what it saw then
+const KEY_LAG = 0.02;
+const STILL = 200;         // held in the air: moving more than 2 degrees (in 1/100 degree) isn't still
+const LIFT = 500;          // and 5 degrees of turning since the task began means it was picked up
+const BRIDGE = "ws://127.0.0.1:47824";
+
+const cv = document.getElementById("station");
+const ctx = cv.getContext("2d");
+const stCv = document.createElement("canvas");  // the station, drawn once per size
+const stx = stCv.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const mod = (v, m) => ((v % m) + m) % m;
+const wrap180 = (a) => mod(a + 180, 360) - 180;
+const r2 = (v) => Math.round(v * 100) / 100;
+const D2R = Math.PI / 180;
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const fmt = (s) => { s = Math.max(0, Math.ceil(s - 1e-6)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+const nowS = () => performance.now() / 1000;
+const calm = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const touchUI = typeof matchMedia === "function" && matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+// ---------------------------------------------------------------- the station
+
+// Seven rooms round a ring corridor, the hub in the middle (where the bot starts) and three spokes
+// to it. Angles are clock degrees, as on the puck; sizes are fractions of the station's radius.
+const ROOMS = [
+  { name: "Navigation", task: "calibrate" },
+  { name: "Comms", task: "beacon" },
+  { name: "Lab", task: "wires" },
+  { name: "Storage", task: "lights" },
+  { name: "Engine", task: "wind" },
+  { name: "Reactor", task: "steady" },
+  { name: "Electrical", task: "breaker" },
+].map((r, i) => ({ ...r, a: (i * 360) / 7 }));
+const SPOKES = [540 / 7, 180, 360 - 540 / 7];  // in the gaps between rooms: either side, and the bottom
+const G = { hub: 0.16, spoke: 0.075, ringIn: 0.42, ringOut: 0.52, neck: 0.085, roomIn: 0.6, roomOut: 1, gap: 7, stand: 0.67, desk: 0.775, label: 0.92 };
+const RC = (G.ringIn + G.ringOut) / 2;         // the corridor's middle, where the bot walks
+const pol = (r, a) => [r * Math.sin(a * D2R), -r * Math.cos(a * D2R)];
+const roomOf = (task) => ROOMS.findIndex((r) => r.task === task);
+
+// Where the bot can walk: the hub, a point on the ring at each door and spoke, a spot in front of
+// each room's desk
+const NODES = {}, EDGES = {};
+function addNode(id, r, a) { const [x, y] = pol(r, a); NODES[id] = { id, r, a, x, y }; EDGES[id] = []; }
+function addEdge(p, q, arc) {
+  const A = NODES[p], B = NODES[q];
+  const l = arc ? RC * Math.abs(wrap180(B.a - A.a)) * D2R : Math.hypot(B.x - A.x, B.y - A.y);
+  EDGES[p].push({ to: q, l, arc }); EDGES[q].push({ to: p, l, arc });
+}
+addNode("H", 0, 0);
+ROOMS.forEach((rm, i) => { addNode("D" + i, RC, rm.a); addNode("S" + i, G.stand, rm.a); addEdge("D" + i, "S" + i); });
+SPOKES.forEach((a, k) => { addNode("J" + k, RC, a); addEdge("J" + k, "H"); });
+{
+  const ring = Object.values(NODES).filter((n) => n.r === RC).sort((p, q) => p.a - q.a);
+  ring.forEach((n, i) => addEdge(n.id, ring[(i + 1) % ring.length].id, true));
+}
+
+// The shortest way between two of them
+function route(from, to) {
+  const d = {}, prev = {}, open = new Set(Object.keys(NODES));
+  for (const k of open) d[k] = Infinity;
+  d[from] = 0;
+  while (open.size) {
+    let u = null;
+    for (const k of open) if (u === null || d[k] < d[u]) u = k;
+    open.delete(u);
+    if (u === to) break;
+    for (const e of EDGES[u]) if (d[u] + e.l < d[e.to]) { d[e.to] = d[u] + e.l; prev[e.to] = u; }
+  }
+  const nodes = [to];
+  while (nodes[0] !== from) nodes.unshift(prev[nodes[0]]);
+  return { nodes, len: d[to] };
+}
+
+// ...as points to walk through, round the ring's curve
+function walkway(nodes) {
+  const pts = [[NODES[nodes[0]].x, NODES[nodes[0]].y]];
+  for (let i = 1; i < nodes.length; i++) {
+    const p = NODES[nodes[i - 1]], q = NODES[nodes[i]];
+    const e = EDGES[p.id].find((e) => e.to === q.id);
+    if (e && e.arc) {
+      const da = wrap180(q.a - p.a), n = Math.max(2, Math.ceil(Math.abs(da) / 3));
+      for (let k = 1; k <= n; k++) pts.push(pol(RC, p.a + (da * k) / n));
+    } else pts.push([q.x, q.y]);
+  }
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  return { pts, cum, len: cum[cum.length - 1] };
+}
+
+function along(P, s) {
+  for (let i = 1; i < P.pts.length; i++) {
+    if (s <= P.cum[i] || i === P.pts.length - 1) {
+      const a = P.pts[i - 1], b = P.pts[i], l = P.cum[i] - P.cum[i - 1], k = l > 0 ? clamp((s - P.cum[i - 1]) / l, 0, 1) : 1;
+      return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, dx: b[0] - a[0], dy: b[1] - a[1] };
+    }
+  }
+  return { x: P.pts[0][0], y: P.pts[0][1], dx: 0, dy: 0 };
+}
+
+// ---------------------------------------------------------------- drawing the station
+
+let W = 0, H = 0, DPR = 1, R = 100, CX = 0, CY = 0;
+const SX = (x) => CX + x * R, SY = (y) => CY + y * R;
+
+function sector(p, r0, r1, a0, a1) {
+  p.arc(CX, CY, r1 * R, (a0 - 90) * D2R, (a1 - 90) * D2R);
+  p.arc(CX, CY, r0 * R, (a1 - 90) * D2R, (a0 - 90) * D2R, true);
+  p.closePath();
+}
+function bar(p, r0, r1, a, w) {  // a straight corridor along clock angle a
+  const [ux, uy] = pol(1, a), vx = (-uy * w) / 2, vy = (ux * w) / 2;
+  p.moveTo(SX(ux * r0 + vx), SY(uy * r0 + vy)); p.lineTo(SX(ux * r1 + vx), SY(uy * r1 + vy));
+  p.lineTo(SX(ux * r1 - vx), SY(uy * r1 - vy)); p.lineTo(SX(ux * r0 - vx), SY(uy * r0 - vy)); p.closePath();
+}
+function floors() {
+  const out = [], half = (360 / 7 - G.gap) / 2, room = "#131315", hall = "#0F0F11";
+  for (const rm of ROOMS) { const p = new Path2D(); sector(p, G.roomIn, G.roomOut, rm.a - half, rm.a + half); out.push([p, room]); }
+  for (const rm of ROOMS) { const p = new Path2D(); bar(p, G.ringOut - 0.02, G.roomIn + 0.02, rm.a, G.neck); out.push([p, hall]); }
+  for (const a of SPOKES) { const p = new Path2D(); bar(p, G.hub - 0.02, G.ringIn + 0.02, a, G.spoke); out.push([p, hall]); }
+  const ring = new Path2D();
+  ring.arc(CX, CY, G.ringOut * R, 0, Math.PI * 2);
+  ring.moveTo(CX + G.ringIn * R, CY);
+  ring.arc(CX, CY, G.ringIn * R, 0, Math.PI * 2, true);
+  out.push([ring, hall, "evenodd"]);
+  const hub = new Path2D();
+  hub.arc(CX, CY, G.hub * R, 0, Math.PI * 2);
+  out.push([hub, room]);
+  return out;
+}
+
+function drawStation() {
+  stCv.width = Math.max(1, Math.round(W * DPR));
+  stCv.height = Math.max(1, Math.round(H * DPR));
+  const c = stx;
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  c.clearRect(0, 0, W, H);
+  const lw = Math.max(1.1, R * 0.0042), list = floors();
+  // Walls: every floor outlined, then every floor filled over the lines that fall inside another.
+  // What's left is one line round the whole, open where a corridor meets a room.
+  c.strokeStyle = "#C2C2C6"; c.lineWidth = lw * 2; c.lineJoin = "round";
+  for (const [p] of list) c.stroke(p);
+  for (const [p, fill, rule] of list) { c.fillStyle = fill; c.fill(p, rule || "nonzero"); }
+  // The corridor's middle, dashed, and a docking ring in the hub
+  c.lineWidth = 1;
+  c.strokeStyle = "rgba(245, 245, 247, 0.1)";
+  c.setLineDash([2, 9]);
+  c.beginPath(); c.arc(CX, CY, RC * R, 0, Math.PI * 2); c.stroke();
+  c.setLineDash([]);
+  c.strokeStyle = "rgba(245, 245, 247, 0.16)";
+  c.beginPath(); c.arc(CX, CY, G.hub * R * 0.6, 0, Math.PI * 2); c.stroke();
+  c.beginPath();
+  for (let k = 0; k < 4; k++) {
+    const [x, y] = pol(G.hub, k * 90);
+    c.moveTo(SX(x * 0.45), SY(y * 0.45)); c.lineTo(SX(x * 0.75), SY(y * 0.75));
+  }
+  c.stroke();
+  ROOMS.forEach((rm) => furnish(c, rm));
+  ROOMS.forEach((rm) => roomName(c, rm));
+}
+
+// A few things in each room, faint, in the room's own frame: x across it, -y towards the hull
+function furnish(c, rm) {
+  const [x, y] = pol(0.8, rm.a);
+  c.save();
+  c.translate(SX(x), SY(y)); c.rotate(rm.a * D2R); c.scale(R, R);
+  c.lineWidth = 1 / R; c.lineCap = "round"; c.lineJoin = "round";
+  c.strokeStyle = "rgba(245, 245, 247, 0.2)"; c.fillStyle = "rgba(245, 245, 247, 0.3)";
+  const line = (...pts) => { c.beginPath(); pts.forEach(([px, py], i) => (i ? c.lineTo(px, py) : c.moveTo(px, py))); c.stroke(); };
+  const ring = (px, py, r) => { c.beginPath(); c.arc(px, py, r, 0, Math.PI * 2); c.stroke(); };
+  const dot = (px, py, r) => { c.beginPath(); c.arc(px, py, r, 0, Math.PI * 2); c.fill(); };
+  const box = (px, py, w, h) => { c.beginPath(); c.rect(px - w / 2, py - h / 2, w, h); c.stroke(); };
+  const crate = (px, py, s, a) => {
+    c.save(); c.translate(px, py); c.rotate(a);
+    c.beginPath(); c.rect(-s / 2, -s / 2, s, s); c.moveTo(-s / 2, -s / 2); c.lineTo(s / 2, s / 2); c.moveTo(s / 2, -s / 2); c.lineTo(-s / 2, s / 2); c.stroke();
+    c.restore();
+  };
+  switch (rm.name) {
+    case "Navigation": {  // a chart table, and stars to steer by
+      ring(-0.17, -0.03, 0.055); ring(-0.17, -0.03, 0.018);
+      line([-0.17, -0.095], [-0.17, 0.035]); line([-0.235, -0.03], [-0.105, -0.03]);
+      const s = [[0.11, -0.07], [0.17, -0.03], [0.23, -0.075], [0.2, 0.03]];
+      line(...s); s.forEach(([px, py]) => dot(px, py, 0.008)); dot(0.13, 0.04, 0.006);
+      break;
+    }
+    case "Comms": {  // a dish, and what it sends
+      c.beginPath(); c.arc(0.17, -0.07, 0.05, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+      line([0.17, -0.02], [0.17, 0.04]); dot(0.17, -0.075, 0.008);
+      for (const r of [0.025, 0.05, 0.075]) { c.beginPath(); c.arc(-0.16, 0.02, r, 1.25 * Math.PI, 1.75 * Math.PI); c.stroke(); }
+      dot(-0.16, 0.02, 0.008);
+      break;
+    }
+    case "Lab": {  // benches, and what's on them
+      box(-0.2, -0.06, 0.14, 0.045); box(0.2, -0.06, 0.14, 0.045);
+      ring(-0.24, -0.06, 0.012); ring(-0.2, -0.06, 0.009); ring(0.17, -0.06, 0.012); ring(0.23, -0.06, 0.01);
+      ring(-0.18, 0.005, 0.016); ring(0.18, 0.005, 0.016);
+      break;
+    }
+    case "Storage": {  // crates, stacked as they came
+      crate(-0.2, -0.05, 0.05, 0.1); crate(-0.135, -0.065, 0.04, -0.06); crate(-0.19, 0.015, 0.04, 0);
+      crate(0.17, -0.05, 0.055, -0.08); crate(0.225, 0.01, 0.04, 0.2);
+      break;
+    }
+    case "Engine": {  // two turbines
+      for (const px of [-0.16, 0.16]) {
+        ring(px, -0.03, 0.055); ring(px, -0.03, 0.014);
+        for (let k = 0; k < 6; k++) {
+          const a = (k / 6) * Math.PI * 2 + 0.3;
+          line([px + Math.cos(a) * 0.02, -0.03 + Math.sin(a) * 0.02], [px + Math.cos(a + 0.35) * 0.05, -0.03 + Math.sin(a + 0.35) * 0.05]);
+        }
+      }
+      break;
+    }
+    case "Reactor": {  // the core, and its pipes
+      c.beginPath();
+      for (let k = 0; k <= 6; k++) { const a = (k / 6) * Math.PI * 2; c[k ? "lineTo" : "moveTo"](-0.16 + Math.cos(a) * 0.045, -0.03 + Math.sin(a) * 0.045); }
+      c.stroke();
+      c.setLineDash([0.01, 0.012]); ring(-0.16, -0.03, 0.072); c.setLineDash([]);
+      dot(-0.16, -0.03, 0.012);
+      line([0.1, -0.085], [0.22, -0.085], [0.22, 0.03]); line([0.1, -0.06], [0.195, -0.06], [0.195, 0.03]);
+      break;
+    }
+    case "Electrical": {  // the breaker board, and cable
+      box(0.18, -0.045, 0.13, 0.075);
+      line([0.135, -0.06], [0.135, -0.03]); line([0.165, -0.06], [0.165, -0.03]); line([0.195, -0.06], [0.195, -0.03]); line([0.225, -0.06], [0.225, -0.03]);
+      for (const py of [-0.05, -0.01]) {
+        c.beginPath();
+        for (let k = 0; k <= 24; k++) { const t = k / 24; c[k ? "lineTo" : "moveTo"](-0.26 + 0.15 * t, py + 0.01 * Math.sin(t * Math.PI * 6)); }
+        c.stroke();
+      }
+      break;
+    }
+  }
+  c.restore();
+}
+
+// Its name, set round the rim like the numbers on a dial (turned to read the right way up below)
+function roomName(c, rm) {
+  const [x, y] = pol(G.label, rm.a), flip = rm.a > 90 && rm.a < 270, size = clamp(R * 0.034, 9, 12.5);
+  c.save();
+  c.translate(SX(x), SY(y)); c.rotate((rm.a + (flip ? 180 : 0)) * D2R);
+  c.font = `800 ${size.toFixed(1)}px Nunito, ui-rounded, sans-serif`;
+  if ("letterSpacing" in c) c.letterSpacing = `${(size * 0.12).toFixed(1)}px`;
+  c.fillStyle = "rgba(245, 245, 247, 0.42)"; c.textAlign = "center"; c.textBaseline = "middle";
+  c.fillText(rm.name.toUpperCase(), 0, 0);
+  c.restore();
+}
+
+// ---------------------------------------------------------------- the game's state
+
+let state = "title";      // title, play, won, lost
+let phase = "walk";       // while playing: walk, task, beat
+let clock = nowS();       // this frame's time, in seconds
+let items = [];           // the level's six: { id, room, done }
+let extra = null;         // the breaker that lights out adds when it isn't one of the six still to do
+let cur = null;           // the task being done, and how it's going
+let target = null;        // the item the bot is on its way to, or at
+let timeLeft = LEVEL_S, startAt = 0, endAt = 0, beatUntil = 0;
+let out = null;           // lights out, while it lasts: { item, at, until }
+let outDone = false, missed = false, missAt = -9, backAt = -9, dark = 0;
+let lastInput = "keys";
+const bot = { node: "H", x: 0, y: 0, face: -Math.PI / 2, look: -Math.PI / 2, path: null, to: "H", t0: 0, dur: 1, stepAt: 0, foot: 0,
+  happy: -9, blinkAt: 2, blinkStart: -9 };
+const keys = new Set();
+const pointer = { x: null, y: null, over: false };
+const snd = { name: "tick", n: 0, base: 0 };  // the sound the puck plays next: each new sn plays s
+
+// A sound on the puck (and on the page, when there's no puck to play it)
+function say(name, echo = true) {
+  snd.name = name;
+  snd.n++;
+  if (echo && !puckLive()) sound(name);
+}
+
+// ---------------------------------------------------------------- the tasks
+
+// Each one is a panel on the puck made for one thing it does well. face() gives the same keys every
+// time (only their values change), so nothing from a moment before lingers on the puck.
+const POS = ["top", "right", "bottom", "left"];
+const TW = 24;                                                    // calibrate: the mark's width
+const PERIOD = 1.4, MEET = 1.05, RIM = 226, RT = 90, WINDOW = 0.17;  // the beacon: a ring each 1.4 s
+const away = (a) => mod(a + (Math.random() < 0.5 ? -1 : 1) * rand(110, 200), 360);
+const other = (i) => [0, 1, 2, 3].filter((k) => k !== i)[Math.floor(Math.random() * 3)];
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
+function beaconRing(t) {  // the moving ring: in from the rim, through the still one, gone
+  const u = clock - t.t0;
+  if (u < 0) return 0;
+  const ph = u % PERIOD;
+  return ph <= MEET + 0.22 ? Math.round(RIM - ((RIM - RT) * ph) / MEET) : 0;
+}
+function shaken(t) { if (t.p > 0.12) say("no"); t.p = 0; }
+
+const DEFS = {
+  calibrate: {
+    name: "Calibrate", turns: true, rate: 150, nudge: 1.5,
+    sub: () => "Turn to the yellow mark",
+    init(t) { t.a = rand(0, 360); t.k = 0; t.hold = 0; t.in = false; t.ta = away(t.a); },
+    input(t, e) { if (e.k === "turn") t.a = mod(t.a + e.v, 360); },
+    update(t, dt) {
+      t.in = Math.abs(wrap180(t.a - t.ta)) <= TW / 2 + 1;
+      t.hold = t.in ? t.hold + dt : Math.max(0, t.hold - dt * 2.5);
+      if (t.hold < 1) return;
+      t.k++; t.hold = 0; t.in = false;
+      if (t.k >= 2) return done(t);
+      say("click");
+      t.ta = away(t.a);
+    },
+    face: (t) => ({ nd: 1, a: Math.round(t.a), ta: Math.round(t.ta), tw: TW, p: r2(Math.min(1, t.hold)), ok: t.in ? 1 : 0, dn: 2, dk: t.k, msg: "" }),
+    how: {
+      puck: "Turn the puck on the desk to bring the needle into the yellow mark, and hold it there.",
+      keys: "Left and right arrows (or A and D) turn the needle. Hold it in the yellow mark.",
+      touch: "Drag round the puck to turn the needle. Hold it in the yellow mark.",
+    },
+  },
+
+  wind: {
+    name: "Wind the generator", turns: true, rate: 720, nudge: 6,
+    sub: (t) => (t.dir > 0 ? "Turn it clockwise" : "Turn it anticlockwise"),
+    init(t) { t.dir = Math.random() < 0.5 ? 1 : -1; t.a = 0; t.got = 0; t.q = 0; },
+    input(t, e) {
+      if (e.k !== "turn") return;
+      t.a = mod(t.a + e.v, 360);
+      t.got = clamp(t.got + e.v * t.dir, 0, 1080);
+      if (t.got >= 1080) return done(t);
+      const q = Math.floor(t.got / 90);
+      if (q > t.q) say("tick");  // each quarter turn
+      t.q = q;
+    },
+    // the needle turns with the puck; the small mark runs ahead of it, the way to wind
+    face: (t) => ({ big: 1, v: Math.max(0, Math.ceil((1080 - t.got) / 360 - 1e-6)), p: r2(t.got / 1080), nd: 1, a: Math.round(t.a),
+      ta: Math.round(mod(t.a + t.dir * 40, 360)), tw: 14, ok: 0, msg: "" }),
+    how: {
+      puck: (t) => `Spin the puck on the desk, three full turns ${t.dir > 0 ? "clockwise" : "anticlockwise"}.`,
+      keys: (t) => `Hold ${t.dir > 0 ? "the right arrow (or D)" : "the left arrow (or A)"} to wind it, three full turns.`,
+      touch: (t) => `Drag round the puck, three full turns ${t.dir > 0 ? "clockwise" : "anticlockwise"}.`,
+    },
+  },
+
+  beacon: {
+    name: "Sync the beacon",
+    sub: () => "Tap when the rings meet",
+    init(t) { t.t0 = clock + 0.35; t.good = 0; t.scored = -1; t.flash = null; },
+    input(t, e) {
+      if (e.k !== "tap") return;
+      const since = e.at - t.t0 - MEET, n = Math.round(since / PERIOD), err = since - n * PERIOD;
+      if (n >= 0 && Math.abs(err) <= WINDOW) {
+        if (n === t.scored) return;  // that ring has been met already
+        t.scored = n;
+        t.good++;
+        if (t.good >= 4) return done(t);
+        t.flash = { msg: "Good", ok: 1, until: clock + 0.35 };
+        say("ok");
+      } else {
+        t.flash = { msg: n < 0 || err < 0 ? "Early" : "Late", ok: 0, until: clock + 0.45 };
+        say("no");
+      }
+    },
+    face(t) {
+      const f = t.flash && clock < t.flash.until ? t.flash : null;
+      return { r: beaconRing(t), rt: RT, dn: 4, dk: t.good, ok: f ? f.ok : 0, msg: f ? f.msg : "" };
+    },
+    how: {
+      puck: "Tap the glass as the moving ring meets the still one. Four good taps.",
+      keys: "Press space as the moving ring meets the still one. Four good taps.",
+      touch: "Tap the puck as the moving ring meets the still one. Four good taps.",
+    },
+  },
+
+  wires: {
+    name: "Route the wires", swipes: true,
+    sub: () => "Swipe the way it points",
+    init(t) {
+      t.seq = [];
+      while (t.seq.length < 5) { const d = "udlr"[Math.floor(Math.random() * 4)]; if (d !== t.seq[t.seq.length - 1]) t.seq.push(d); }
+      t.k = 0;
+    },
+    input(t, e) {
+      if (e.k !== "swipe") return;
+      if (e.v === t.seq[t.k]) { t.k++; if (t.k >= 5) return done(t); say("tick"); }
+      else { t.k = 0; say("no"); }  // a wrong one: from the start
+    },
+    face: (t) => ({ dir: t.seq[t.k] || "", dn: 5, dk: t.k, ok: 0, msg: "" }),
+    how: {
+      puck: "Swipe the glass the way the arrow points. A wrong swipe starts the wires again.",
+      keys: "Here the arrow keys swipe. Follow the arrows; a wrong one starts again.",
+      touch: "Flick across the puck the way the arrow points. A wrong one starts again.",
+    },
+  },
+
+  steady: {
+    name: "Hold steady",
+    sub: (t) => (t.puck ? (t.up ? "Keep it still for 3 s" : "Pick it up off the desk") : "Keep the mouse still"),
+    init(t) {
+      t.puck = puckLive(); t.up = false; t.lift = 0; t.x = t.y = t.ax = t.ay = 0; t.p = 0;
+      t.m = pointer.over && pointer.x !== null ? { x: pointer.x, y: pointer.y } : null;
+    },
+    aim(t, dx, dy) {  // the puck's pointing, in 1/100 degree
+      t.puck = true;
+      t.x += dx; t.y += dy;
+      if (!t.up) { t.lift += Math.hypot(dx, dy); if (t.lift >= LIFT) { t.up = true; t.ax = t.x; t.ay = t.y; } return; }
+      if (Math.hypot(t.x - t.ax, t.y - t.ay) > STILL) { shaken(t); t.ax = t.x; t.ay = t.y; }
+    },
+    mouse(t, x, y) {  // without a puck: the mouse, kept still over the page
+      if (t.puck) return;
+      if (!t.m) { t.m = { x, y }; return; }
+      if (Math.hypot(x - t.m.x, y - t.m.y) > 6) { shaken(t); t.m = { x, y }; }
+    },
+    update(t, dt) {
+      if (t.puck) {
+        const k = 1 - Math.exp(-dt / 2);  // a slow drift is forgiven
+        t.ax += (t.x - t.ax) * k; t.ay += (t.y - t.ay) * k;
+        if (t.up) t.p += dt / 3;
+      } else if (!pointer.over) t.p = 0;
+      else if (t.m) t.p += dt / 3;
+      if (t.p >= 1) done(t);
+    },
+    face: (t) => ({ aim: 1, msg: "Hold still", p: r2(Math.min(1, t.p)), ok: 0 }),
+    how: {
+      puck: "Pick the puck up and hold it still in the air for three seconds.",
+      keys: "Keep the mouse still over the page for three seconds.",
+      touch: "Keep a finger still on the screen for three seconds.",
+    },
+  },
+
+  breaker: {
+    name: "Reset the breaker",
+    sub: (t) => (t.st === "up" ? "Turn it face down" : t.st === "down" ? "Wait for the click" : "Turn it face up"),
+    init(t) { t.st = keys.has("KeyF") ? "down" : "up"; t.downAt = clock; },
+    input(t, e) {
+      if (e.k !== "flip") return;
+      if (e.v && t.st === "up") { t.st = "down"; t.downAt = clock; }
+      else if (!e.v && t.st === "down") { t.st = "up"; say("no"); }  // up too soon
+      else if (!e.v && t.st === "click") done(t);
+    },
+    update(t) { if (t.st === "down" && clock - t.downAt >= 2) { t.st = "click"; say("click"); } },
+    face: (t) => ({ flip: 1, msg: t.st === "click" ? "Now up" : "Flip it", p: t.st === "down" ? r2(clamp((clock - t.downAt) / 2, 0, 1)) : t.st === "click" ? 1 : 0, ok: 0 }),
+    how: {
+      puck: "Turn the puck face down and wait for the click, then turn it face up.",
+      keys: "Hold F to turn it face down. Let go after the click.",
+      touch: "Press and hold the puck to turn it face down. Let go after the click.",
+    },
+  },
+
+  lights: {
+    name: "Fix the lights", turns: true, steps: true,
+    sub: () => "Find the off switch, tap",
+    init(t) { t.acc = 0; t.slot = 0; t.idx = 0; t.k = 0; t.off = other(0); t.fixedAt = -9; },
+    input(t, e) {
+      if (e.k === "turn") {  // a slot each 45 degrees, with a little give at the edges
+        t.acc += e.v;
+        let s = t.slot;
+        while (t.acc > (s + 0.5) * 45 + 4) s++;
+        while (t.acc < (s - 0.5) * 45 - 4) s--;
+        if (s !== t.slot) { t.slot = s; t.idx = mod(s, 4); say("click"); }
+      } else if (e.k === "tap") {
+        if (t.idx !== t.off) { say("no"); return; }
+        t.k++;
+        if (t.k >= 3) return done(t);
+        say("ok");
+        t.fixedAt = clock;
+        t.off = other(t.idx);
+      }
+    },
+    face: (t) => ({ seg: 4, idx: t.idx, msg: cap(POS[t.idx]), dn: 3, dk: t.k, ok: clock - t.fixedAt < 0.3 ? 1 : 0 }),
+    how: {
+      puck: (t) => `The ${POS[t.off]} switch is off. Turn the puck to choose it, then tap.`,
+      keys: (t) => `The ${POS[t.off]} switch is off. Left and right arrows choose, space sets it.`,
+      touch: (t) => `The ${POS[t.off]} switch is off. Drag round to choose it, then tap.`,
+    },
+  },
+};
+
+// ---------------------------------------------------------------- playing
+
+function start() {
+  const ids = shuffle(Object.keys(DEFS)).slice(0, 6);
+  items = ids.map((id) => ({ id, room: roomOf(id), done: false }));
+  extra = null; out = null; outDone = false; missed = false; missAt = backAt = -9;
+  timeLeft = LEVEL_S; startAt = clock; endAt = 0;
+  Object.assign(bot, { node: "H", x: 0, y: 0, path: null, to: "H", happy: -9 });
+  state = "play";
+  showPanel();
+  document.activeElement?.blur?.();  // the Start button keeps no focus, or space would press it again
+  walkTo(items[Math.floor(Math.random() * items.length)]);  // the first is any of them; then the nearest
+  count("game_start", { game: "tasks", input: lastInput });
+}
+
+// The bot sets off along the corridors: a second or two, however far
+function walkTo(item) {
+  target = item;
+  cur = null;
+  phase = "walk";
+  const to = "S" + item.room;
+  bot.path = walkway(route(bot.node, to).nodes);
+  bot.to = to;
+  bot.t0 = clock;
+  bot.dur = clamp(bot.path.len / WALK, 1, 2);
+  renderList();
+}
+
+function arrive() {
+  bot.node = bot.to;
+  if (target.gone || target.done) { next(); return; }  // the lights came back on the way
+  cur = { id: target.id, item: target, at: clock };
+  DEFS[cur.id].init(cur);
+  phase = "task";
+  renderList();
+}
+
+// A task done: a short beat (the puck lights up and says so), then on to the next
+function done(t) {
+  if (t.over) return;
+  t.over = true;
+  phase = "beat";
+  beatUntil = clock + BEAT_S;
+  bot.happy = clock;
+  say("ok", false);
+  sound("done");
+  const it = t.item;
+  it.done = true;
+  it.fresh = clock;
+  if (out && out.item === it) { out = null; backAt = clock; sound("back"); }
+  renderList();
+}
+
+function next() {
+  if (extra && (extra.done || extra.gone)) extra = null;
+  if (items.every((i) => i.done)) { win(); return; }
+  if (!outDone && items.filter((i) => i.done).length >= 3) { lightsOut(); return; }
+  walkTo(out ? out.item : nearest());
+}
+
+function nearest() {
+  let best = null, bd = Infinity;
+  for (const it of shuffle(items.filter((i) => !i.done))) {
+    const d = route(bot.node, "S" + it.room).len;
+    if (d < bd - 1e-6) { bd = d; best = it; }
+  }
+  return best;
+}
+
+// Midway, the lights go out and the breaker jumps the queue, with its own 15 seconds. If it isn't
+// one of the six still to do, it comes as an extra.
+function lightsOut() {
+  outDone = true;
+  let item = items.find((i) => i.id === "breaker" && !i.done);
+  if (!item) item = extra = { id: "breaker", room: roomOf("breaker"), done: false, extra: true };
+  out = { item, at: clock, until: clock + OUT_S };
+  sound("alarm");
+  say("no", false);
+  walkTo(item);
+}
+
+// Too slow: the backup power comes on, and the time it took comes off the clock. A breaker from the
+// list stays on it (and if the bot is at it, it carries on); an extra one is dropped.
+function missOut() {
+  const it = out.item;
+  out = null;
+  missed = true;
+  missAt = backAt = clock;
+  timeLeft = Math.max(0, timeLeft - OUT_COST);
+  sound("cost");
+  say("no", false);
+  if (it.extra) {
+    it.gone = true;
+    if (phase === "task" && cur && cur.item === it) { cur = null; next(); return; }
+  }
+  renderList();
+}
+
+function win() {
+  state = "won";
+  endAt = clock;
+  cur = target = null;
+  sound("level");
+  showPanel();
+  renderList();
+  count("game_end", { game: "tasks", result: "won", seconds: Math.round(endAt - startAt) });
+}
+
+function lose() {
+  state = "lost";
+  endAt = clock;
+  out = cur = target = null;
+  sound("cost");
+  showPanel();
+  renderList();
+  count("game_end", { game: "tasks", result: "lost", done: items.filter((i) => i.done).length });
+}
+
+function press() {  // a tap on the puck, a click, the space bar, between levels
+  if (state === "title" || ((state === "won" || state === "lost") && clock - endAt > 0.7)) start();
+}
+
+// Every way of playing comes here: the puck through Watt, the keys, the puck on the page
+function input(e) {
+  if (state !== "play" || phase !== "task" || !cur) return;
+  const d = DEFS[cur.id];
+  if (d.input) d.input(cur, e);
+}
+function tapNow(lag) {
+  if (state !== "play") { press(); return; }
+  input({ k: "tap", at: nowS() - lag });
+}
+function turn(v) {
+  MIR.turn += v;
+  input({ k: "turn", v });
+}
+
+function update(dt) {
+  dark += ((out ? 1 : 0) - dark) * (1 - Math.exp(-dt * (out ? 5 : 2.2)));
+  if (state !== "play") return;
+  if (!items.every((i) => i.done)) timeLeft -= dt;
+  if (timeLeft <= 0) { timeLeft = 0; lose(); return; }
+  if (out && clock >= out.until) missOut();
+  if (phase === "walk") walk();
+  else if (phase === "task") {
+    heldTurn(dt);
+    if (phase === "task" && cur && DEFS[cur.id].update) DEFS[cur.id].update(cur, dt);
+  } else if (phase === "beat" && clock >= beatUntil) next();
+}
+
+function walk() {
+  const u = clamp((clock - bot.t0) / bot.dur, 0, 1), e = 0.5 - 0.5 * Math.cos(Math.PI * u);
+  const p = along(bot.path, e * bot.path.len);
+  bot.x = p.x; bot.y = p.y;
+  if (p.dx || p.dy) bot.face = Math.atan2(p.dy, p.dx);
+  if (bot.path.len > 0.01 && u > 0.06 && u < 0.94 && clock - bot.stepAt > 0.2) { bot.stepAt = clock; bot.foot ^= 1; sound("step"); }
+  if (u >= 1) arrive();
+}
+
+// The left and right keys, held: turning, a little faster the longer they're held
+let held = 0;
+function heldTurn(dt) {
+  const d = DEFS[cur.id];
+  const dir = (keys.has("ArrowRight") || keys.has("KeyD") ? 1 : 0) - (keys.has("ArrowLeft") || keys.has("KeyA") ? 1 : 0);
+  if (!dir || !d.turns || d.steps) { held = 0; return; }
+  held += dt;
+  turn(dir * d.rate * Math.min(1, 0.3 + held / 0.6) * dt);
+}
+
+// ---------------------------------------------------------------- drawing it all
+
+// The station gets the space the list and the puck leave: between them, or on a phone (or a tablet
+// held upright) above the puck. The same query as the CSS's.
+const NARROW = "(max-width: 760px), (max-width: 1024px) and (orientation: portrait)";
+function layout() {
+  const lr = $("list").getBoundingClientRect(), pr = $("pad").getBoundingClientRect();
+  let x0 = 12, x1 = W - 12, y0 = 60, y1 = H - 20;
+  if (typeof matchMedia === "function" && matchMedia(NARROW).matches) { y0 = lr.top + 92; y1 = pr.top - 6; }
+  else {
+    x0 = lr.right + 20; x1 = pr.left - 12;
+    if (x1 - x0 < 300) { x0 = 12; x1 = W - 12; }
+  }
+  R = Math.max(60, Math.min(x1 - x0, y1 - y0) / 2) * 0.88;
+  CX = (x0 + x1) / 2;
+  CY = (y0 + y1) / 2;
+}
+
+const STARS = Array.from({ length: 120 }, () => ({ x: Math.random(), y: Math.random(), r: rand(0.5, 1.4), a: rand(0.1, 0.42), v: rand(0.002, 0.007) }));
+const wrapPi = (a) => mod(a + Math.PI, Math.PI * 2) - Math.PI;
+function rrect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+
+function render() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = "#0A0A0B";
+  ctx.fillRect(0, 0, W, H);
+  for (const s of STARS) {  // drifting past, slowly
+    ctx.fillStyle = `rgba(245, 245, 247, ${s.a})`;
+    ctx.fillRect(mod(s.x - (calm ? 0 : clock * s.v), 1) * W, s.y * H, s.r, s.r);
+  }
+  // Lights out: the station all but gone (flickering as it goes), but for what the bot's glow reaches
+  let dk = dark;
+  if (out && !calm && clock - out.at < 0.7) dk *= Math.random() < 0.45 ? 0.25 : 1;
+  ctx.globalAlpha = 1 - 0.94 * dk;
+  ctx.drawImage(stCv, 0, 0, W, H);
+  ctx.globalAlpha = 1;
+  timerRing(dk);
+  const bx = SX(bot.x), by = SY(bot.y);
+  if (dk > 0.01) {
+    const gr = R * 0.34;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(bx, by, gr, 0, Math.PI * 2); ctx.clip();
+    ctx.globalAlpha = dk;
+    ctx.drawImage(stCv, 0, 0, W, H);
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(bx, by, 0, bx, by, gr);
+    g.addColorStop(0, "rgba(10, 10, 11, 0)"); g.addColorStop(0.55, `rgba(10, 10, 11, ${0.45 * dk})`); g.addColorStop(1, `rgba(10, 10, 11, ${dk})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(bx - gr, by - gr, gr * 2, gr * 2);
+    ctx.restore();
+  }
+  desks(dk, bx, by);
+  pathAhead();
+  drawBot(bx, by, dk);
+}
+
+// The time left, on ticks round the station like the puck's own ring: from 7 o'clock round to 5
+function timerRing(dk) {
+  const f = clamp(timeLeft / LEVEL_S, 0, 1), on = Math.floor(f * 100 + 1e-4), low = state === "play" && timeLeft < 30;
+  const fade = 1 - 0.5 * dk, ri = R * 1.058, rm = R * 1.045, ro = R * 1.085;
+  const groups = [[], [], [], []];  // minor, major, lit minor, lit major
+  for (let i = 0; i <= 100; i++) groups[(f > 0 && i <= on ? 2 : 0) + (i % 10 === 0 ? 1 : 0)].push(i);
+  const cols = [`rgba(245, 245, 247, ${0.09 * fade})`, `rgba(245, 245, 247, ${0.18 * fade})`];
+  const lit = low ? `rgba(255, 214, 10, ${0.8 * fade})` : `rgba(245, 245, 247, ${0.42 * fade})`;
+  ctx.lineCap = "round";
+  groups.forEach((g, k) => {
+    if (!g.length) return;
+    ctx.strokeStyle = k >= 2 ? lit : cols[k];
+    ctx.lineWidth = k % 2 ? 1.8 : 1.2;
+    ctx.beginPath();
+    for (const i of g) {
+      const [ux, uy] = pol(1, 210 + 3 * i), r0 = i % 10 === 0 ? rm : ri;
+      ctx.moveTo(CX + ux * r0, CY + uy * r0); ctx.lineTo(CX + ux * ro, CY + uy * ro);
+    }
+    ctx.stroke();
+  });
+}
+
+// Each room's desk: faint when it isn't in this level, white while it waits, yellow and pulsing for
+// the one the bot is going to, ticked once done
+function desks(dk, bx, by) {
+  const lw = Math.max(1.2, R * 0.0045), w = R * 0.1, h = R * 0.042;
+  ROOMS.forEach((rm, i) => {
+    const ext = extra && extra.room === i && !extra.gone && !extra.done ? extra : null;
+    const it = ext || items.find((x) => x.room === i);
+    const goal = state === "play" && target && target.room === i && !target.done;
+    let kind = !it || state === "title" ? "idle" : goal ? "next" : it.done ? "done" : "todo";
+    if (out && out.item.room === i) kind = "next";
+    const [x, y] = pol(G.desk, rm.a), sx = SX(x), sy = SY(y);
+    let a = 1;
+    if (dk > 0 && !(out && out.item.room === i)) a = 1 - dk + dk * clamp(1 - Math.hypot(sx - bx, sy - by) / (R * 0.34), 0, 1);
+    if (a < 0.02) return;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.translate(sx, sy);
+    ctx.rotate(rm.a * D2R);
+    if (kind === "next") {
+      const k = calm ? 0.4 : (clock * 0.8) % 1, p = k * R * 0.05;
+      ctx.strokeStyle = `rgba(255, 214, 10, ${0.5 * (1 - k)})`;
+      ctx.lineWidth = 1.2;
+      rrect(ctx, -w / 2 - p, -h / 2 - p, w + 2 * p, h + 2 * p, h * 0.3 + p);
+      ctx.stroke();
+      ctx.shadowColor = "rgba(255, 214, 10, 0.55)";
+      ctx.shadowBlur = 14;
+    }
+    rrect(ctx, -w / 2, -h / 2, w, h, h * 0.3);
+    ctx.fillStyle = "#0A0A0B";
+    ctx.fill();
+    ctx.strokeStyle = { next: "#FFD60A", done: "rgba(255, 214, 10, 0.55)", todo: "rgba(245, 245, 247, 0.75)", idle: "rgba(245, 245, 247, 0.22)" }[kind];
+    ctx.lineWidth = lw;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath();
+    if (kind === "done") {
+      ctx.strokeStyle = "#FFD60A";
+      ctx.moveTo(-w * 0.14, 0); ctx.lineTo(-w * 0.03, h * 0.24); ctx.lineTo(w * 0.16, -h * 0.26);
+    } else {
+      ctx.strokeStyle = kind === "next" ? "rgba(255, 214, 10, 0.8)" : `rgba(245, 245, 247, ${kind === "todo" ? 0.4 : 0.14})`;
+      ctx.moveTo(-w * 0.26, 0); ctx.lineTo(w * 0.26, 0);
+    }
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+// Where the bot is going: dots along the way it hasn't walked yet
+function pathAhead() {
+  if (state !== "play" || phase !== "walk" || !bot.path || bot.path.len < 0.05) return;
+  const P = bot.path, u = clamp((clock - bot.t0) / bot.dur, 0, 1), s0 = (0.5 - 0.5 * Math.cos(Math.PI * u)) * P.len, step = 0.035;
+  ctx.fillStyle = "rgba(255, 214, 10, 0.45)";
+  for (let s = Math.ceil(s0 / step) * step + step; s < P.len - 0.03; s += step) {
+    const p = along(P, s);
+    ctx.beginPath(); ctx.arc(SX(p.x), SY(p.y), Math.max(1, R * 0.0042), 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// The bot: a small round one with two eyes that look where it's going, and a light of its own
+function drawBot(x, y, dk) {
+  const r = Math.max(7, R * 0.045), t = clock, walking = state === "play" && phase === "walk";
+  let want = bot.face;
+  if (state === "play" && phase !== "walk" && target) want = (ROOMS[target.room].a - 90) * D2R;  // at the desk
+  else if (state !== "play") want = -Math.PI / 2 + (calm ? 0 : 0.7 * Math.sin(t * 0.45));      // looking about
+  bot.look += wrapPi(want - bot.look) * 0.15;
+  const gr = r * (2.6 + 3.4 * dk), g = ctx.createRadialGradient(x, y, r * 0.6, x, y, gr);
+  g.addColorStop(0, `rgba(255, 214, 10, ${0.08 + 0.16 * dk})`);
+  g.addColorStop(1, "rgba(255, 214, 10, 0)");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, gr, 0, Math.PI * 2); ctx.fill();
+  const hop = walking && !calm ? Math.abs(Math.sin((t - bot.t0) * Math.PI * 5)) * r * 0.14 : 0;
+  ctx.save();
+  ctx.translate(x, y - hop);
+  ctx.fillStyle = "#0A0A0B";
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.95)";
+  ctx.lineWidth = Math.max(1.5, r * 0.15);
+  ctx.stroke();
+  if (t >= bot.blinkAt) { bot.blinkStart = t; bot.blinkAt = t + rand(2.4, 5.5); }
+  const bk = (t - bot.blinkStart) / 0.16, blink = bk < 1 ? 1 - Math.abs(2 * bk - 1) : 0;
+  const lx = Math.cos(bot.look) * r * 0.22, ly = Math.sin(bot.look) * r * 0.16;
+  const ew = r * 0.2, eh = r * 0.5 * (1 - 0.85 * blink), gap = r * 0.3, happy = t - bot.happy < 0.9;
+  ctx.fillStyle = ctx.strokeStyle = "#F5F5F7";
+  if (dk > 0.05) { ctx.shadowColor = "rgba(255, 255, 255, 0.8)"; ctx.shadowBlur = 8 * dk; }
+  for (const s of [-1, 1]) {
+    const ex = s * gap + lx, ey = ly;
+    if (happy) {  // a job done: eyes closed, smiling
+      ctx.lineWidth = ew * 0.8; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.arc(ex, ey + eh * 0.2, ew * 0.85, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    } else { rrect(ctx, ex - ew / 2, ey - eh / 2, ew, eh, Math.min(ew, eh) / 2); ctx.fill(); }
+  }
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- the puck on the page
+
+// What the puck shows, drawn from the same face it gets and the way its firmware draws it: 466 units
+// across, clock angles, the reel's greys as levels of white, Nunito. Round it, the case, which turns
+// as the puck is turned.
+const MIR = { cv: $("mirror"), c: $("mirror").getContext("2d"), css: 252, body: 100, dpr: 1, k: 1, kind: "", last: null, prev: null, wipeAt: -9,
+  turn: 0, odo: {}, dw: 0 };
+const GLASS = 0.9;  // the screen, of the case: on a 252 px canvas, a case 200 px across and a screen of 180
+const LW = (l) => `rgba(245, 245, 247, ${(l / 255).toFixed(3)})`, LY = (l) => `rgba(255, 214, 10, ${(l / 255).toFixed(3)})`;
+const NUN = '"Nunito", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif';
+const CAP = 0.705;  // Nunito's capitals, of its size: the puck centres them on a line
+
+function sizeMirror() {
+  const css = MIR.cv.getBoundingClientRect().width || 252;
+  MIR.css = css;
+  MIR.body = css * (100 / 252);
+  MIR.dpr = Math.min(3, devicePixelRatio || 1);
+  MIR.cv.width = MIR.cv.height = Math.round(css * MIR.dpr);
+}
+
+function fText(c, s, y, size, weight, col) {
+  c.font = `${weight} ${size}px ${NUN}`;
+  c.fillStyle = col; c.textAlign = "center"; c.textBaseline = "alphabetic";
+  c.fillText(s, 0, y + (size * CAP) / 2);
+}
+function fArc(c, r, from, span, w, col, glow, glowCol, round) {
+  c.save();
+  if (glow) { c.shadowColor = glowCol; c.shadowBlur = glow * MIR.k; }
+  c.strokeStyle = col; c.lineWidth = w; c.lineCap = round ? "round" : "butt";
+  c.beginPath(); c.arc(0, 0, r, (from - 90) * D2R, (from + span - 90) * D2R); c.stroke();
+  c.restore();
+}
+function fSeg(c, x0, y0, x1, y1, w, col, glow, glowCol) {
+  c.save();
+  if (glow) { c.shadowColor = glowCol; c.shadowBlur = glow * MIR.k; }
+  c.strokeStyle = col; c.lineWidth = w; c.lineCap = "round";
+  c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+  c.restore();
+}
+function fRing(c, r, w, col) { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.stroke(); }
+function fDot(c, x, y, r, col) { c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); }
+
+// The dial's ticks: 101 from 7 o'clock round to 5, every tenth longer, lit up to onTo
+function fTicks(c, onTo, lvOn, yellow) {
+  const on = Math.floor((onTo + 1e-4) * 100);
+  c.lineCap = "round";
+  for (const [lit, major] of [[0, 0], [0, 1], [1, 0], [1, 1]]) {
+    c.strokeStyle = lit ? (yellow ? LY(lvOn) : LW(lvOn)) : major ? LW(94) : LW(46);
+    c.lineWidth = major ? 4.5 : 3;
+    c.beginPath();
+    for (let i = 0; i <= 100; i++) {
+      if ((i <= on ? 1 : 0) !== lit || (i % 10 === 0 ? 1 : 0) !== major) continue;
+      const [x, y] = pol(1, 210 + 3 * i), r1 = major ? 188 : 199;
+      c.moveTo(x * r1, y * r1); c.lineTo(x * 214, y * 214);
+    }
+    c.stroke();
+  }
+}
+
+// Digits that roll like a counter's, as the puck's do
+function fOdo(c, v, y, col) {
+  const size = 150, cap = size * CAP, lh = cap + cap / 3;
+  c.font = `900 ${size}px ${NUN}`;
+  if (!MIR.dw) MIR.dw = Math.max(...Array.from("0123456789", (d) => c.measureText(d).width)) * 0.9;
+  v = Math.max(0, v);
+  const iv = Math.floor(v + 1e-4), n = String(iv).length, w = MIR.dw * n;
+  c.save();
+  c.beginPath(); c.rect(-w / 2 - 6, y - lh / 2 - 2, w + 12, lh + 4); c.clip();
+  c.fillStyle = col; c.textAlign = "center"; c.textBaseline = "alphabetic";
+  for (let k = 0; k < n; k++) {
+    const p = 10 ** k, d = Math.floor(iv / p) % 10;
+    const roll = k === 0 ? v - Math.floor(v) : Math.max(0, (v % p) - (p - 1));
+    const x = w / 2 - MIR.dw * (k + 0.5), base = y + cap / 2 - roll * lh;
+    c.fillText(String(d), x, base);
+    if (roll > 0.001) c.fillText(String((d + 1) % 10), x, base + lh);
+  }
+  c.restore();
+}
+function odoEase(kind, target, now) {  // as the puck: quick, and a jump rather than a long spin
+  const o = MIR.odo[kind] || (MIR.odo[kind] = { v: -1, at: now });
+  const dt = clamp(now - o.at, 0, 0.1);
+  o.at = now;
+  target = Math.round(target);
+  if (o.v < 0 || Math.abs(target - o.v) > 12) o.v = target;
+  else o.v += (target - o.v) * (1 - Math.exp(-dt / 0.05));
+  if (Math.abs(target - o.v) < 0.02) o.v = target;
+  return o.v;
+}
+
+// One face, as Views.ino draws it (sceneRemote: "meter" and "panel")
+function drawFace(c, f, now, live) {
+  const p = f.params;
+  if (f.face === "meter") {
+    const on = p.on !== 0, fr = clamp(p.f >= 0 ? p.f : p.v / 100, 0, 1);
+    const lit = !on ? 148 : p.fl && !calm ? 255 * (0.45 + 0.55 * Math.abs(Math.sin(now * 21) * Math.sin(now * 6.7 + 1))) : 255;
+    fTicks(c, fr, lit, on);
+    fText(c, f.label || "", -94, 28, 700, LW(148));
+    fOdo(c, live ? odoEase("meter", p.v, now) : p.v, 4, LW(on ? 255 : 148));
+    if (p.sub) fText(c, p.sub, 86, 21, 700, LW(94));
+    return;
+  }
+  const ok = !!p.ok, slots = Math.min(p.seg || 0, 6), mid = ok ? LY(255) : LW(255);
+  if (slots > 0) {  // slots round the rim, the chosen one lit
+    const span = 360 / slots;
+    for (let i = 0; i < slots; i++) {
+      const on = i === p.idx;
+      fArc(c, 204, i * span - (span - 10) / 2, span - 10, 14, on ? LY(255) : LW(46), on ? 10 : 0, LY(90), true);
+    }
+  } else if (p.p >= 0) fTicks(c, clamp(p.p, 0, 1), p.on === 0 ? 148 : 255, p.on !== 0);
+  if (p.tw > 0) fArc(c, 178, p.ta - p.tw / 2, p.tw, 18, LY(255), ok ? 12 : 0, LY(110), true);  // the mark
+  if (p.nd) {  // the needle
+    const [x0, y0] = pol(96, p.a), [x1, y1] = pol(186, p.a);
+    fSeg(c, x0, y0, x1, y1, 8, mid, 8, ok ? LY(80) : LW(80));
+  }
+  if (!slots) {
+    if (p.rt > 0) fRing(c, p.rt, 6, ok ? LY(255) : LW(94));  // the ring to meet
+    if (p.r > 0) fRing(c, p.r, 4, LW(255));                  // the ring that moves
+  }
+  if (p.dir) {  // an arrow, the way to swipe
+    const a = { r: 90, d: 180, l: 270 }[p.dir] || 0, [ux, uy] = pol(1, a), vx = -uy, vy = ux, tx = ux * 40, ty = uy * 40 - 6;
+    for (const s of [-1, 1]) fSeg(c, tx, ty, tx - ux * 46 + s * vx * 46, ty - uy * 46 + s * vy * 46, 16, mid);
+  } else if (p.big) fOdo(c, live ? odoEase("panel", p.v, now) : p.v, 4, mid);
+  else if (p.msg) fText(c, p.msg, 4, 42, 800, mid);
+  if (f.label) fText(c, f.label, -108, 28, 700, LW(148));
+  const n = Math.min(p.dn || 0, 10);
+  for (let i = 0; i < n; i++) fDot(c, (i - (n - 1) / 2) * 20, 112, 5, i < p.dk ? LY(255) : LW(46));
+  if (p.sub) fText(c, p.sub, 150, 18, 700, LW(94));
+}
+
+function drawMirror(f, now) {
+  const m = MIR, c = m.c, b = m.body;
+  c.setTransform(m.dpr, 0, 0, m.dpr, 0, 0);
+  c.clearRect(0, 0, m.css, m.css);
+  c.translate(m.css / 2, m.css / 2);
+  lamps(c, b, now);
+  // The case: turned aluminium catching the light, and a groove that shows a turn
+  const ang = m.turn * D2R;
+  if (c.createConicGradient) {
+    const rim = c.createConicGradient(ang - 0.7, 0, 0);
+    [[0, 0.93], [0.12, 0.6], [0.25, 0.86], [0.38, 0.5], [0.5, 0.9], [0.62, 0.56], [0.75, 0.84], [0.88, 0.48], [1, 0.93]]
+      .forEach(([s, v]) => rim.addColorStop(s, `rgb(${Math.round(v * 232)}, ${Math.round(v * 234)}, ${Math.round(v * 240)})`));
+    c.fillStyle = rim;
+  } else c.fillStyle = "#9A9AA0";
+  c.beginPath(); c.arc(0, 0, b, 0, Math.PI * 2); c.fill();
+  c.fillStyle = "#050506";
+  c.beginPath(); c.arc(0, 0, b * 0.94, 0, Math.PI * 2); c.fill();
+  c.save();
+  c.rotate(ang + 0.96);
+  c.fillStyle = "rgba(0, 0, 0, 0.38)";
+  rrect(c, b * 0.949, -b * 0.045, b * 0.042, b * 0.09, b * 0.021);
+  c.fill();
+  c.restore();
+  // The glass: the face, and for a moment after a new one, the new one sweeping in like a clock hand
+  const k = (b * GLASS) / 233;
+  m.k = k * m.dpr;
+  if (f.face !== m.kind) { m.prev = m.last; m.kind = f.face; m.wipeAt = calm || !m.prev ? -9 : now; }
+  m.last = f;
+  c.save();
+  c.scale(k, k);
+  c.beginPath(); c.arc(0, 0, 233, 0, Math.PI * 2); c.clip();
+  c.fillStyle = "#000";
+  c.fillRect(-240, -240, 480, 480);
+  const u = (now - m.wipeAt) / 0.42;
+  if (u < 1) {
+    drawFace(c, m.prev, now, false);
+    c.save();
+    c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 240, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - (1 - u) * (1 - u))); c.closePath(); c.clip();
+    c.fillStyle = "#000";
+    c.fillRect(-240, -240, 480, 480);
+    drawFace(c, f, now, true);
+    c.restore();
+  } else drawFace(c, f, now, true);
+  c.restore();
+  const sheen = c.createLinearGradient(-b, -b, b * 0.4, b * 0.6);
+  sheen.addColorStop(0, "rgba(255, 255, 255, 0.06)");
+  sheen.addColorStop(0.45, "rgba(255, 255, 255, 0)");
+  c.fillStyle = sheen;
+  c.beginPath(); c.arc(0, 0, b * 0.94, 0, Math.PI * 2); c.fill();
+}
+
+// Fixing the lights: the four switches round the puck, where its slots are. The one that's off is
+// the yellow ring. The puck doesn't say which; the page does.
+function lamps(c, b, now) {
+  if (state !== "play" || phase !== "task" || !cur || cur.id !== "lights") return;
+  const pulse = calm ? 0.85 : 0.55 + 0.45 * Math.sin(now * 6);
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = pol(b + 13, i * 90);
+    c.save();
+    if (i === cur.off) {
+      c.strokeStyle = `rgba(255, 214, 10, ${pulse.toFixed(3)})`; c.lineWidth = 1.6;
+      c.beginPath(); c.arc(x, y, 5, 0, Math.PI * 2); c.stroke();
+    } else {
+      c.shadowColor = "rgba(245, 245, 247, 0.6)"; c.shadowBlur = 6 * MIR.dpr;
+      c.fillStyle = "rgba(245, 245, 247, 0.85)";
+      c.beginPath(); c.arc(x, y, 3.5, 0, Math.PI * 2); c.fill();
+    }
+    c.restore();
+  }
+}
+
+// It plays too: drag round it to turn it, click (or tap) it, flick across it to swipe, and press and
+// hold it to turn it face down
+let drag = null;
+MIR.cv.addEventListener("pointerdown", (e) => {
+  unlockSound();
+  try { MIR.cv.setPointerCapture(e.pointerId); } catch {}
+  const r = MIR.cv.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  drag = { x: e.clientX, y: e.clientY, t: nowS(), cx, cy, a: Math.atan2(e.clientY - cy, e.clientX - cx), travel: 0, turned: 0 };
+  lastInput = e.pointerType === "touch" ? "touch" : "mouse";
+  const id = state === "play" && phase === "task" && cur ? cur.id : null;
+  if (id === "breaker") { drag.flip = true; input({ k: "flip", v: 1 }); }
+  else if (id === "beacon") { drag.tapped = true; tapNow(KEY_LAG); }  // in time: the press is the tap
+});
+MIR.cv.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  drag.travel = Math.max(drag.travel, Math.hypot(e.clientX - drag.x, e.clientY - drag.y));
+  const a = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx), d = wrap180((a - drag.a) / D2R);
+  drag.a = a;
+  if (drag.flip || Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) < 14) return;  // too near the middle to tell a turn
+  drag.turned += Math.abs(d);
+  if (drag.turned > 3 && cur && DEFS[cur.id].turns) turn(d);
+});
+MIR.cv.addEventListener("pointerup", (e) => {
+  const d = drag;
+  drag = null;
+  if (!d) return;
+  if (d.flip) { input({ k: "flip", v: 0 }); return; }
+  if (d.tapped) return;
+  const dx = e.clientX - d.x, dy = e.clientY - d.y, id = state === "play" && phase === "task" && cur ? cur.id : null;
+  if (id === "wires" && Math.hypot(dx, dy) > 22) input({ k: "swipe", v: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "r" : "l") : dy > 0 ? "d" : "u" });
+  else if (d.travel < 10 && d.turned < 4 && nowS() - d.t < 0.5) tapNow(KEY_LAG);
+});
+MIR.cv.addEventListener("pointercancel", () => { if (drag && drag.flip) input({ k: "flip", v: 0 }); drag = null; });
+
+// ---------------------------------------------------------------- the puck, through Watt
+
+const bridge = { ws: null, up: false, sent: "", sentAt: 0, kind: "", retry: 3000, heard: -9, seen: false };
+const puckLive = () => bridge.up && bridge.seen;  // Watt is on, and the puck has been used
+
+function connect() {
+  let ws;
+  try { ws = new WebSocket(BRIDGE); } catch { setTimeout(connect, bridge.retry); return; }
+  ws.onopen = () => {
+    bridge.ws = ws;
+    bridge.up = true;
+    bridge.retry = 3000;
+    bridge.sent = bridge.kind = "";
+    send({ type: "hello", kind: "game", name: "Tasks" });
+    presence();
+    if (state === "title") showPanel();
+  };
+  ws.onmessage = (e) => {
+    let m;
+    try { m = JSON.parse(e.data); } catch { return; }
+    if (m.type === "aim") {
+      heard();
+      if (state === "play" && phase === "task" && cur && cur.id === "steady") DEFS.steady.aim(cur, +m.dx || 0, +m.dy || 0);
+    } else if (m.type === "input") {
+      heard();
+      lastInput = "puck";
+      if (m.input === "tap") tapNow(PUCK_LAG);
+      else if (m.input === "turn") turn(+m.value || 0);
+      else if (m.input === "swipe") input({ k: "swipe", v: String(m.value) });
+      else if (m.input === "flip") input({ k: "flip", v: +m.value ? 1 : 0 });
+    }
+  };
+  ws.onclose = () => {
+    const was = bridge.up;
+    bridge.ws = null;
+    bridge.up = bridge.seen = false;
+    if (was && state === "title") showPanel();
+    setTimeout(connect, bridge.retry);
+    bridge.retry = Math.min(bridge.retry * 1.5, 15000);  // Watt isn't open: ask less often
+  };
+}
+function heard() { bridge.heard = nowS(); bridge.seen = true; }
+function send(o) { if (bridge.ws && bridge.ws.readyState === 1) bridge.ws.send(JSON.stringify(o)); }
+
+// Watt gives the puck to the page you're looking at
+function presence() { send({ type: "presence", visible: !document.hidden, focused: document.hasFocus(), title: document.title }); }
+addEventListener("focus", presence);
+addEventListener("blur", presence);
+document.addEventListener("visibilitychange", presence);
+setInterval(presence, 2000);
+
+// The puck's face for the moment: the task's panel; between tasks, a meter with the tasks left and
+// the time on its ring (lights out: the seconds left, flickering). Each kind always carries the same
+// keys, so nothing from a moment before stays on the puck.
+function faceNow() {
+  const left = items.filter((i) => !i.done).length;
+  const meter = (label, v, f, on, fl, sub) => ({ face: "meter", label, params: { v, f: r2(clamp(f, 0, 1)), on, fl, sub } });
+  if (state === "title") return meter("Tasks", 6, 1, 0, 0, "Tap to start");
+  if (state === "won") return meter("Station secure", Math.round(endAt - startAt), timeLeft / LEVEL_S, 1, 0, "Seconds. Tap to go again");
+  if (state === "lost") return meter("Out of time", left, 0, 0, 0, "Left to do. Tap to retry");
+  if (phase === "walk" || !cur) {
+    const room = target ? ROOMS[target.room].name : "";
+    if (out) return meter("Lights out", Math.max(0, Math.ceil(out.until - clock)), (out.until - clock) / OUT_S, 1, 1, "Get to " + room);
+    return meter("Tasks", left, timeLeft / LEVEL_S, 1, 0, "Walking to " + room);
+  }
+  const d = DEFS[cur.id], p = d.face(cur);
+  p.sub = d.sub(cur);
+  if (phase === "beat") {  // done: the middle says so, in yellow
+    p.ok = 1;
+    p.msg = "Done";
+    if ("big" in p) p.big = 0;
+    if ("dir" in p) p.dir = "";
+    if ("dn" in p) p.dk = p.dn;
+    if ("p" in p) p.p = 1;
+    if ("r" in p) p.r = 0;
+  }
+  return { face: "panel", label: d.name, params: p };
+}
+
+// Sent when it changes: every 40 ms at most while something on it moves, every 100 ms otherwise.
+// A new kind of face plays no sound on the puck, so a sound asked for with it waits for the next.
+function face(now, f) {
+  if (!bridge.up) return;
+  const fresh = f.face !== bridge.kind;
+  const msg = { ...f, params: { ...f.params, s: snd.name, sn: fresh ? snd.base : snd.n } };
+  const s = JSON.stringify(msg);
+  const moving = state === "play" && phase === "task" && cur && ["calibrate", "wind", "beacon", "lights"].includes(cur.id);
+  if (s === bridge.sent || now - bridge.sentAt < (moving ? 0.04 : 0.1)) return;
+  bridge.sent = s;
+  bridge.sentAt = now;
+  bridge.kind = f.face;
+  snd.base = msg.params.sn;
+  send(msg);
+}
+
+// ---------------------------------------------------------------- keys, and the mouse kept still
+
+const SWIPE = { ArrowLeft: "l", ArrowRight: "r", ArrowUp: "u", ArrowDown: "d", KeyA: "l", KeyD: "r", KeyW: "u", KeyS: "d" };
+addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const code = e.code;
+  if (!(code in SWIPE) && code !== "Space" && code !== "Enter" && code !== "KeyF") return;
+  if ((code === "Space" || code === "Enter") && e.target.closest && e.target.closest("a, button")) return;
+  e.preventDefault();
+  unlockSound();
+  lastInput = "keys";
+  if (code === "Space" || code === "Enter") { if (!e.repeat) tapNow(KEY_LAG); return; }
+  if (code === "KeyF") { if (!e.repeat) { keys.add(code); input({ k: "flip", v: 1 }); } return; }  // held: face down
+  const id = state === "play" && phase === "task" && cur ? cur.id : null;
+  if (id === "wires") { if (!e.repeat) input({ k: "swipe", v: SWIPE[code] }); return; }  // routing wires, the arrows swipe
+  const dir = SWIPE[code] === "r" ? 1 : SWIPE[code] === "l" ? -1 : 0;
+  if (!dir) return;
+  if (id && DEFS[id].steps) { turn(dir * 45); return; }  // a switch each press
+  if (!e.repeat) { keys.add(code); if (id && DEFS[id].turns) turn(dir * DEFS[id].nudge); }
+});
+addEventListener("keyup", (e) => {
+  keys.delete(e.code);
+  if (e.code === "KeyF") input({ k: "flip", v: 0 });
+});
+addEventListener("blur", () => {
+  if (keys.has("KeyF")) input({ k: "flip", v: 0 });
+  keys.clear();
+  pointer.over = false;
+});
+
+// Holding steady without a puck: the mouse kept still over the page (or a finger kept on it)
+addEventListener("pointermove", (e) => {
+  if (e.pointerType === "touch" && !pointer.touch) return;
+  pointer.x = e.clientX; pointer.y = e.clientY; pointer.over = true;
+  if (state === "play" && phase === "task" && cur && cur.id === "steady") DEFS.steady.mouse(cur, e.clientX, e.clientY);
+});
+addEventListener("pointerdown", (e) => {
+  if (e.pointerType !== "touch") return;
+  pointer.touch = true; pointer.x = e.clientX; pointer.y = e.clientY; pointer.over = true;
+  if (state === "play" && phase === "task" && cur && cur.id === "steady") DEFS.steady.mouse(cur, e.clientX, e.clientY);
+});
+const touchUp = (e) => { if (e.pointerType === "touch") pointer.touch = pointer.over = false; };
+addEventListener("pointerup", touchUp);
+addEventListener("pointercancel", touchUp);
+document.addEventListener("mouseout", (e) => { if (!e.relatedTarget) pointer.over = false; });
+
+// A click on the station taps too (in time with the beacon, the press itself)
+let pressAt = null;
+cv.addEventListener("pointerdown", (e) => {
+  unlockSound();
+  pressAt = { x: e.clientX, y: e.clientY, t: nowS() };
+  lastInput = e.pointerType === "touch" ? "touch" : "mouse";
+  if (state === "play" && phase === "task" && cur && cur.id === "beacon") { pressAt.tapped = true; tapNow(KEY_LAG); }
+});
+cv.addEventListener("pointerup", (e) => {
+  const s = pressAt;
+  pressAt = null;
+  if (!s || s.tapped || Math.hypot(e.clientX - s.x, e.clientY - s.y) > 12 || nowS() - s.t > 0.4) return;
+  tapNow(KEY_LAG);
+});
+
+// ---------------------------------------------------------------- sound (once the page has been clicked or a key pressed)
+
+let audio = null;
+function unlockSound() {
+  if (!audio) { try { audio = new AudioContext(); } catch { audio = null; } }
+  audio?.resume?.();
+}
+function sound(kind) {
+  if (!audio || audio.state !== "running") return;
+  const t = audio.currentTime;
+  const tone = (f, at, len, gain, type = "sine", to) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t + at);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + at + len);
+    g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(gain, t + at + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + at + len);
+    o.connect(g); g.connect(audio.destination); o.start(t + at); o.stop(t + at + len + 0.02);
+  };
+  if (kind === "step") tone(bot.foot ? 190 : 160, 0, 0.05, 0.02, "triangle");
+  else if (kind === "tick") tone(1600, 0, 0.03, 0.03, "triangle");
+  else if (kind === "tock") tone(800, 0, 0.04, 0.035, "triangle");
+  else if (kind === "click") tone(2600, 0, 0.018, 0.025, "square");
+  else if (kind === "ok") { tone(1180, 0, 0.1, 0.035); tone(1580, 0.05, 0.14, 0.03); }
+  else if (kind === "no") tone(180, 0, 0.16, 0.05, "triangle", 120);
+  else if (kind === "done") { tone(880, 0, 0.16, 0.05); tone(1320, 0.08, 0.26, 0.045); }
+  else if (kind === "alarm") for (let i = 0; i < 3; i++) { tone(660, i * 0.42, 0.2, 0.035, "triangle"); tone(520, i * 0.42 + 0.2, 0.2, 0.035, "triangle"); }
+  else if (kind === "back") tone(330, 0, 0.5, 0.035, "triangle", 660);
+  else if (kind === "cost") tone(440, 0, 0.6, 0.04, "triangle", 110);
+  else if (kind === "level") { tone(660, 0, 0.3, 0.05); tone(990, 0.12, 0.4, 0.05); tone(1320, 0.24, 0.7, 0.05); }
+}
+
+function count(name, params) { gtag("event", name, params); }
+
+// ---------------------------------------------------------------- what's round it
+
+function renderList() {
+  const row = (it) => {
+    const urgent = out && out.item === it, cls = [it.done ? "done" : state === "play" && it === target ? "now" : "", urgent ? "urgent" : "",
+      it.done && clock - (it.fresh ?? -9) < 0.5 ? "fresh" : ""].filter(Boolean).join(" ");
+    const cd = urgent ? ` · <span data-cd>${Math.max(0, Math.ceil(out.until - clock))} s</span>` : "";
+    return `<li class="${cls}"><i></i>${DEFS[it.id].name}<small>${ROOMS[it.room].name}${cd}</small></li>`;
+  };
+  $("items").innerHTML = (extra && !extra.gone ? [extra] : []).concat(items).map(row).join("");
+  $("tally").textContent = `${items.filter((i) => i.done).length} of ${items.length || 6}`;
+}
+
+// What to do now, under the puck: the puck's way when it's in use, else the keys (or touch)
+function howText() {
+  const mode = puckLive() ? "puck" : touchUI || lastInput === "touch" ? "touch" : "keys";
+  if (state === "title") return mode === "keys" ? "Press space, or click the puck, to start." : "Tap the puck to start.";
+  if (state !== "play") return "";
+  if (phase === "walk" || !cur) return target ? `On the way to ${ROOMS[target.room].name}.` : "";
+  if (phase === "beat") return "Done.";
+  const h = DEFS[cur.id].how[mode];
+  return typeof h === "function" ? h(cur) : h;
+}
+
+function hintText() {
+  if (state !== "play") return "";
+  if (out) return "Lights out. Get to the breaker in Electrical before its time runs out.";
+  if (clock - missAt < 2.8) return "The backup power came on. That cost 20 seconds.";
+  if (clock - backAt < 1.8) return "The lights are back";
+  if (clock - startAt < 4) return "The bot walks by itself. The puck does the tasks.";
+  return "";
+}
+
+let shownHow = null, shownHint = null;
+function hud() {
+  $("time").textContent = fmt(timeLeft);
+  $("clock").classList.toggle("low", state === "play" && timeLeft < 30);
+  $("cost").classList.toggle("show", clock - missAt < 2.8);
+  const how = howText(), hint = hintText();
+  if (how !== shownHow) $("how").textContent = shownHow = how;
+  if (hint !== shownHint) $("hint").textContent = shownHint = hint;
+  const cd = out && document.querySelector("[data-cd]");
+  if (cd) cd.textContent = `${Math.max(0, Math.ceil(out.until - clock))} s`;
+  const puck = bridge.up && clock - bridge.heard < 6;
+  $("conn").classList.toggle("puck", puck);
+  $("connText").textContent = puck ? "Puck" : bridge.up ? "Watt is on: use the puck" : touchUI ? "Touch" : "Keys";
+}
+
+const and = (a) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`);
+const PANELS = {
+  title: () => `<h1>Tasks</h1>
+    <p>A small station, six tasks and two and a half minutes. <b>The bot walks to each one; the puck does the work.</b></p>
+    <p class="how">${bridge.up ? "At each task the puck becomes its panel: turn it, spin it, tap it in time, swipe it, hold it still, flip it over. Halfway through, the lights go out."
+      : touchUI ? "No puck? Use the one on the page: drag round it to turn it, tap it, flick across it, and press and hold it to turn it face down. Halfway through, the lights go out."
+      : "No puck? Use the one on the page: left and right arrows (or A and D) turn it, space taps, F held down turns it face down, and the arrow keys swipe when there are wires to route. Halfway through, the lights go out."}</p>
+    <div class="go"><button class="btn" type="button" data-go>Start</button><span class="or">${bridge.up ? "or tap the puck" : touchUI ? "or tap the puck below" : "or press space"}</span></div>`,
+  won: () => `<h1>Station secure</h1>
+    <p>All six tasks in ${fmt(endAt - startAt)}${missed ? ", with 20 seconds lost to the dark" : ""}.</p>
+    <div class="go"><button class="btn" type="button" data-go>Play again</button><a class="btn quiet" href="../">More games</a></div>`,
+  lost: () => {
+    const left = items.filter((i) => !i.done).map((i) => DEFS[i.id].name);
+    return `<h1>Out of time</h1>
+    <p>${left.length === 1 ? "One task was left" : `${left.length} tasks were left`}: ${and(left)}.</p>
+    <div class="go"><button class="btn" type="button" data-go>Play again</button><a class="btn quiet" href="../">More games</a></div>`;
+  },
+};
+
+function showPanel() {
+  const make = PANELS[state];
+  $("panel").classList.toggle("show", !!make);
+  $("list").style.opacity = state === "title" ? 0 : 1;
+  if (!make) return;
+  $("card").innerHTML = make();
+  $("card").querySelector("[data-go]")?.addEventListener("click", (e) => { e.stopPropagation(); unlockSound(); start(); });
+}
+
+// ---------------------------------------------------------------- the frame
+
+function resize() {
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth;
+  H = innerHeight;
+  cv.width = Math.round(W * DPR);
+  cv.height = Math.round(H * DPR);
+  layout();
+  drawStation();
+  sizeMirror();
+}
+
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000);
+  last = t;
+  clock = t / 1000;
+  update(dt);
+  render();
+  const f = faceNow();
+  drawMirror(f, clock);
+  face(clock, f);
+  hud();
+  requestAnimationFrame(frame);
+}
+
+addEventListener("resize", resize);
+resize();
+document.fonts?.ready.then(() => { MIR.dw = 0; drawStation(); });
+renderList();
+showPanel();
+connect();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

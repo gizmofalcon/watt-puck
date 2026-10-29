@@ -1,0 +1,2489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hamlet · Puck games</title>
+<meta name="description" content="A small village in a clearing. Gather food, wood and gold, keep clear of the wolves, and advance to a new age. Played with Watt, the puck, or a mouse and keys.">
+<meta name="theme-color" content="#0A0A0B">
+<link rel="icon" href="../../assets/icon.png">
+<link rel="canonical" href="https://watt.sourabhdaroji.com/games/hamlet/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Watt, the puck">
+<meta property="og:title" content="Hamlet">
+<meta property="og:description" content="A small village in a clearing. Gather, build, keep clear of the wolves, and advance to a new age.">
+<meta property="og:url" content="https://watt.sourabhdaroji.com/games/hamlet/">
+<meta property="og:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  // Google Analytics, as on the home page: only on the real site, and loaded once the page is idle
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0A0A0B; --w: #F5F5F7; --mute: rgba(245, 245, 247, 0.56); --faint: rgba(245, 245, 247, 0.4); --y: #FFD60A; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color-scheme: dark; overflow: hidden; }
+  body { color: var(--w); -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; touch-action: none;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--w); }
+  #map { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+  body.playing #map { cursor: grab; }
+  body.dragging #map { cursor: grabbing; }
+  body.placing #map { cursor: crosshair; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: rgba(255, 255, 255, 0.08); color: var(--w); font-weight: 700; }
+  .btn.quiet:hover { filter: none; background: rgba(255, 255, 255, 0.13); }
+  .btn.small { height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; }
+  .btn svg { width: 8px; height: 12px; margin-right: 8px; opacity: 0.6; }
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
+
+  /* along the top: the way back, what the village has, how long it has taken */
+  .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; pointer-events: none; z-index: 2; }
+  .hud > * { pointer-events: auto; }
+  .stock { display: flex; align-items: center; gap: 18px; font: 500 14px/1 "Roboto Mono", ui-monospace, Menlo, monospace; color: var(--mute); }
+  .stock span { display: flex; align-items: center; gap: 7px; transition: color 0.3s; }
+  .stock svg { width: 16px; height: 16px; flex: none; }
+  .stock b { font-weight: 500; color: var(--w); transition: color 0.3s; }
+  .stock .bump { animation: bump 0.35s var(--ease); }
+  .stock .short, .stock .short b { color: var(--y); }
+  @keyframes bump { 40% { transform: scale(1.18); } }
+
+  /* the whole clearing, small */
+  .mini { position: fixed; top: 72px; right: 24px; width: 180px; height: 120px; border-radius: 12px; cursor: pointer; touch-action: none;
+    box-shadow: inset 0 0 0 1px rgba(245, 245, 247, 0.1), 0 10px 30px rgba(0, 0, 0, 0.4); transition: opacity 0.5s var(--ease); }
+
+  /* what just happened */
+  .toasts { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px;
+    pointer-events: none; z-index: 3; }
+  .toast { display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 14px; border-radius: 18px; background: rgba(22, 22, 24, 0.86);
+    box-shadow: inset 0 0 0 1px rgba(245, 245, 247, 0.08); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    font-size: 14px; line-height: 20px; white-space: nowrap; cursor: pointer; pointer-events: auto;
+    opacity: 0; transform: translateY(-6px); transition: opacity 0.4s var(--ease), transform 0.5s var(--ease); }
+  .toast.show { opacity: 1; transform: none; }
+  .toast i { width: 6px; height: 6px; border-radius: 50%; background: rgba(245, 245, 247, 0.4); flex: none; }
+  .toast.warn i { background: var(--y); box-shadow: 0 0 8px rgba(255, 214, 10, 0.6); }
+
+  /* the selection: the puck as it looks now, and a few words on what's picked */
+  .who { position: fixed; left: 20px; bottom: 20px; display: flex; align-items: center; gap: 16px; padding: 10px; border-radius: 90px;
+    background: rgba(16, 16, 18, 0.9); box-shadow: inset 0 0 0 1px rgba(245, 245, 247, 0.07), 0 10px 40px rgba(0, 0, 0, 0.45); z-index: 2; }
+  #mirror { display: block; width: 148px; height: 148px; border-radius: 50%; cursor: pointer; touch-action: none; flex: none; }
+  .info { width: 200px; margin-right: 16px; }
+  .info .nm { font-size: 17px; line-height: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .info .doing { margin-top: 2px; font-size: 14px; line-height: 20px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .info .bar { height: 3px; margin: 10px 0 12px; border-radius: 2px; background: rgba(245, 245, 247, 0.12); overflow: hidden; }
+  .info .bar i { display: block; height: 100%; border-radius: 2px; background: rgba(245, 245, 247, 0.72); transform-origin: left;
+    transform: scaleX(var(--v, 1)); transition: transform 0.3s var(--ease); }
+  .info .bar.y i { background: var(--y); }
+  .info .bar.off { visibility: hidden; }
+  .info .act { font-size: 14px; line-height: 20px; color: var(--faint); text-wrap: pretty; }
+  .info .act b { font-weight: 700; color: var(--w); }
+  .info .act.no, .info .act.no b { color: var(--y); }
+  body:not(.playing) .info { display: none; }
+  body.title .stock { visibility: hidden; }
+  body:not(.playing) .who { padding: 10px; }
+  body:not(.playing) .mini { opacity: 0; pointer-events: none; }
+
+  .panel { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; pointer-events: none; opacity: 0; transition: opacity 0.5s var(--ease); z-index: 4;
+    background: radial-gradient(ellipse at center, rgba(10, 10, 11, 0.86), rgba(10, 10, 11, 0.55) 60%, rgba(10, 10, 11, 0.2)); }
+  .panel.show { opacity: 1; }
+  .panel.show .card { pointer-events: auto; }
+  .card { max-width: 480px; text-align: center; transform: translateY(8px); transition: transform 0.6s var(--ease); }
+  .panel.show .card { transform: none; }
+  .card h1 { margin: 0; font-size: 44px; line-height: 52px; font-weight: 800; letter-spacing: -0.02em; }
+  .card p { margin: 14px 0 0; font-size: 18px; line-height: 28px; color: var(--mute); text-wrap: pretty; }
+  .card .how { margin-top: 18px; font-size: 15px; line-height: 23px; color: var(--faint); }
+  .card .go { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; margin-top: 28px; }
+  .card .or { font-size: 14px; color: var(--faint); }
+
+  .hint { position: fixed; left: 440px; right: 220px; bottom: 22px; margin: 0; text-align: center; font-size: 14px; line-height: 20px; color: var(--faint);
+    pointer-events: none; transition: opacity 0.4s; }
+  .conn { position: fixed; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 24px; color: var(--faint); }
+  .conn i { width: 7px; height: 7px; border-radius: 50%; background: rgba(245, 245, 247, 0.25); transition: background-color 0.3s, box-shadow 0.3s; }
+  .conn.puck i { background: var(--y); box-shadow: 0 0 10px rgba(255, 214, 10, 0.6); }
+
+  @media (max-width: 960px) {
+    .hint { left: 16px; right: 16px; bottom: 200px; }
+  }
+  @media (max-width: 640px) {
+    .hud { padding: 16px; }
+    .stock { gap: 12px; font-size: 13px; }
+    .stock .clock { display: none; }
+    .mini { top: 62px; right: 16px; width: 132px; height: 88px; }
+    .toasts { top: 158px; }
+    .who { left: 10px; right: 10px; bottom: 10px; gap: 12px; padding: 8px; }
+    body:not(.playing) .who { right: auto; }
+    #mirror { width: 112px; height: 112px; }
+    .info { flex: 1; min-width: 0; width: auto; }
+    .hint { bottom: 140px; }
+    .conn { display: none; }
+    .card h1 { font-size: 36px; line-height: 44px; }
+    .card p { font-size: 17px; line-height: 26px; }
+  }
+  @media (max-width: 400px) {
+    .stock .pop { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="map" aria-label="A village in a clearing, seen from above"></canvas>
+
+<div class="hud">
+  <a class="btn quiet small" href="../"><svg viewBox="0 0 8 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 1 1.5 6l5 5"/></svg>Games</a>
+  <div class="stock" aria-live="polite">
+    <span id="s-food" title="Food"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="5.2" cy="10.2" r="2.7"/><circle cx="10.8" cy="10.2" r="2.7"/><circle cx="8" cy="5.4" r="2.7"/></svg><b id="food">0</b></span>
+    <span id="s-wood" title="Wood"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5h8.5a3 3 0 0 1 0 6H3.5a3 3 0 0 1 0-6z"/><circle cx="12" cy="8" r="1.1"/></svg><b id="wood">0</b></span>
+    <span id="s-gold" title="Gold"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 11.5 4.5 6l4-2.5 4.5 3-1 5.5-5.5 1z"/></svg><b id="gold">0</b></span>
+    <span class="pop" title="People, and room for"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="5" r="2.6"/><path d="M3 14c0-3 2.2-5 5-5s5 2 5 5"/></svg><b id="pop">0</b>/<span id="cap">5</span></span>
+    <span class="clock" id="clock">0:00</span>
+  </div>
+</div>
+
+<canvas class="mini" id="mini" aria-label="The whole clearing, small"></canvas>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<div class="who" id="who">
+  <canvas id="mirror" aria-label="The puck, as it looks now"></canvas>
+  <div class="info">
+    <div class="nm" id="whoName"></div>
+    <div class="doing" id="whoDoing"></div>
+    <div class="bar off" id="whoBar"><i></i></div>
+    <div class="act" id="whoAct"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel"><div class="card" id="card"></div></div>
+<p class="hint" id="hint"></p>
+<div class="conn" id="conn"><i></i><span id="connText">Mouse</span></div>
+
+<script>
+// Hamlet: a small village in a clearing. Gather food, wood and gold, build, keep clear of the wolves,
+// and advance the village to a new age.
+//
+// The puck plays it through Watt on this Mac: the page joins Watt's local bridge as a game and asks
+// for the "panel" face, with what the selected villager or building can do as slots round the puck's
+// rim. A swipe picks the next one (the map pans to it), turning the puck moves round the slots, a tap
+// does the lit one. Holding on a building lets you point the puck at where it goes. A mouse and keys
+// play it too, and the small puck in the corner works as a controller of its own.
+
+const MAP_W = 3000, MAP_H = 2000;
+const VIEW_H = 900;                  // world units the screen is tall, at rest
+const HOME = { x: 1500, y: 1000 };   // where the Town Centre stands
+const SAFE_R = 380;                  // wolves keep out of the village
+const BUILD_R = 520;                 // and buildings go up this close to the Town Centre
+const CARRY = 10, GATHER = 0.7;      // a load, and how much of it is gathered a second
+const SPEED = { villager: 70, militia: 76, flee: 74, prowl: 34, chase: 90 };
+const HP = { villager: 25, militia: 45, wolf: 30 };
+const BITE = 3, HIT = 6;             // a wolf's bite and a militia's blow: health a second
+const AGGRO = 225, LEASH = 900, PROWL_R = 320;  // a wolf notices villagers this close, chases them this far from its den
+const COST = { villager: { food: 50 }, militia: { food: 60, gold: 20 }, house: { wood: 30 }, barracks: { wood: 120 },
+  advance: { food: 300, wood: 200, gold: 100 } };
+const TIME = { villager: 11, militia: 13, advance: 20, house: 12, barracks: 20 };  // seconds to train, to advance, to build
+const MAX = { house: 5, barracks: 1, queue: 5 };
+const SIZE = { tc: { w: 132, d: 84, h: 30, roof: 30 }, house: { w: 58, d: 42, h: 18, roof: 15 }, barracks: { w: 104, d: 56, h: 22, roof: 0 } };
+const AMOUNT = { wood: 100, food: 150, gold: 800 };
+const TURN_STEP = 40;                // degrees of turning the puck per slot
+const SWEEP_DEG = 40;                // pointing the puck this far moves a new building across the screen
+const STEP = 1 / 60;
+const TAU = Math.PI * 2;
+const BRIDGE = "ws://127.0.0.1:47824";
+
+const cv = document.getElementById("map");
+const ctx = cv.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function seeded(a) {
+  return () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---------------------------------------------------------------- the clearing
+
+// A river down the west side, with a bridge and a ford; woods, berries and a seam of gold round the
+// village; a wolf den at three of the edges. The same clearing every game, so times compare.
+const riverX = (y) => 600 + 60 * Math.sin(y * 0.0024 + 0.4) + 22 * Math.sin(y * 0.0071 + 1.3);
+const riverW = (y) => 30 + 5 * Math.sin(y * 0.004 + 2);   // half its width
+const CROSSINGS = [{ y: 990 }, { y: 1690 }];               // the bridge, the stepping stones
+const side = (x, y) => (x < riverX(y) ? -1 : 1);
+const inWater = (x, y, pad = 0) => Math.abs(x - riverX(y)) < riverW(y) + pad;
+const onCrossing = (x, y) => CROSSINGS.some((c) => Math.abs(y - c.y) < 20 && Math.abs(x - riverX(c.y)) < riverW(c.y) + 30);
+
+const PLACES = [
+  { type: "wood", name: "in the grove", x: 1120, y: 680, r: 130, n: 11 },
+  { type: "wood", name: "near the river", strip: [360, 1640], n: 26 },
+  { type: "wood", name: "in the north woods", x: 1780, y: 250, r: 240, n: 20 },
+  { type: "wood", name: "in the south woods", x: 2480, y: 1670, r: 250, n: 20 },
+  { type: "wood", name: "over the river", west: true, n: 34 },
+  { type: "food", name: "by the village", x: 1840, y: 1210, r: 74, n: 6 },
+  { type: "food", name: "in the east", x: 2240, y: 640, r: 84, n: 6 },
+  { type: "food", name: "over the river", x: 330, y: 1380, r: 80, n: 5 },
+  { type: "gold", name: "at the seam", x: 2190, y: 1260, n: 1 },
+  { type: "wood", name: "", lone: true, n: 16 },
+];
+const ROCKS = [[1150, 1520, 22], [1188, 1500, 14], [1118, 1484, 12], [1214, 1542, 10], [1088, 1534, 9], [2080, 160, 18], [2112, 188, 11],
+  [2600, 420, 16], [2630, 442, 9], [880, 1770, 15], [905, 1792, 9], [2860, 1700, 14], [1640, 1668, 12], [1664, 1684, 7], [400, 620, 16], [430, 640, 9]];
+const DENS = [{ x: 2600, y: 1240 }, { x: 1320, y: 110 }, { x: 2170, y: 1915 }];  // east (by the gold), north, south
+const PATHS = [[1430, 992, 700, 990, 1060, 1010], [1560, 1040, 1820, 1190, 1700, 1140], [1566, 1010, 2140, 1240, 1880, 1060],
+  [1450, 958, 1150, 720, 1260, 860], [1520, 958, 1700, 440, 1640, 700]];
+const PATROL = Array.from({ length: 8 }, (_, i) => ({ x: HOME.x + Math.cos((i / 8) * TAU) * 600, y: HOME.y + Math.sin((i / 8) * TAU) * 430 }));
+
+function blob(R, n, r, squash = 0.72) {
+  return Array.from({ length: n }, (_, i) => { const a = (i / n) * TAU, k = r * (0.82 + R() * 0.3); return [Math.cos(a) * k, Math.sin(a) * k * squash]; });
+}
+
+function makeWorld() {
+  const R = seeded(1701);
+  for (const [x, y, r] of ROCKS) G.rocks.push({ t: "rock", x, y, r, pts: blob(R, 7, r) });
+  const free = (x, y, r, gap) => {
+    if (x < 50 || y < 50 || x > MAP_W - 50 || y > MAP_H - 50) return false;
+    if (Math.abs(x - riverX(y)) < riverW(y) + r + 28) return false;
+    if (Math.hypot(x - HOME.x, y - HOME.y) < 300) return false;
+    if (CROSSINGS.some((c) => Math.abs(y - c.y) < 60 && Math.abs(x - riverX(c.y)) < 170)) return false;  // the crossings stay clear
+    if (Math.abs(y - 990) < 48 && x > riverX(990) && x < HOME.x) return false;                          // and the road to the bridge
+    for (const o of G.res) if (Math.hypot(o.x - x, o.y - y) < o.r + r + gap) return false;
+    for (const o of G.rocks) if (Math.hypot(o.x - x, o.y - y) < o.r + r + gap) return false;
+    for (const d of DENS) if (Math.hypot(d.x - x, d.y - y) < 60) return false;
+    return true;
+  };
+  PLACES.forEach((pl, i) => {
+    G.places.push({ name: pl.name, type: pl.type, left: 0 });
+    if (pl.type === "gold") { addRes("seam", "gold", pl.x, pl.y, 36, i, R); return; }
+    for (let k = 0, tries = 0; k < pl.n && tries < 5000; tries++) {
+      let x, y;
+      if (pl.strip) { y = pl.strip[0] + R() * (pl.strip[1] - pl.strip[0]); x = riverX(y) + riverW(y) + 62 + R() * 220; }
+      else if (pl.west) { y = 70 + R() * (MAP_H - 140); x = 60 + R() * Math.max(0, riverX(y) - riverW(y) - 130); }
+      else if (pl.lone) { x = 120 + R() * (MAP_W - 240); y = 100 + R() * (MAP_H - 200); }
+      else { const a = R() * TAU, d = Math.sqrt(R()) * pl.r; x = pl.x + Math.cos(a) * d; y = pl.y + Math.sin(a) * d * 0.8; }
+      const r = pl.type === "wood" ? 13 + R() * 7 : 10;
+      if (pl.lone && (side(x, y) < 0 || Math.hypot(x - HOME.x, y - HOME.y) < 430)) continue;
+      if (!free(x, y, r, pl.lone ? 70 : pl.type === "wood" ? 10 : 12)) continue;
+      addRes(pl.type === "wood" ? "tree" : "bush", pl.type, x, y, r, i, R);
+      k++;
+    }
+  });
+}
+
+function addRes(t, type, x, y, r, place, R) {
+  const n = { t, id: G.id++, type, x, y, r, amt: AMOUNT[type], max: AMOUNT[type], place, hit: -9 };
+  if (t === "tree") { n.pine = R() < 0.35; n.tone = ["#18221c", "#1b261f", "#1d2821", "#172019"][Math.floor(R() * 4)]; }
+  if (t === "bush") n.dots = Array.from({ length: 8 }, () => [(R() - 0.5) * 15, -3 - R() * 11]);
+  if (t === "seam") {
+    n.rocks = [[-22, -2, 17], [8, -12, 19], [26, 2, 14], [-4, 10, 15], [-34, 10, 10], [34, 14, 9]]
+      .map(([ox, oy, s]) => ({ x: ox, y: oy, pts: blob(R, 7, s, 0.7) })).sort((a, b) => a.y - b.y);
+    n.flecks = Array.from({ length: 12 }, () => ({ x: (R() - 0.5) * 64, y: (R() - 0.5) * 22 - 2, s: 1.6 + R() * 1.8 }));
+  }
+  G.res.push(n);
+  G.places[place].left += n.amt;
+  return n;
+}
+
+// ---------------------------------------------------------------- the game
+
+let G = null;                 // the village, the wolves, what's left in the woods
+let rnd = Math.random;        // the wolves' wandering; the clearing itself comes from a fixed seed
+
+function newGame() {
+  G = { t: 0, stock: { food: 150, wood: 80, gold: 0 }, units: [], wolves: [], blds: [], res: [], rocks: [], places: [], events: [],
+    id: 1, n: { villager: 0, militia: 0, house: 0, barracks: 0 }, tc: null, advancing: false, won: false, wonAt: 0, lost: false, checkAt: 1,
+    stats: { lost: 0, wolves: 0 } };
+  makeWorld();
+  G.tc = addBuilding("tc", HOME.x, HOME.y, true);
+  for (const [dx, dy] of [[-46, 74], [0, 84], [46, 74]]) addUnit("villager", HOME.x + dx, HOME.y + dy);
+  for (const d of DENS) G.wolves.push({ t: "wolf", id: G.id++, x: d.x, y: d.y, hp: HP.wolf, max: HP.wolf, den: d, st: "prowl", tx: d.x, ty: d.y,
+    wait: rnd() * 3, prey: null, foe: null, calm: 0, ph: rnd() * 6, dir: 1, moving: false, hurtAt: -99 });
+}
+
+function addBuilding(kind, x, y, done) {
+  const b = { t: "bld", id: G.id++, kind, n: kind === "tc" ? 0 : ++G.n[kind], x, y, done, prog: done ? 1 : 0, queue: [], jt: 0 };
+  G.blds.push(b);
+  return b;
+}
+function addUnit(kind, x, y) {
+  const u = { t: "unit", id: G.id++, kind, n: ++G.n[kind], x, y, hp: HP[kind], max: HP[kind], st: "idle", task: null, order: "guard",
+    carry: { type: null, amt: 0 }, frac: 0, res: null, bld: null, after: null, gx: x, gy: y, foe: null, wp: 0,
+    ph: 0, dir: 1, moving: false, hurtAt: -99, nudge: -9, nside: 1 };
+  G.units.push(u);
+  return u;
+}
+const emit = (k, o = {}) => G.events.push({ k, ...o });
+const pop = () => G.units.length;
+const cap = () => Math.min(30, 5 + 5 * G.blds.filter((b) => b.kind === "house" && b.done).length);
+const queued = () => G.blds.reduce((n, b) => n + b.queue.filter((j) => j !== "advance").length, 0);
+const nBuilt = (kind) => G.blds.filter((b) => b.kind === kind).length;
+function rectDist(u, b) {
+  const s = SIZE[b.kind];
+  return Math.hypot(Math.max(0, Math.abs(u.x - b.x) - s.w / 2), Math.max(0, Math.abs(u.y - b.y) - s.d / 2));
+}
+
+function step(dt) {
+  G.t += dt;
+  for (const b of G.blds) trainStep(b, dt);
+  for (const u of G.units) (u.kind === "villager" ? villagerStep : militiaStep)(u, dt);
+  for (const w of G.wolves) wolfStep(w, dt);
+  separate();
+  for (let i = G.units.length - 1; i >= 0; i--) if (G.units[i].hp <= 0) gone(G.units.splice(i, 1)[0]);
+  // home mends, slowly: standing in the village, once nothing has hurt you for a while
+  for (const u of G.units) if (u.hp < u.max && !u.moving && G.t - u.hurtAt > 5 && dist(u, HOME) < SAFE_R) u.hp = Math.min(u.max, u.hp + 0.6 * dt);
+  if (G.t >= G.checkAt) {
+    G.checkAt = G.t + 1;
+    const left = G.units.some((u) => u.kind === "villager") || G.tc.queue.includes("villager");
+    if (!left && G.stock.food < COST.villager.food && !G.won && !G.lost) { G.lost = true; emit("lost"); }
+  }
+}
+
+function gone(u) {
+  G.stats.lost++;
+  emit("dead", { u });
+  for (const w of G.wolves) {
+    if (w.prey === u) { w.prey = null; w.st = "back"; w.calm = G.t + 8; }
+    if (w.foe === u) w.foe = null;
+  }
+}
+
+function trainStep(b, dt) {
+  if (!b.done || !b.queue.length) return;
+  const job = b.queue[0];
+  if (!b.jt && job === "advance") emit("advancing");
+  b.jt += dt;
+  if (b.jt < TIME[job]) return;
+  b.queue.shift();
+  b.jt = 0;
+  if (job === "advance") { G.won = true; G.wonAt = G.t; emit("age"); return; }
+  const s = SIZE[b.kind], u = addUnit(job, b.x + (rnd() - 0.5) * s.w * 0.6, b.y + s.d / 2 + 16);
+  emit("trained", { u });
+}
+
+// Villagers: walk to the nearest of what they were told to gather, gather a load, carry it home, again
+function villagerStep(v, dt) {
+  switch (v.st) {
+    case "go": {
+      const r = v.res;
+      if (!r || r.amt <= 0) { seek(v); break; }
+      if (walk(v, v.gx, v.gy, SPEED.villager, dt, 6, r.t === "seam" ? r : null)) { v.st = "work"; v.dir = r.x < v.x ? -1 : 1; }
+      break;
+    }
+    case "work": {
+      const r = v.res;
+      if (!r || r.amt <= 0) { seek(v); break; }
+      v.moving = false;
+      r.hit = G.t;
+      v.frac += GATHER * dt;
+      while (v.frac >= 1 && r.amt > 0 && v.carry.amt < CARRY) {
+        v.frac -= 1;
+        r.amt--;
+        v.carry.amt++;
+        v.carry.type = r.type;
+        const p = G.places[r.place];
+        if (--p.left === 0 && p.name) emit("out", { p });
+      }
+      if (r.amt <= 0) emit("gone", { r });
+      if (v.carry.amt >= CARRY) { v.st = "home"; v.frac = 0; }
+      else if (r.amt <= 0) seek(v);
+      break;
+    }
+    case "home":
+      if (walkTo(v, G.tc, SPEED.villager, dt)) { drop(v); seek(v); }
+      break;
+    case "tobuild": {
+      const b = v.bld;
+      if (!b || b.done || !G.blds.includes(b)) { resume(v); break; }
+      if (walkTo(v, b, SPEED.villager, dt)) v.st = "build";
+      break;
+    }
+    case "build": {
+      const b = v.bld;
+      if (!b || b.done) { resume(v); break; }
+      v.moving = false;
+      v.dir = b.x < v.x ? -1 : 1;
+      b.prog = Math.min(1, b.prog + dt / TIME[b.kind]);
+      if (b.prog >= 1) finish(b);
+      break;
+    }
+    case "flee":  // bitten: run home and drop what you carry; rest only if it was bad, so a second bite can be the last
+      if (walkTo(v, G.tc, SPEED.flee, dt)) { drop(v); if (v.hp < v.max * 0.3) v.st = "rest"; else seek(v); }
+      break;
+    case "rest":
+      v.moving = false;
+      v.hp = Math.min(v.max, v.hp + 2 * dt);
+      if (v.hp >= v.max) seek(v);
+      break;
+    default:
+      v.moving = false;
+  }
+}
+
+function seek(v) {
+  v.res = null;
+  const task = v.task;
+  if (task !== "wood" && task !== "food" && task !== "gold") { v.st = v.carry.amt ? "home" : "idle"; return; }
+  if (v.carry.amt && (v.carry.type !== task || v.carry.amt >= CARRY)) { v.st = "home"; return; }
+  const r = nearestSource(v, task);
+  if (!r) {
+    if (v.carry.amt) { v.st = "home"; return; }
+    v.st = "idle";
+    v.task = null;
+    emit("none", { type: task });
+    return;
+  }
+  v.res = r;
+  // stand at its edge: round the seam on your own side, in front of a tree or a bush
+  const a = r.t === "seam" ? Math.atan2(v.y - r.y, v.x - r.x) + (rnd() - 0.5) * 1.2 : Math.PI / 2 + (rnd() - 0.5) * 2.2;
+  const d = r.t === "seam" ? r.r + 10 : r.t === "bush" ? r.r + 5 : 10;
+  v.gx = r.x + Math.cos(a) * d;
+  v.gy = r.y + Math.sin(a) * d * (r.t === "seam" ? 1 : 0.6);
+  v.st = "go";
+}
+
+function nearestSource(v, type) {
+  let best = null, bd = Infinity;
+  for (const r of G.res) {
+    if (r.type !== type || r.amt <= 0) continue;
+    let d = Math.hypot(r.x - v.x, r.y - v.y);
+    if (side(r.x, r.y) !== side(v.x, v.y)) d += 600;                           // over the river only when it's the nearest by far
+    if (r.t !== "seam") for (const u of G.units) if (u !== v && u.res === r) d += 50;  // a tree to yourself, if there's one
+    if (d < bd) { bd = d; best = r; }
+  }
+  return best;
+}
+
+function drop(v) {
+  if (v.carry.amt > 0) { G.stock[v.carry.type] += v.carry.amt; emit("drop", { type: v.carry.type, amt: v.carry.amt }); }
+  v.carry.amt = 0;
+  v.carry.type = null;
+  v.frac = 0;
+}
+
+function setTask(v, task) {
+  v.task = task;
+  v.bld = null;
+  v.after = null;
+  seek(v);
+}
+function sendToBuild(v, b) {
+  if (v.task !== "build") v.after = v.task;
+  v.task = "build";
+  v.bld = b;
+  v.res = null;
+  v.st = "tobuild";
+}
+function resume(v) {
+  v.bld = null;
+  v.task = v.after;
+  v.after = null;
+  seek(v);
+}
+function finish(b) {
+  b.done = true;
+  b.prog = 1;
+  emit("built", { b });
+  for (const u of G.units) if (u.bld === b) resume(u);
+}
+function nearestSite(v) {
+  let best = null, bd = Infinity;
+  for (const b of G.blds) if (!b.done) { const d = dist(b, v); if (d < bd) { bd = d; best = b; } }
+  return best;
+}
+
+// Militia: go after wolves when told, or stand guard by the Town Centre, or walk a ring round the village
+function militiaStep(m, dt) {
+  if (m.foe && m.foe.hp <= 0) m.foe = null;
+  if (!m.foe) m.foe = findFoe(m);
+  if (m.foe) {
+    const w = m.foe;
+    if ((m.order === "guard" && dist(w, HOME) > 780) || (m.order === "patrol" && dist(w, m) > 460)) m.foe = null;
+    else {
+      if (dist(m, w) > 18) { walk(m, w.x, w.y, SPEED.militia, dt, 16); m.fight = false; }
+      else {
+        m.moving = false;
+        m.fight = true;
+        m.dir = w.x < m.x ? -1 : 1;
+        w.hp -= HIT * dt;
+        w.hurtAt = G.t;
+        w.foe = m;
+        if (w.hp <= 0) wolfDown(w);
+      }
+      return;
+    }
+  }
+  m.fight = false;
+  if (m.order === "hunt") m.order = "guard";  // none left
+  if (m.order === "guard") { const p = post(m); walk(m, p.x, p.y, SPEED.militia, dt, 5); }
+  else if (m.order === "patrol") {
+    const p = PATROL[m.wp % PATROL.length];
+    if (walk(m, p.x, p.y, SPEED.militia * 0.8, dt, 12)) m.wp = (m.wp + 1) % PATROL.length;
+  }
+}
+function findFoe(m) {
+  let best = null, bd = Infinity;
+  for (const w of G.wolves) {
+    if (w.hp <= 0) continue;
+    const d = dist(w, m);
+    const want = m.order === "hunt" || (m.order === "guard" && (dist(w, HOME) < 640 || (w.prey && dist(w.prey, HOME) < 720))) ||
+      (m.order === "patrol" && d < 300);
+    if (want && d < bd) { bd = d; best = w; }
+  }
+  return best;
+}
+function post(m) {
+  const i = G.units.filter((u) => u.kind === "militia").indexOf(m), a = 0.5 + i * 1.05;
+  return { x: HOME.x + Math.cos(a) * 120, y: HOME.y + 20 + Math.sin(a) * 86 };
+}
+function setOrder(m, o) {
+  m.order = o;
+  m.foe = null;
+  if (o === "patrol") {
+    let bi = 0;
+    PATROL.forEach((p, i) => { if (dist(p, m) < dist(PATROL[bi], m)) bi = i; });
+    m.wp = bi;
+  }
+}
+function wolfDown(w) {
+  w.hp = 0;
+  G.wolves.splice(G.wolves.indexOf(w), 1);
+  G.stats.wolves++;
+  for (const u of G.units) if (u.foe === w) u.foe = null;
+  emit("wolf", { x: w.x, y: w.y, left: G.wolves.length });
+}
+
+// Wolves: prowl round their den, go for a villager who comes near, bite, and give up at the village
+function wolfStep(w, dt) {
+  w.bite = false;
+  if (w.foe && (w.foe.hp <= 0 || !G.units.includes(w.foe) || dist(w, w.foe) > 70)) w.foe = null;
+  if (w.foe) { fang(w, w.foe, dt); return; }
+  if (w.st === "chase") {
+    const p = w.prey;
+    if (!p || p.hp <= 0 || !G.units.includes(p) || dist(p, w.den) > LEASH || dist(p, HOME) < SAFE_R) {
+      w.prey = null;
+      w.st = "back";
+      w.calm = G.t + 6;
+    } else { fang(w, p, dt); keepOut(w); return; }
+  }
+  if (w.st !== "back" && G.t > w.calm) {
+    let best = null, bd = AGGRO;
+    for (const u of G.units) {
+      if (u.kind !== "villager") continue;
+      const d = dist(u, w);
+      if (d < bd && dist(u, w.den) < LEASH && dist(u, HOME) > SAFE_R) { bd = d; best = u; }
+    }
+    if (best) { w.st = "chase"; w.prey = best; return; }
+  }
+  if (w.st === "back") {
+    if (walk(w, w.den.x, w.den.y, SPEED.prowl * 1.4, dt, 24)) { w.st = "prowl"; w.wait = 1 + rnd() * 2; }
+    keepOut(w);
+    return;
+  }
+  if (w.wait > 0) { w.wait -= dt; w.moving = false; return; }
+  if (walk(w, w.tx, w.ty, SPEED.prowl, dt, 6)) {
+    w.wait = 1 + rnd() * 3;
+    for (let k = 0; k < 8; k++) {
+      const a = rnd() * TAU, d = PROWL_R * Math.sqrt(rnd());
+      w.tx = clamp(w.den.x + Math.cos(a) * d, 30, MAP_W - 30);
+      w.ty = clamp(w.den.y + Math.sin(a) * d * 0.8, 30, MAP_H - 30);
+      if (Math.hypot(w.tx - HOME.x, w.ty - HOME.y) > SAFE_R + 40 && !inWater(w.tx, w.ty, 20)) break;
+    }
+  }
+  keepOut(w);
+}
+// Keep up and bite: a wolf bites on the run
+function fang(w, u, dt) {
+  if (dist(w, u) > 12) walk(w, u.x, u.y, SPEED.chase, dt, 11);
+  else w.moving = false;
+  if (dist(w, u) > 16) return;
+  w.bite = true;
+  w.dir = u.x < w.x ? -1 : 1;
+  u.hp -= BITE * dt;
+  if (u.kind === "villager") {
+    if (G.t - u.hurtAt > 10) emit("attack", { u });
+    if (u.st !== "flee") { u.st = "flee"; u.res = null; }
+  }
+  u.hurtAt = G.t;
+}
+function keepOut(w) {
+  const d = dist(w, HOME);
+  if (d < SAFE_R && d > 0) { w.x = HOME.x + ((w.x - HOME.x) / d) * SAFE_R; w.y = HOME.y + ((w.y - HOME.y) / d) * SAFE_R; }
+}
+
+// ---------------------------------------------------------------- walking
+
+// Toward (gx, gy): over the river by the nearer crossing, round buildings and rocks. True once within `near`.
+function walk(u, gx, gy, speed, dt, near = 4, ignore = null) {
+  const far = Math.hypot(gx - u.x, gy - u.y);
+  if (far <= near) { u.moving = false; return true; }
+  const p = waypoint(u, gx, gy);
+  let dx = p.x - u.x, dy = p.y - u.y;
+  const L = Math.hypot(dx, dy);
+  if (L < 1e-6) { u.moving = false; return true; }
+  dx /= L;
+  dy /= L;
+  const c = detour(u, p.x, p.y, ignore);
+  if (c) {
+    const cl = Math.hypot(c.x - u.x, c.y - u.y) || 1;
+    dx = (c.x - u.x) / cl;
+    dy = (c.y - u.y) / cl;
+  }
+  if (u.nudge > G.t) {  // stuck a moment ago: lean to one side
+    const tx = dx * 0.35 - dy * u.nside, ty = dy * 0.35 + dx * u.nside, n = Math.hypot(tx, ty);
+    dx = tx / n;
+    dy = ty / n;
+  } else [dx, dy] = avoid(u, dx, dy, ignore, Math.min(far, L));
+  const len = Math.min(speed * dt, L), ox = u.x, oy = u.y;
+  u.x += dx * len;
+  u.y += dy * len;
+  settle(u, ox, oy);
+  const moved = Math.hypot(u.x - ox, u.y - oy);
+  // no nearer for a while (a wall, someone in the way): step to one side for a moment
+  if (u.best === undefined || Math.hypot(gx - u.wgx, gy - u.wgy) > 30) { u.wgx = gx; u.wgy = gy; u.best = far; u.bestAt = G.t; }
+  else if (far < u.best - 3) { u.best = far; u.bestAt = G.t; }
+  else if (G.t - u.bestAt > 1.2) { u.best = far; u.bestAt = G.t; u.nudge = G.t + 0.7; u.nside = rnd() < 0.5 ? -1 : 1; }
+  u.moving = true;
+  u.ph += moved / 8;
+  if (Math.abs(dx) > 0.15) u.dir = dx < 0 ? -1 : 1;
+  return Math.hypot(gx - u.x, gy - u.y) <= near;
+}
+function walkTo(u, b, speed, dt) {
+  if (rectDist(u, b) <= 10) { u.moving = false; return true; }
+  walk(u, b.x, b.y, speed, dt, 0, b);
+  return rectDist(u, b) <= 10;
+}
+
+function waypoint(u, gx, gy) {
+  if (onCrossing(u.x, u.y) || inWater(u.x, u.y, 2)) {  // on the bridge or the stones: on to the far bank
+    let c = CROSSINGS[0];
+    for (const k of CROSSINGS) if (Math.abs(k.y - u.y) < Math.abs(c.y - u.y)) c = k;
+    const s = side(gx, gy);
+    if (side(u.x, u.y) !== s || inWater(u.x, u.y, 4)) return { x: riverX(c.y) + s * (riverW(c.y) + 24), y: c.y };
+    return { x: gx, y: gy };
+  }
+  const a = side(u.x, u.y);
+  if (a === side(gx, gy)) return { x: gx, y: gy };
+  let best = null, bc = Infinity;
+  for (const c of CROSSINGS) {
+    const nx = riverX(c.y) + a * (riverW(c.y) + 24), fx = riverX(c.y) - a * (riverW(c.y) + 24);
+    const cost = Math.hypot(u.x - nx, u.y - c.y) + Math.hypot(gx - fx, gy - c.y);
+    if (cost < bc) { bc = cost; best = { nx, fx, y: c.y }; }
+  }
+  if (Math.hypot(u.x - best.nx, u.y - best.y) < 12) return { x: best.fx, y: best.y };
+  return { x: best.nx, y: best.y };
+}
+
+// A building in the way: the shortest way round it, by its corners. Returns the next corner to make for.
+function detour(u, px, py, ignore) {
+  let hit = null, ht = Infinity;
+  for (const b of G.blds) {
+    if (b === ignore) continue;
+    const t = crosses(u.x, u.y, px, py, b, 3);  // 3: less than the 5 people keep from a wall, so leaving one isn't crossing it
+    if (t < ht) { ht = t; hit = b; }
+  }
+  if (!hit) return null;
+  const s = SIZE[hit.kind], hw = s.w / 2 + 16, hd = s.d / 2 + 16;
+  const P = [[u.x, u.y], [hit.x - hw, hit.y - hd], [hit.x + hw, hit.y - hd], [hit.x + hw, hit.y + hd], [hit.x - hw, hit.y + hd], [px, py]];
+  const n = P.length, D = Array(n).fill(Infinity), prev = Array(n).fill(-1), done = Array(n).fill(false);
+  D[0] = 0;
+  for (;;) {  // six points: plain Dijkstra
+    let i = -1;
+    for (let k = 0; k < n; k++) if (!done[k] && D[k] < Infinity && (i < 0 || D[k] < D[i])) i = k;
+    if (i < 0 || i === n - 1) break;
+    done[i] = true;
+    for (let j = 0; j < n; j++) {
+      if (done[j] || crosses(P[i][0], P[i][1], P[j][0], P[j][1], hit, 2) < Infinity) continue;
+      const c = D[i] + Math.hypot(P[j][0] - P[i][0], P[j][1] - P[i][1]);
+      if (c < D[j]) { D[j] = c; prev[j] = i; }
+    }
+  }
+  let j = n - 1;
+  if (D[j] === Infinity) return null;
+  while (prev[j] > 0) j = prev[j];
+  return j === n - 1 ? null : { x: P[j][0], y: P[j][1] };
+}
+// Where along the line from (x0, y0) to (x1, y1) it first enters the building (grown by m), or Infinity
+function crosses(x0, y0, x1, y1, b, m) {
+  const s = SIZE[b.kind], dx = x1 - x0, dy = y1 - y0;
+  let t0 = 0, t1 = 1;
+  for (const [p, q] of [[-dx, x0 - (b.x - s.w / 2 - m)], [dx, b.x + s.w / 2 + m - x0], [-dy, y0 - (b.y - s.d / 2 - m)], [dy, b.y + s.d / 2 + m - y0]]) {
+    if (Math.abs(p) < 1e-9) { if (q < 0) return Infinity; continue; }
+    const r = q / p;
+    if (p < 0) { if (r > t1) return Infinity; if (r > t0) t0 = r; }
+    else { if (r < t0) return Infinity; if (r < t1) t1 = r; }
+  }
+  return t0 <= t1 ? t0 : Infinity;
+}
+
+// Steer round rocks and the seam ahead, unless that's where you're going
+function avoid(u, dx, dy, ignore, reach) {
+  let ax = dx, ay = dy;
+  const one = (x, y, r, ref) => {
+    if (ref === ignore) return;
+    const ox = x - u.x, oy = y - u.y, ahead = ox * dx + oy * dy;
+    if (ahead < 0 || ahead > Math.min(r + 60, reach + r)) return;
+    const lat = -ox * dy + oy * dx, R = r + 9;
+    if (Math.abs(lat) >= R) return;
+    const k = ((R - Math.abs(lat)) / R) * 1.8, s = lat > 0 ? -1 : 1;
+    ax += -dy * s * k;
+    ay += dx * s * k;
+  };
+  for (const r of G.rocks) one(r.x, r.y, r.r, r);
+  for (const r of G.res) if (r.t === "seam") one(r.x, r.y, r.r, r);
+  const L = Math.hypot(ax, ay) || 1;
+  return [ax / L, ay / L];
+}
+
+// Out of the water (unless on a crossing), out of buildings and rocks, inside the map
+function settle(u, ox, oy) {
+  if (inWater(u.x, u.y, 5)) {
+    const c = CROSSINGS.find((k) => Math.abs(u.y - k.y) < 44);
+    if (c) { if (Math.abs(u.y - c.y) > 20) u.y = c.y + Math.sign(u.y - c.y) * 20; }
+    else u.x = riverX(u.y) + side(ox, oy) * (riverW(u.y) + 5.5);
+  }
+  for (const b of G.blds) {  // 5 clear of every wall, with round corners, so people slide round them
+    const s = SIZE[b.kind], hw = s.w / 2, hd = s.d / 2;
+    const cx = clamp(u.x, b.x - hw, b.x + hw), cy = clamp(u.y, b.y - hd, b.y + hd), dx = u.x - cx, dy = u.y - cy, d = Math.hypot(dx, dy);
+    if (d >= 5) continue;
+    if (d > 1e-6) { u.x = cx + (dx / d) * 5; u.y = cy + (dy / d) * 5; }
+    else if (hw - Math.abs(u.x - b.x) < hd - Math.abs(u.y - b.y)) u.x = b.x + (u.x < b.x ? -hw - 5 : hw + 5);
+    else u.y = b.y + (u.y < b.y ? -hd - 5 : hd + 5);
+  }
+  const round = (r, R) => {
+    const dx = u.x - r.x, dy = u.y - r.y, d = Math.hypot(dx, dy);
+    if (d < R && d > 0.01) { u.x = r.x + (dx / d) * R; u.y = r.y + (dy / d) * R; }
+  };
+  for (const r of G.rocks) round(r, r.r + 5);
+  for (const r of G.res) if (r.t === "seam") round(r, r.r + 4);
+  u.x = clamp(u.x, 8, MAP_W - 8);
+  u.y = clamp(u.y, 8, MAP_H - 8);
+}
+
+// People keep a little apart; two on the move only a little, so they can pass in a lane
+function separate() {
+  const a = G.units;
+  for (let i = 0; i < a.length; i++) {
+    for (let j = i + 1; j < a.length; j++) {
+      const p = a[i], q = a[j], dx = q.x - p.x, dy = q.y - p.y, d2 = dx * dx + dy * dy;
+      if (d2 >= 196 || d2 < 1e-4) continue;
+      const d = Math.sqrt(d2), k = (14 - d) * (p.moving && q.moving ? 0.06 : 0.25), ux = dx / d, uy = dy / d;
+      const px = p.x, py = p.y, qx = q.x, qy = q.y;
+      p.x -= ux * k; p.y -= uy * k; q.x += ux * k; q.y += uy * k;
+      settle(p, px, py);
+      settle(q, qx, qy);
+    }
+  }
+}
+
+// ---------------------------------------------------------------- what each thing can do
+
+const ACTIONS = {
+  villager: [{ id: "wood", name: "Chop wood" }, { id: "food", name: "Gather food" }, { id: "gold", name: "Mine gold" },
+    { id: "house", name: "Build house", cost: COST.house, build: "house" }, { id: "barracks", name: "Build barracks", cost: COST.barracks, build: "barracks" },
+    { id: "help", name: "Help build" }],
+  militia: [{ id: "hunt", name: "Hunt wolves" }, { id: "guard", name: "Guard" }, { id: "patrol", name: "Patrol" }],
+  tc: [{ id: "villager", name: "Train villager", cost: COST.villager }, { id: "advance", name: "Advance", cost: COST.advance }],
+  barracks: [{ id: "militia", name: "Train militia", cost: COST.militia }],
+  house: [],
+};
+const actionsOf = (e) => (e.t === "bld" && !e.done ? [] : ACTIONS[e.kind]);
+
+// Why it can't be done now, or "" if it can
+function whyNot(e, a, at) {
+  if (a.build) {
+    if (nBuilt(a.build) >= MAX[a.build]) return a.build === "house" ? "Five is the most" : "Already have one";
+    if (at) { const w = canPlace(a.build, at.x, at.y); if (w) return w; }
+  }
+  if (a.id === "villager" || a.id === "militia") {
+    if (e.queue.length >= MAX.queue) return "Five in line already";
+    if (pop() + queued() >= cap()) return cap() >= 30 ? "The village is full" : "No room: build a house";
+  }
+  if (a.id === "advance" && G.advancing) return "Already advancing";
+  if (a.id === "help" && !nearestSite(e)) return "Nothing to build";
+  if (a.id === "hunt" && !G.wolves.length) return "No wolves left";
+  if ((a.id === "wood" || a.id === "food" || a.id === "gold") && !G.res.some((r) => r.type === a.id && r.amt > 0)) return `No ${a.id} left`;
+  if (a.cost) for (const k of ["food", "wood", "gold"]) if (a.cost[k] > G.stock[k]) return `Need ${a.cost[k] - G.stock[k]} more ${k}`;
+  return "";
+}
+
+function perform(e, a, at) {
+  const why = whyNot(e, a, at);
+  if (why) return why;
+  if (a.build) {
+    const spot = at || autoSpot(a.build, e);
+    if (!spot) return "No room near home";
+    pay(a.cost);
+    sendToBuild(e, addBuilding(a.build, spot.x, spot.y, false));
+  } else if (a.id === "help") sendToBuild(e, nearestSite(e));
+  else if (e.kind === "villager") setTask(e, a.id);
+  else if (e.kind === "militia") setOrder(e, a.id);
+  else {
+    pay(a.cost);
+    e.queue.push(a.id);
+    if (a.id === "advance") G.advancing = true;
+  }
+  return "";
+}
+function pay(cost) { for (const k in cost) G.stock[k] -= cost[k]; }
+
+// Where a building may go: on open ground, near home, clear of the river, trees, bushes and rocks,
+// with room to walk round it
+function canPlace(kind, x, y) {
+  const s = SIZE[kind], hw = s.w / 2, hd = s.d / 2, lane = 40;
+  if (x - hw < 40 || x + hw > MAP_W - 40 || y - hd < 60 || y + hd > MAP_H - 40) return "No room here";
+  if (Math.hypot(x - HOME.x, y - HOME.y) > BUILD_R) return "Too far from home";
+  for (const yy of [y - hd, y, y + hd]) if (Math.abs(x - riverX(yy)) < riverW(yy) + hw + lane) return "No room here";
+  for (const b of G.blds) {
+    const t = SIZE[b.kind];
+    if (Math.abs(x - b.x) < hw + t.w / 2 + lane && Math.abs(y - b.y) < hd + t.d / 2 + lane) return "No room here";
+  }
+  const hits = (cx, cy, r) => Math.hypot(Math.max(0, Math.abs(cx - x) - hw), Math.max(0, Math.abs(cy - y) - hd)) < r;
+  for (const r of G.res) if ((r.amt > 0 || r.t === "seam") && hits(r.x, r.y, r.t === "tree" ? 14 : r.t === "seam" ? r.r + lane : r.r + 6)) return "No room here";
+  for (const r of G.rocks) if (hits(r.x, r.y, r.r + lane)) return "No room here";
+  for (const u of G.units) if (u.st === "build" || u.st === "work") if (hits(u.x, u.y, 4)) return "No room here";
+  return "";
+}
+
+// A free spot near the Town Centre, leaning towards the builder
+function autoSpot(kind, v) {
+  let best = null, bs = Infinity;
+  for (let r = 150; r <= BUILD_R; r += 30) {
+    const n = Math.max(10, Math.round(r / 20));
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU + r * 0.01, x = HOME.x + Math.cos(a) * r * 1.12, y = HOME.y + Math.sin(a) * r * 0.86;
+      if (canPlace(kind, x, y)) continue;
+      const sc = r + 0.25 * Math.hypot(x - v.x, y - v.y);
+      if (sc < bs) { bs = sc; best = { x, y }; }
+    }
+  }
+  return best;
+}
+
+// ---------------------------------------------------------------- picking, choosing, doing
+
+let state = "title";          // title, play, ending (the new age, a moment before the panel), won, lost
+let stateAt = 0, now = 0, lastInput = "mouse", best = 0, prevBest = 0, newBest = false;
+let selId = 0, selAt = 0;     // what's picked, and since when
+let placing = null;           // choosing where a building goes
+const NEVER = -1e9;           // a time long before the page opened
+const pk = { s: "", sn: 0, flash: "", flashAt: NEVER, okAt: NEVER, turn: 0, turnAt: 0, inputAt: NEVER };
+try { best = +localStorage.getItem("hamlet.best") || 0; } catch { best = 0; }
+
+// One ring of everything that can be picked: the Town Centre, villagers, militia, then buildings
+const roster = () => [G.tc, ...G.units.filter((u) => u.kind === "villager"), ...G.units.filter((u) => u.kind === "militia"),
+  ...G.blds.filter((b) => b !== G.tc)];
+const kindOf = (e) => (e.kind === "villager" ? 0 : e.kind === "militia" ? 1 : 2);
+function selected() { return G.units.find((u) => u.id === selId) || G.blds.find((b) => b.id === selId) || G.tc; }
+function nameOf(e) {
+  if (e.kind === "tc") return "Town Centre";
+  if (e.kind === "barracks") return "Barracks";
+  return `${e.kind[0].toUpperCase()}${e.kind.slice(1)} ${e.n}`;
+}
+function hlOf(e) { const n = actionsOf(e).length; return n ? (((e.hl || 0) % n) + n) % n : 0; }
+
+function pick(e, quiet) {
+  if (!e) return;
+  if (e.id !== selId) {
+    selId = e.id;
+    selAt = now;
+    pk.turn = 0;
+    pk.flash = "";
+    // a villager or militia shows what it's doing now; a building, what you chose last
+    const acts = actionsOf(e);
+    const i = e.kind === "villager" ? acts.findIndex((a) => a.id === (e.task === "build" ? "help" : e.task))
+      : e.kind === "militia" ? acts.findIndex((a) => a.id === e.order) : -1;
+    if (i >= 0) e.hl = i;
+  }
+  cam.free = false;
+  flyTo();
+  if (!quiet) { sound("select"); puckSound("tock"); }
+}
+function cycle(d) {
+  const r = roster(), i = Math.max(0, r.findIndex((e) => e.id === selId));
+  pick(r[(i + d + r.length) % r.length]);
+}
+// Up and down skip to the next kind: villagers (idle ones first), militia, buildings
+function jumpKind(d) {
+  const r = roster(), k = kindOf(selected());
+  for (let j = 1; j <= 2; j++) {
+    const want = (k + d * j + 3) % 3, list = r.filter((e) => kindOf(e) === want);
+    if (list.length) { pick(want === 0 ? list.find((v) => v.st === "idle") || list[0] : list[0]); return; }
+  }
+}
+function jumpTo(k) {
+  const list = roster().filter((e) => kindOf(e) === k);
+  if (!list.length) { no(k === 1 ? "No militia yet" : "No one yet"); return; }
+  let e = list[0];
+  if (k === 0) {
+    const idle = list.filter((v) => v.st === "idle");
+    if (idle.length) e = idle[(idle.findIndex((v) => v.id === selId) + 1) % idle.length];
+  }
+  pick(e);
+}
+function moveHl(d) {
+  const e = selected(), n = actionsOf(e).length;
+  if (n < 2) return;
+  e.hl = (hlOf(e) + d + n) % n;
+  pk.flash = "";
+  sound("step");
+  puckSound("click");
+}
+function turn(deg) {
+  pk.turn += deg;
+  pk.turnAt = performance.now();
+  while (pk.turn >= TURN_STEP) { pk.turn -= TURN_STEP; moveHl(1); }
+  while (pk.turn <= -TURN_STEP) { pk.turn += TURN_STEP; moveHl(-1); }
+}
+
+// A tap on the puck, Enter, a click on the lit slot
+function press() {
+  if (state !== "play") {
+    if (state === "title" || ((state === "won" || state === "lost") && performance.now() - stateAt > 800)) start();
+    return;
+  }
+  if (placing) { place(); return; }
+  const e = selected(), acts = actionsOf(e);
+  if (!acts.length) { no(e.t === "bld" && !e.done ? "Still rising" : "A home: nothing to do"); return; }
+  const a = acts[hlOf(e)], why = perform(e, a);
+  if (why) no(why);
+  else yes(a.build ? "place" : "ok");
+}
+// A hold: choose where a building goes, or bring the view back to what's picked
+function hold() {
+  if (state !== "play") return;
+  if (placing) { cancelPlacing(); return; }
+  const e = selected(), a = actionsOf(e)[hlOf(e)];
+  if (a && a.build) {
+    const why = whyNot(e, a);
+    if (why) { no(why); return; }
+    const spot = autoSpot(a.build, e) || { x: HOME.x, y: HOME.y + 160 };
+    placing = { kind: a.build, by: e.id, a, x: spot.x, y: spot.y, lock: true };
+    cam.free = false;
+    flyTo();
+    sound("select");
+    puckSound("tick");
+    return;
+  }
+  cam.free = false;
+  flyTo();
+  puckSound("tock");
+}
+function place() {
+  const p = placing, v = G.units.find((u) => u.id === p.by);
+  if (!v) { cancelPlacing(); return; }
+  const fit = canPlace(p.kind, p.x, p.y);
+  if (fit) { no(fit); return; }
+  placing = null;
+  const why = perform(v, p.a, { x: p.x, y: p.y });
+  if (why) no(why);
+  else yes("place");
+  cam.free = false;
+  flyTo();
+}
+function cancelPlacing() {
+  placing = null;
+  cam.free = false;
+  flyTo();
+  sound("step");
+  puckSound("tock");
+}
+function no(why) {
+  pk.flash = why;
+  pk.flashAt = performance.now();
+  sound("no");
+  puckSound("no");
+  const m = /more (food|wood|gold)/.exec(why);
+  if (m) shortAt[m[1]] = performance.now();
+}
+function yes(kind) {
+  pk.okAt = performance.now();
+  pk.flash = "";
+  sound(kind);
+  puckSound("ok");
+}
+const puckSound = (s) => { pk.s = s; pk.sn++; };
+
+// ---------------------------------------------------------------- what the puck shows
+
+function costText(c) { return ["food", "wood", "gold"].filter((k) => c[k]).map((k) => `${c[k]} ${k}`).join(", "); }
+
+function doing(e) {
+  if (e.t === "bld") {
+    if (!e.done) {
+      const on = G.units.some((u) => u.bld === e && u.st === "build");
+      return on ? `Rising, ${Math.floor(e.prog * 100)}%` : `${Math.floor(e.prog * 100)}%, needs a builder`;
+    }
+    if (e.queue.length) {
+      const j = e.queue[0], left = Math.max(1, Math.ceil(TIME[j] - e.jt));
+      return j === "advance" ? `Advancing, ${left} s left` : `Training, ${left} s left`;
+    }
+    return e.kind === "barracks" ? "Ready to train" : "Home for 5";
+  }
+  if (e.kind === "militia") return e.foe ? "Fighting a wolf" : { hunt: "Hunting wolves", guard: "Guarding home", patrol: "On patrol" }[e.order];
+  const where = { wood: "the woods", food: "the berries", gold: "the gold" };
+  switch (e.st) {
+    case "go": return `Going to ${where[e.task] || "work"}`;
+    case "work": return `${{ wood: "Chopping", food: "Picking", gold: "Mining" }[e.task] || "Gathering"}, ${e.carry.amt} of ${CARRY}`;
+    case "home": return `Taking ${e.carry.amt} ${e.carry.type} home`;
+    case "tobuild": return "Going to build";
+    case "build": return e.bld ? `Building, ${Math.floor(e.bld.prog * 100)}%` : "Building";
+    case "flee": return "Running home";
+    case "rest": return "Resting";
+    default: return "Idle";
+  }
+}
+function subFor(e, a) {
+  const why = whyNot(e, a);
+  if (why) return why;
+  if (a.id === "advance") return "20 s to a new age";
+  return a.cost ? costText(a.cost) : doing(e);
+}
+
+// The "panel" face: the picked thing's name, its actions round the rim, the lit one in the middle
+function faceNow() {
+  const P = {};
+  let label = "Hamlet";
+  if (state === "title") { P.msg = "Start"; P.sub = "Tap to begin"; }
+  else if (state === "ending" || state === "won") { P.msg = "New age"; P.ok = 1; P.sub = `In ${fmt(G.wonAt)}`; }
+  else if (state === "lost") { P.msg = "Empty"; P.sub = "Tap to try again"; }
+  else {
+    const e = selected();
+    label = nameOf(e);
+    if (placing) {
+      const why = canPlace(placing.kind, placing.x, placing.y);
+      P.msg = "Where?";
+      P.sub = why || "Tap to build here";
+      P.ok = why ? 0 : 1;
+      P.aim = 1;
+    } else {
+      const acts = actionsOf(e), i = hlOf(e), a = acts[i];
+      if (acts.length > 1) { P.seg = acts.length; P.idx = i; }
+      if (a) { P.msg = a.name; P.sub = subFor(e, a); }
+      else if (e.t === "bld" && !e.done) { P.msg = "Rising"; P.sub = doing(e); }
+      else { P.msg = "Home for 5"; P.sub = `${pop()} of ${cap()} people`; }
+      if (e.t === "bld" && acts.length < 2) {
+        const k = !e.done ? e.prog : e.queue.length ? e.jt / TIME[e.queue[0]] : -1;
+        if (k >= 0) { P.p = Math.round(k * 50) / 50; P.on = 1; }
+      }
+      if (e.t === "bld" && e.queue.length) { P.dn = Math.min(10, e.queue.length); P.dk = 1; }
+      if (pk.flash && now - pk.flashAt < 1800) P.sub = pk.flash;
+      if (now - pk.okAt < 450) P.ok = 1;
+    }
+  }
+  if (pk.sn) { P.s = pk.s; P.sn = pk.sn; }
+  return { face: "panel", label, params: P };
+}
+
+// ---------------------------------------------------------------- the camera
+
+const cam = { x: HOME.x, y: HOME.y, z: 1, free: false, flight: null };
+let W = 0, H = 0, DPR = 1;
+const baseScale = () => clamp(H / VIEW_H, 0.6, 1.5);
+const scaleOf = () => baseScale() * cam.z;
+
+function camTarget() {
+  if (placing) {
+    if (placing.lock) return { x: placing.x, y: placing.y };
+    // the view follows the building once it nears the edge
+    const s = scaleOf(), mx = (W / s) * 0.3, my = (H / s) * 0.28;
+    return { x: clamp(cam.x, placing.x - mx, placing.x + mx), y: clamp(cam.y, placing.y - my, placing.y + my) };
+  }
+  const e = selected();
+  return e.t === "bld" ? { x: e.x, y: e.y - SIZE[e.kind].h * 0.6 } : { x: e.x, y: e.y - 12 };
+}
+// A pan to what's picked; going far, the view pulls back a little on the way
+function flyTo() {
+  const t = camTarget(), d = Math.hypot(t.x - cam.x, t.y - cam.y);
+  if (calm) { cam.x = t.x; cam.y = t.y; cam.z = 1; cam.flight = null; return; }
+  if (d < 2) { cam.flight = null; return; }
+  cam.flight = { x: cam.x, y: cam.y, z: cam.z, t: 0, dur: clamp(0.4 + d / 2600, 0.4, 1.05), out: clamp((d - 260) / 2400, 0, 0.3) };
+}
+function camStep(dt) {
+  if (state === "title") {
+    const t = now / 1000;
+    cam.x = calm ? HOME.x : HOME.x + Math.sin(t * 0.07) * 360;
+    cam.y = calm ? HOME.y : HOME.y + Math.cos(t * 0.05) * 150;
+    cam.z = 1;
+    clampCam();
+    return;
+  }
+  if (cam.free && !placing) { clampCam(); return; }
+  const t = camTarget();
+  if (cam.flight) {
+    const f = cam.flight;
+    f.t += dt;
+    const k = clamp(f.t / f.dur, 0, 1), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    cam.x = f.x + (t.x - f.x) * e;
+    cam.y = f.y + (t.y - f.y) * e;
+    cam.z = (f.z + (1 - f.z) * e) * (1 - f.out * Math.sin(Math.PI * k));
+    if (k >= 1) { cam.flight = null; if (placing) placing.lock = false; }
+  } else {
+    const a = calm ? 1 : 1 - Math.exp(-dt * 6);
+    cam.x += (t.x - cam.x) * a;
+    cam.y += (t.y - cam.y) * a;
+    cam.z += (1 - cam.z) * a;
+    if (placing) placing.lock = false;
+  }
+  clampCam();
+}
+function clampCam() {
+  const s = scaleOf(), vw = W / s, vh = H / s;
+  cam.x = vw >= MAP_W + 300 ? MAP_W / 2 : clamp(cam.x, vw / 2 - 150, MAP_W - vw / 2 + 150);
+  cam.y = vh >= MAP_H + 300 ? MAP_H / 2 : clamp(cam.y, vh / 2 - 150, MAP_H - vh / 2 + 150);
+}
+function toWorld(sx, sy) { const s = scaleOf(); return { x: cam.x + (sx - W / 2) / s, y: cam.y + (sy - H / 2) / s }; }
+function onScreen(e, m = 40) {
+  const s = scaleOf(), x = (e.x - cam.x) * s + W / 2, y = (e.y - cam.y) * s + H / 2;
+  return x > -m && x < W + m && y > -m && y < H + m;
+}
+
+// ---------------------------------------------------------------- drawing
+
+const INK = "rgba(245, 245, 247, 0.88)", Y = "#FFD60A";
+const FIG = 1.35;             // people and wolves are drawn this much larger than they're reckoned
+const WALL = "#1d1d21", ROOF_F = "#34343a", ROOF_S = "#2c2c31", ROOF_B = "#25252a";
+let groundPat = null, mood = null;
+const fx = [];                // drawn for a moment: "+10 wood", a wolf gone
+const list = [];
+
+function ell(x, y, rx, ry) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, TAU); }
+function blobPath(x, y, pts) {
+  ctx.beginPath();
+  const n = pts.length;
+  ctx.moveTo(x + (pts[n - 1][0] + pts[0][0]) / 2, y + (pts[n - 1][1] + pts[0][1]) / 2);
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    ctx.quadraticCurveTo(x + a[0], y + a[1], x + (a[0] + b[0]) / 2, y + (a[1] + b[1]) / 2);
+  }
+  ctx.closePath();
+}
+
+// The ground: specks and tufts, once, as a tile; and the lie of the land, once, small and soft
+function makeGround() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 512;  // 256 world units
+  const g = c.getContext("2d"), R = seeded(99);
+  for (let i = 0; i < 900; i++) {
+    g.fillStyle = `rgba(245, 245, 247, ${(0.012 + R() * 0.035).toFixed(3)})`;
+    const s = 1 + R() * 1.6;
+    g.fillRect(R() * 512, R() * 512, s, s);
+  }
+  g.lineCap = "round";
+  g.lineWidth = 2;
+  for (let i = 0; i < 60; i++) {
+    const x = R() * 512, y = R() * 512;
+    g.strokeStyle = `rgba(165, 185, 160, ${(0.035 + R() * 0.05).toFixed(3)})`;
+    g.beginPath();
+    g.moveTo(x - 4, y); g.lineTo(x - 7, y - 9);
+    g.moveTo(x, y + 1); g.lineTo(x + 1, y - 11);
+    g.moveTo(x + 4, y); g.lineTo(x + 7, y - 8);
+    g.stroke();
+  }
+  return c;
+}
+function makeMood() {
+  const c = document.createElement("canvas");
+  c.width = 600;
+  c.height = 400;
+  const g = c.getContext("2d");
+  g.scale(0.2, 0.2);
+  const glow = (x, y, r, rgb, a) => {
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, `rgba(${rgb}, ${a})`);
+    gr.addColorStop(1, `rgba(${rgb}, 0)`);
+    g.fillStyle = gr;
+    g.fillRect(x - r, y - r, 2 * r, 2 * r);
+  };
+  glow(HOME.x, HOME.y, 780, "245, 245, 240", 0.035);       // the clearing
+  glow(HOME.x, HOME.y + 30, 280, "225, 205, 170", 0.05);   // the yard, trodden
+  for (const r of G.res) if (r.t === "tree") glow(r.x, r.y, 90, "0, 0, 0", 0.16);  // under the trees
+  for (let y = 0; y <= MAP_H; y += 25) glow(riverX(y), y, riverW(y) + 60, "0, 0, 0", 0.1);  // damp banks
+  for (const [x0, y0, x1, y1] of [[0, 0, 140, 0], [MAP_W, 0, MAP_W - 140, 0], [0, 0, 0, 140], [0, MAP_H, 0, MAP_H - 140]]) {
+    const gr = g.createLinearGradient(x0, y0, x1, y1);
+    gr.addColorStop(0, "rgba(0, 0, 0, 0.4)");
+    gr.addColorStop(1, "rgba(0, 0, 0, 0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, MAP_W, MAP_H);
+  }
+  return c;
+}
+
+function render(t) {
+  const s = scaleOf(), vw = W / s, vh = H / s, L = cam.x - vw / 2, T = cam.y - vh / 2, R = L + vw, B = T + vh;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = "#070708";  // past the edge of the clearing
+  ctx.fillRect(0, 0, W, H);
+  if (!G) return;
+  ctx.setTransform(DPR * s, 0, 0, DPR * s, DPR * (W / 2 - cam.x * s), DPR * (H / 2 - cam.y * s));
+  const gx = Math.max(0, L), gy = Math.max(0, T), gw = Math.min(MAP_W, R) - gx, gh = Math.min(MAP_H, B) - gy;
+  if (gw > 0 && gh > 0) {
+    ctx.fillStyle = "#0f100f";
+    ctx.fillRect(gx, gy, gw, gh);
+    if (groundPat) { ctx.fillStyle = groundPat; ctx.fillRect(gx, gy, gw, gh); }
+    if (mood) ctx.drawImage(mood, gx / 5, gy / 5, gw / 5, gh / 5, gx, gy, gw, gh);
+  }
+  drawPaths();
+  drawRiver(T, B, t);
+  drawCrossings();
+
+  // on the ground: what's picked, and where it's headed
+  const sel = state === "play" || state === "ending" ? selected() : null;
+  if (sel) groundMarks(sel, t);
+  if (G.advancing && !G.won && state === "play") {
+    const j = G.tc.queue.indexOf("advance");
+    if (j === 0) {
+      ctx.strokeStyle = Y;
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.ellipse(G.tc.x, G.tc.y + 6, 108, 74, 0, -Math.PI / 2, -Math.PI / 2 + TAU * (G.tc.jt / TIME.advance));
+      ctx.stroke();
+    }
+  }
+
+  // what stands on it, back to front
+  list.length = 0;
+  const vis = (x, y, m) => x > L - m && x < R + m && y > T - m && y < B + m * 1.6;
+  for (const r of G.res) if (vis(r.x, r.y, 60)) list.push(r);
+  for (const r of G.rocks) if (vis(r.x, r.y, 40)) list.push(r);
+  for (const b of G.blds) if (vis(b.x, b.y, 150)) list.push(b);
+  for (const u of G.units) if (vis(u.x, u.y, 40)) list.push(u);
+  for (const w of G.wolves) if (vis(w.x, w.y, 40)) list.push(w);
+  list.sort((a, b) => (a.t === "bld" ? a.y + SIZE[a.kind].d / 2 : a.y) - (b.t === "bld" ? b.y + SIZE[b.kind].d / 2 : b.y));
+  for (const e of list) {
+    if (e.t === "tree") drawTree(e, t);
+    else if (e.t === "bush") drawBush(e);
+    else if (e.t === "seam") drawSeam(e, t);
+    else if (e.t === "rock") drawRock(e);
+    else if (e.t === "bld") drawBld(e, t, null);
+    else if (e.t === "unit") drawPerson(e, t);
+    else drawWolf(e, t);
+  }
+
+  // over everything: health, the marker over what's picked, the new building, moments
+  for (const e of list) if ((e.t === "unit" || e.t === "wolf") && (e.hp < e.max - 0.01 || e === sel)) bar(e.x, e.y - (e.t === "wolf" ? 26 : 34) * FIG, e.hp / e.max);
+  if (sel && sel.t === "unit" && !placing) chevron(sel, t);
+  if (placing && state === "play") drawGhost(t);
+  drawFx(t);
+  if (state === "ending" || state === "won") newAge(t);
+}
+
+function drawPaths() {
+  ctx.strokeStyle = "rgba(225, 212, 190, 0.04)";
+  ctx.lineWidth = 22;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  for (const [x0, y0, x1, y1, cx, cy] of PATHS) { ctx.moveTo(x0, y0); ctx.quadraticCurveTo(cx, cy, x1, y1); }
+  ctx.stroke();
+}
+
+function drawRiver(T, B, t) {
+  const y0 = Math.max(-20, Math.floor(T / 20) * 20 - 40), y1 = Math.min(MAP_H + 20, B + 40);
+  if (y1 <= y0) return;
+  ctx.beginPath();
+  for (let y = y0; y <= y1; y += 20) ctx.lineTo(riverX(y) - riverW(y), y);
+  for (let y = y1; y >= y0; y -= 20) ctx.lineTo(riverX(y) + riverW(y), y);
+  ctx.closePath();
+  ctx.fillStyle = "#0c1318";
+  ctx.fill();
+  ctx.lineWidth = 1.3;
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.2)";
+  for (const sd of [-1, 1]) {
+    ctx.beginPath();
+    for (let y = y0; y <= y1; y += 20) ctx.lineTo(riverX(y) + sd * riverW(y), y);
+    ctx.stroke();
+  }
+  // the current, drifting south
+  const flow = calm ? 0 : ((t / 1000) * 16) % 46;
+  ctx.strokeStyle = "rgba(170, 200, 220, 0.1)";
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  for (let k = Math.floor(y0 / 46) - 1; k * 46 < y1; k++) {
+    const y = k * 46 + flow + (((k * 37) % 23) + 23) % 23, o = ((((k * 53) % 9) + 9) % 9) / 9 - 0.5;
+    ctx.moveTo(riverX(y) + o * riverW(y), y);
+    ctx.lineTo(riverX(y + 11) + o * riverW(y + 11), y + 11);
+  }
+  ctx.stroke();
+}
+
+function drawCrossings() {
+  const b = CROSSINGS[0], x = riverX(b.y), hw = riverW(b.y) + 16;
+  ctx.fillStyle = "#29241f";
+  ctx.fillRect(x - hw, b.y - 17, hw * 2, 34);
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.12)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let px = x - hw + 6; px < x + hw; px += 7) { ctx.moveTo(px, b.y - 15); ctx.lineTo(px, b.y + 15); }
+  ctx.stroke();
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(x - hw, b.y - 17); ctx.lineTo(x + hw, b.y - 17);
+  ctx.moveTo(x - hw, b.y + 17); ctx.lineTo(x + hw, b.y + 17);
+  ctx.stroke();
+  ctx.fillStyle = "#1b1b1e";
+  for (const px of [x - hw, x, x + hw]) for (const py of [b.y - 17, b.y + 17]) { ctx.fillRect(px - 2.5, py - 2.5, 5, 5); ctx.strokeRect(px - 2.5, py - 2.5, 5, 5); }
+  // the stepping stones
+  const f = CROSSINGS[1], fx0 = riverX(f.y), fw = riverW(f.y);
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    const sx = fx0 - fw + 5 + (i * (fw * 2 - 10)) / 5, sy = f.y + (i % 2 ? 5 : -4);
+    ell(sx, sy, 7, 4.6);
+    ctx.fillStyle = "#29292d";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.32)";
+    ctx.stroke();
+  }
+}
+
+function drawTree(e, t) {
+  const { x, y } = e;
+  if (e.amt <= 0) {  // a stump
+    ell(x, y - 1, 4.5, 2.2);
+    ctx.fillStyle = "#2a241f";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.2)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    return;
+  }
+  const r = e.r, cx = x + (!calm && G.t - e.hit < 0.2 ? Math.sin(t * 0.06) * 0.9 : 0);
+  ell(x + r * 0.3, y + 1, r * 0.9, r * 0.32);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+  ctx.fill();
+  ctx.strokeStyle = "#3b3129";
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - r * 0.8); ctx.stroke();
+  ctx.lineJoin = "round";
+  if (e.pine) {
+    for (let k = 0; k < 3; k++) {
+      const w = r * (1 - k * 0.24), yb = y - r * 0.55 - k * r * 0.5;
+      ctx.beginPath(); ctx.moveTo(cx - w, yb); ctx.lineTo(cx + w, yb); ctx.lineTo(cx, yb - r * 0.95); ctx.closePath();
+      ctx.fillStyle = e.tone;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(245, 245, 247, 0.22)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    return;
+  }
+  // a round crown: outlined, then filled over, so only its edge shows
+  const cy = y - r * 1.2;
+  lobes(cx, cy, r, CROWN);
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.24)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = e.tone;
+  ctx.fill();
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.1)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(cx - r * 0.1, cy - r * 0.3, r * 0.42, Math.PI * 1.1, Math.PI * 1.55); ctx.stroke();
+}
+
+function drawBush(e) {
+  const { x, y } = e;
+  ell(x + 2, y + 1, 11, 3.5);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.fill();
+  lobes(x, y, 1, CLUMP);
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.24)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = e.amt > 0 ? "#1c2822" : "#18191a";
+  ctx.fill();
+  const n = Math.ceil((8 * e.amt) / e.max);
+  if (!n) return;
+  ctx.fillStyle = "#b5687f";
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) { const [dx, dy] = e.dots[i]; ctx.moveTo(x + dx + 1.7, y + dy); ctx.arc(x + dx, y + dy, 1.7, 0, TAU); }
+  ctx.fill();
+}
+// A crown or a clump: overlapping circles as one path, so one stroke and one fill draw it
+const CROWN = [[-0.38, 0.18, 0.7], [0.4, 0.14, 0.66], [0, -0.22, 0.78]], CLUMP = [[-5, -5, 6.5], [5, -5.5, 6.5], [0, -9.5, 7]];
+function lobes(x, y, k, set) {
+  ctx.beginPath();
+  for (const [ox, oy, r] of set) { ctx.moveTo(x + ox * k + r * k, y + oy * k); ctx.arc(x + ox * k, y + oy * k, r * k, 0, TAU); }
+}
+
+function drawSeam(e, t) {
+  const k = e.amt / e.max;
+  ell(e.x + 4, e.y + 8, 52, 15);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.32)";
+  ctx.fill();
+  ctx.lineJoin = "round";
+  for (const b of e.rocks) {
+    blobPath(e.x + b.x, e.y + b.y - 6, b.pts);
+    ctx.fillStyle = "#232327";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.42)";
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+  }
+  if (k <= 0) return;
+  const n = Math.ceil(e.flecks.length * k), glint = !calm && G.t - e.hit < 0.3;
+  ctx.fillStyle = `rgba(206, 168, 76, ${(0.4 + 0.55 * k).toFixed(2)})`;
+  for (let i = 0; i < n; i++) {
+    const f = e.flecks[i], fx0 = e.x + f.x, fy = e.y + f.y - 6, s = f.s * (glint && i % 3 === Math.floor(t / 120) % 3 ? 1.5 : 1);
+    ctx.beginPath(); ctx.moveTo(fx0, fy - s); ctx.lineTo(fx0 + s * 0.8, fy); ctx.lineTo(fx0, fy + s); ctx.lineTo(fx0 - s * 0.8, fy); ctx.closePath(); ctx.fill();
+  }
+}
+
+function drawRock(e) {
+  ell(e.x + 3, e.y + 2, e.r * 1.05, e.r * 0.4);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.fill();
+  blobPath(e.x, e.y - e.r * 0.4, e.pts);
+  ctx.fillStyle = "#1f1f23";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.32)";
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.12)";
+  ctx.beginPath(); ctx.arc(e.x - e.r * 0.2, e.y - e.r * 0.6, e.r * 0.45, Math.PI * 1.1, Math.PI * 1.6); ctx.stroke();
+}
+
+// Buildings, seen from above and in front: a wall with its door, a hipped roof (the barracks' is flat)
+function drawBld(b, t, ghost) {
+  const s = SIZE[b.kind], x0 = b.x - s.w / 2, x1 = b.x + s.w / 2, yf = b.y + s.d / 2, yb = b.y - s.d / 2;
+  const eave = yf - s.h, back = yb - s.h, ridge = b.y - s.h - s.roof, ins = Math.min(s.w, s.d) * 0.32, o = 5;
+  const rising = !ghost && !b.done;
+  if (!ghost) { ctx.fillStyle = "rgba(0, 0, 0, 0.3)"; ctx.fillRect(x0 + 6, yb + 6, s.w, s.d); }
+  if (rising) {
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.4)";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(x0, yb, s.w, s.d);
+    ctx.setLineDash([]);
+    const top = Math.min(back, ridge) - 6, hh = yf - top;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0 - 12, yf - hh * b.prog - 1, s.w + 24, hh * b.prog + 4);
+    ctx.clip();
+  }
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = ghost || INK;
+  const poly = (pts, fill) => {
+    ctx.beginPath();
+    pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.stroke();
+  };
+  if (b.kind === "barracks") {
+    poly([[x0 - o, back + 4], [x1 + o, back + 4], [x1 + o, eave], [x0 - o, eave]], ROOF_F);
+    ctx.strokeStyle = ghost || "rgba(245, 245, 247, 0.2)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let px = x0 + 8; px < x1; px += 12) { ctx.moveTo(px, back + 7); ctx.lineTo(px, eave - 3); }
+    ctx.stroke();
+    ctx.strokeStyle = ghost || INK;
+    ctx.lineWidth = 1.4;
+    // crossed spears on the roof
+    const cx = b.x, cy = (back + eave) / 2 + 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 13, cy + 9); ctx.lineTo(cx + 13, cy - 9);
+    ctx.moveTo(cx + 13, cy + 9); ctx.lineTo(cx - 13, cy - 9);
+    ctx.stroke();
+    ctx.fillStyle = ghost || INK;
+    for (const sx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + sx * 16, cy - 11); ctx.lineTo(cx + sx * 10, cy - 10); ctx.lineTo(cx + sx * 14, cy - 6); ctx.closePath(); ctx.fill(); }
+  } else {
+    poly([[x0 - o, back], [x1 + o, back], [x1 - ins, ridge], [x0 + ins, ridge]], ROOF_B);
+    poly([[x0 - o, back], [x0 + ins, ridge], [x0 - o, eave]], ROOF_S);
+    poly([[x1 + o, back], [x1 - ins, ridge], [x1 + o, eave]], ROOF_S);
+    poly([[x0 + ins, ridge], [x1 - ins, ridge], [x1 + o, eave], [x0 - o, eave]], ROOF_F);
+    // a few courses across the front slope
+    ctx.strokeStyle = ghost || "rgba(245, 245, 247, 0.14)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let k = 1; k < 3; k++) {
+      const f = k / 3, yy = ridge + (eave - ridge) * f;
+      ctx.moveTo(x0 + ins + (-o - ins) * f + 3, yy); ctx.lineTo(x1 - ins + (o + ins) * f - 3, yy);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = ghost || INK;
+    ctx.lineWidth = 1.4;
+  }
+  // the wall and its door
+  ctx.fillStyle = WALL;
+  ctx.fillRect(x0, eave, s.w, s.h);
+  ctx.strokeRect(x0, eave, s.w, s.h);
+  const dw = Math.max(10, s.w * 0.13), dh = s.h * 0.74;
+  ctx.beginPath();
+  ctx.moveTo(b.x - dw / 2, yf);
+  ctx.lineTo(b.x - dw / 2, yf - dh + dw / 2);
+  ctx.arc(b.x, yf - dh + dw / 2, dw / 2, Math.PI, 0);
+  ctx.lineTo(b.x + dw / 2, yf);
+  ctx.fillStyle = "#0b0b0c";
+  ctx.fill();
+  ctx.stroke();
+  const win = (wx, wy, w, h) => { ctx.fillStyle = ghost ? "rgba(255, 214, 10, 0.2)" : "rgba(245, 232, 205, 0.2)"; ctx.fillRect(wx, wy, w, h); ctx.strokeRect(wx, wy, w, h); };
+  if (b.kind === "tc") {
+    for (const wx of [x0 + 14, x0 + 34, x1 - 43, x1 - 23]) win(wx, eave + 8, 9, 9);
+    // a pole on the ridge, and its pennant (yellow once the village advances)
+    const py = ridge - 32, wave = calm ? 0 : Math.sin(t / 380) * 1.6;
+    ctx.beginPath(); ctx.moveTo(b.x, ridge + 2); ctx.lineTo(b.x, py); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(b.x, py); ctx.quadraticCurveTo(b.x + 9, py + 2 + wave, b.x + 19, py + 5 + wave); ctx.lineTo(b.x, py + 11); ctx.closePath();
+    ctx.fillStyle = ghost ? "transparent" : G.won ? Y : "rgba(245, 245, 247, 0.85)";
+    ctx.fill();
+  } else if (b.kind === "house") {
+    win(x0 + 7, eave + 5, 8, 7);
+    // a chimney, and a little smoke
+    const cx = x1 - ins - 4, cy = ridge + 3;
+    ctx.fillStyle = WALL;
+    ctx.fillRect(cx - 3, cy - 9, 6, 10);
+    ctx.strokeRect(cx - 3, cy - 9, 6, 10);
+    if (!ghost && b.done && !calm) {
+      for (let i = 0; i < 3; i++) {
+        const k = ((t / 2600 + i / 3 + b.id * 0.13) % 1);
+        ctx.fillStyle = `rgba(245, 245, 247, ${(0.07 * (1 - k)).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(cx + k * 9, cy - 12 - k * 22, 2.5 + k * 4, 0, TAU); ctx.fill();
+      }
+    }
+  } else {
+    for (const wx of [x0 + 12, x1 - 20]) win(wx, eave + 6, 8, 10);
+  }
+  if (rising) {
+    ctx.restore();
+    // scaffolding while it rises
+    const top = Math.min(back, ridge) - 6, hh = (yf - top) * Math.max(0.25, b.prog);
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.4)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const px of [x0 - 4, x1 + 4]) { ctx.moveTo(px, yf + 1); ctx.lineTo(px, yf - hh); }
+    ctx.moveTo(x0 - 4, yf - hh * 0.5); ctx.lineTo(x1 + 4, yf - hh * 0.5);
+    ctx.moveTo(x0 - 4, yf); ctx.lineTo(x0 + 10, yf - hh * 0.5);
+    ctx.moveTo(x1 + 4, yf); ctx.lineTo(x1 - 10, yf - hh * 0.5);
+    ctx.stroke();
+  }
+}
+
+// People: a small figure in white line, a load on the back, a tool going when at work
+function drawPerson(u, t) {
+  const m = u.kind === "militia", x = 0, y = 0, d = u.dir;
+  ctx.save();
+  ctx.translate(u.x, u.y);
+  ctx.scale(FIG, FIG);
+  const bob = u.moving ? Math.abs(Math.sin(u.ph)) * 1.6 : calm ? 0 : Math.sin(t / 700 + u.id) * 0.3;
+  const sw = u.moving ? Math.sin(u.ph) * 2.4 : 0;
+  ell(x, y, 7, 2.6);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+  ctx.fill();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(x - 2, y - 6 - bob); ctx.lineTo(x - 2 + sw, y - 0.5);
+  ctx.moveTo(x + 2, y - 6 - bob); ctx.lineTo(x + 2 - sw, y - 0.5);
+  ctx.stroke();
+  const top = y - 16 - bob, bw = m ? 10 : 9;
+  // working: the tool swings, and lands on the beat
+  const working = !u.moving && (u.st === "work" || u.st === "build");
+  const ph = ((G.t + u.id * 0.37) / 0.85 + 0.12) % 1;
+  const swing = ph < 0.12 ? -0.6 + (ph / 0.12) * 1.9 : 1.3 - ((ph - 0.12) / 0.88) * 1.9;
+  if (!m && u.carry.amt > 0) load(u, x - d * 5.5, top + 3);
+  ctx.fillStyle = m ? "#3a3a40" : "#2c2c31";
+  ctx.beginPath();
+  ctx.moveTo(x - bw / 2 + 3, top); ctx.arcTo(x + bw / 2, top, x + bw / 2, top + 10, 3); ctx.arcTo(x + bw / 2, top + 10, x - bw / 2, top + 10, 2);
+  ctx.arcTo(x - bw / 2, top + 10, x - bw / 2, top, 2); ctx.arcTo(x - bw / 2, top, x + bw / 2, top, 3); ctx.closePath();
+  ctx.fill();
+  ctx.lineWidth = 1.3;
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, top - 4, 3.6, 0, TAU);
+  ctx.fillStyle = "#1b1b1e";
+  ctx.fill();
+  ctx.stroke();
+  if (m) {
+    ctx.beginPath(); ctx.arc(x, top - 4.4, 4.3, Math.PI * 1.05, Math.PI * 1.95); ctx.lineWidth = 2; ctx.stroke();  // a helmet
+    const jab = u.fight && !calm ? Math.max(0, Math.sin(t / 70)) * 4 : 0;
+    const sx = x + d * (6 + jab), sy = y - 2;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + d * 2.5, y - 31); ctx.stroke();
+    ctx.fillStyle = INK;
+    ctx.beginPath(); ctx.moveTo(sx + d * 2.5, y - 36); ctx.lineTo(sx + d * 4.5, y - 30); ctx.lineTo(sx + d * 0.8, y - 30.5); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(x - d * 5, top + 6, 4.3, 0, TAU);
+    ctx.fillStyle = "#26262b";
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = INK;
+    ctx.beginPath(); ctx.arc(x - d * 5, top + 6, 1, 0, TAU); ctx.fill();
+  } else if (working) {
+    const kind = u.st === "build" ? "build" : u.task;
+    const a = (kind === "food" ? 0.8 + Math.sin(t / 160 + u.id) * 0.25 : swing) * d;
+    const hx = x + d * 3, hy = top + 3, len = kind === "food" ? 7 : 10;
+    const ex = hx + Math.sin(a) * len, ey = hy - Math.cos(a) * len;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(ex, ey); ctx.stroke();
+    if (kind === "wood") {  // an axe head
+      ctx.fillStyle = INK;
+      ctx.beginPath(); ctx.arc(ex, ey, 2.4, a - Math.PI / 2 + (d > 0 ? 0 : Math.PI), a + Math.PI / 2 + (d > 0 ? 0 : Math.PI)); ctx.closePath(); ctx.fill();
+    } else if (kind === "gold") {  // a pick
+      ctx.beginPath(); ctx.moveTo(ex - Math.cos(a) * 3.5, ey - Math.sin(a) * 3.5); ctx.lineTo(ex + Math.cos(a) * 3.5, ey + Math.sin(a) * 3.5); ctx.stroke();
+    } else if (kind === "build") {  // a mallet
+      ctx.fillStyle = INK;
+      ctx.save(); ctx.translate(ex, ey); ctx.rotate(a); ctx.fillRect(-2.6, -1.6, 5.2, 3.2); ctx.restore();
+    }
+  }
+  if (!m && u.st === "flee") {  // running for it
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(x + 7, top - 10); ctx.lineTo(x + 7, top - 5); ctx.moveTo(x + 7, top - 2.6); ctx.lineTo(x + 7, top - 2.5); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function load(u, x, y) {
+  const n = Math.max(1, Math.ceil((u.carry.amt / CARRY) * 3)), type = u.carry.type;
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.6)";
+  if (type === "wood") {
+    ctx.fillStyle = "#6e5a44";
+    for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.rect(x - 4.5, y + 3 - i * 2.8, 9, 2.4); ctx.fill(); ctx.stroke(); }
+  } else if (type === "food") {
+    ctx.fillStyle = "#4a3b2c";
+    ctx.beginPath(); ctx.moveTo(x - 4.5, y); ctx.lineTo(x + 4.5, y); ctx.lineTo(x + 3, y + 5); ctx.lineTo(x - 3, y + 5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#b5687f";
+    for (let i = 0; i < n + 1; i++) { ctx.beginPath(); ctx.arc(x - 2.5 + i * 1.8, y - 0.8 - (i % 2), 1.4, 0, TAU); ctx.fill(); }
+  } else {
+    ctx.fillStyle = "#3b3326";
+    ctx.beginPath(); ctx.arc(x, y + 2, 3.6, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "rgba(206, 168, 76, 0.9)";
+    for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.arc(x - 1.6 + i * 1.6, y + 0.6 + (i % 2), 1.1, 0, TAU); ctx.fill(); }
+  }
+}
+
+// A wolf, side on: low and slow while it prowls, stretched out when it runs
+function drawWolf(w, t) {
+  const run = w.st === "chase" || !!w.foe, ph = w.ph * (run ? 1.3 : 1);
+  const bob = w.moving ? Math.abs(Math.sin(ph)) * (run ? 1.5 : 0.7) : 0;
+  ell(w.x, w.y, 13 * FIG, 3 * FIG);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+  ctx.fill();
+  ctx.save();
+  ctx.translate(w.x, w.y);
+  ctx.scale(w.dir * FIG, FIG);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.72)";
+  ctx.lineWidth = 1.5;
+  const legs = [[-8, 0], [-5, Math.PI], [5, Math.PI], [8, 0]];
+  ctx.beginPath();
+  for (const [ox, o] of legs) {
+    const s = w.moving ? Math.sin(ph + o) * (run ? 4 : 2.4) : 0;
+    ctx.moveTo(ox, -7 - bob); ctx.lineTo(ox + s, -0.5);
+  }
+  ctx.stroke();
+  ctx.fillStyle = "#2a2a2f";
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.78)";
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.moveTo(-11, -9 - bob);
+  ctx.quadraticCurveTo(-2, -15 - bob, 8, -12.5 - bob);
+  ctx.quadraticCurveTo(11.5, -11 - bob, 11, -7 - bob);
+  ctx.quadraticCurveTo(1, -4 - bob, -10, -6.5 - bob);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // the head: low while prowling, out front when it runs, snapping when it bites
+  const hy = (run ? -13 : -10.5) - bob, hx = w.bite && !calm ? Math.max(0, Math.sin(t / 60)) * 2 : 0;
+  ctx.beginPath();
+  ctx.moveTo(7 + hx, hy - 1.5);
+  ctx.lineTo(10 + hx, hy - 7);
+  ctx.lineTo(12 + hx, hy - 2.6);
+  ctx.lineTo(18.5 + hx, hy + 0.6);
+  ctx.lineTo(12.5 + hx, hy + 3);
+  ctx.lineTo(8 + hx, hy + 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  const sway = calm ? 0 : Math.sin(t / 300 + w.id) * 1.4;
+  ctx.moveTo(-10.5, -9.5 - bob);
+  ctx.quadraticCurveTo(-17, -10.5 - bob + sway, -19.5, -5.5 - bob + sway);
+  ctx.lineWidth = 2.6;
+  ctx.stroke();
+  ctx.fillStyle = "rgba(245, 245, 247, 0.9)";
+  ctx.beginPath(); ctx.arc(12.4 + hx, hy - 0.4, 0.9, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// The yellow ring under what's picked, and a dotted line to where it's going
+function groundMarks(e, t) {
+  const k = calm ? 1 : clamp((t - selAt) / 420, 0, 1), g = 1 + (1 - (1 - Math.pow(1 - k, 3))) * 0.6;
+  let rx = 14, ry = 6, cx = e.x, cy = e.y;
+  if (e.t === "bld") { const s = SIZE[e.kind]; rx = s.w / 2 + 16; ry = s.d / 2 + 14; cy = e.y + 4; }
+  if (e.t === "unit") {
+    let tx = null, ty = null;
+    if (e.st === "go") { tx = e.gx; ty = e.gy; }
+    else if (e.st === "home" || e.st === "flee") { tx = G.tc.x; ty = G.tc.y + SIZE.tc.d / 2; }
+    else if (e.st === "tobuild" && e.bld) { tx = e.bld.x; ty = e.bld.y + SIZE[e.bld.kind].d / 2; }
+    else if (e.kind === "militia" && e.foe) { tx = e.foe.x; ty = e.foe.y; }
+    if (tx !== null && Math.hypot(tx - e.x, ty - e.y) > 30) {
+      ctx.setLineDash([2, 6]);
+      ctx.strokeStyle = "rgba(245, 245, 247, 0.28)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(tx, ty); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(tx, ty, 3, 0, TAU); ctx.stroke();
+    }
+  }
+  ctx.strokeStyle = "rgba(255, 214, 10, 0.22)";
+  ctx.lineWidth = 5;
+  ell(cx, cy, rx * g, ry * g);
+  ctx.stroke();
+  ctx.strokeStyle = Y;
+  ctx.lineWidth = 1.8;
+  ell(cx, cy, rx * g, ry * g);
+  ctx.stroke();
+}
+function chevron(e, t) {
+  const y = e.y - 44 * FIG + (calm ? 0 : Math.sin(t / 320) * 1.8);
+  ctx.fillStyle = Y;
+  ctx.beginPath(); ctx.moveTo(e.x - 5, y - 5); ctx.lineTo(e.x + 5, y - 5); ctx.lineTo(e.x, y + 1); ctx.closePath(); ctx.fill();
+}
+function bar(x, y, k) {
+  ctx.fillStyle = "rgba(10, 10, 11, 0.75)";
+  ctx.fillRect(x - 10, y - 1, 20, 4.4);
+  ctx.fillStyle = k < 0.35 ? Y : "rgba(245, 245, 247, 0.85)";
+  ctx.fillRect(x - 9, y, 18 * clamp(k, 0, 1), 2.4);
+}
+
+function drawGhost(t) {
+  const p = placing, why = canPlace(p.kind, p.x, p.y);
+  ctx.setLineDash([3, 7]);
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.18)";
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(HOME.x, HOME.y, BUILD_R, 0, TAU); ctx.stroke();
+  ctx.setLineDash([]);
+  const s = SIZE[p.kind];
+  ctx.globalAlpha = why ? 0.4 : 0.85;
+  drawBld({ kind: p.kind, x: p.x, y: p.y, done: true, id: 0 }, t, why ? "rgba(245, 245, 247, 0.6)" : Y);
+  ctx.globalAlpha = 1;
+  if (why) ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = why ? "rgba(245, 245, 247, 0.5)" : Y;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(p.x - s.w / 2, p.y - s.d / 2, s.w, s.d);
+  ctx.setLineDash([]);
+}
+
+function drawFx(t) {
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const f = fx[i], k = (t - f.at) / (f.k === "text" ? 1300 : 900);
+    if (k >= 1 || k < 0) { fx.splice(i, 1); continue; }
+    if (f.k === "text") {
+      ctx.font = "700 12px Nunito, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillStyle = `rgba(245, 245, 247, ${(0.8 * (1 - k)).toFixed(3)})`;
+      ctx.fillText(f.s, f.x, f.y - k * 24);
+    } else {
+      ctx.strokeStyle = `rgba(245, 245, 247, ${(0.55 * (1 - k)).toFixed(3)})`;
+      ctx.lineWidth = 1.5;
+      ell(f.x, f.y - 6, 8 + k * 28, 4 + k * 11);
+      ctx.stroke();
+    }
+  }
+}
+
+// The new age: rings of light from the Town Centre, once
+function newAge(t) {
+  const k = (t - stateAt) / 2600;
+  if (state === "won" || calm) {
+    const g = ctx.createRadialGradient(G.tc.x, G.tc.y, 0, G.tc.x, G.tc.y, 420);
+    g.addColorStop(0, "rgba(255, 214, 10, 0.07)");
+    g.addColorStop(1, "rgba(255, 214, 10, 0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(G.tc.x - 420, G.tc.y - 420, 840, 840);
+    return;
+  }
+  for (let i = 0; i < 3; i++) {
+    const q = clamp(k * 1.4 - i * 0.18, 0, 1);
+    if (q <= 0 || q >= 1) continue;
+    ctx.strokeStyle = `rgba(255, 214, 10, ${(0.5 * (1 - q)).toFixed(3)})`;
+    ctx.lineWidth = 2;
+    ell(G.tc.x, G.tc.y + 6, 80 + q * 760, 55 + q * 520);
+    ctx.stroke();
+  }
+}
+
+// ---------------------------------------------------------------- the minimap
+
+const mini = $("mini"), mctx = mini.getContext("2d");
+const miniBase = document.createElement("canvas");
+let miniW = 180, miniH = 120, miniDPR = 1, miniDirty = true;
+
+function drawMiniBase() {
+  miniBase.width = Math.round(miniW * miniDPR);
+  miniBase.height = Math.round(miniH * miniDPR);
+  const c = miniBase.getContext("2d"), k = miniW / MAP_W;
+  c.setTransform(miniDPR, 0, 0, miniDPR, 0, 0);
+  c.fillStyle = "#0e0e10";
+  c.fillRect(0, 0, miniW, miniH);
+  const g = c.createRadialGradient(HOME.x * k, HOME.y * k, 0, HOME.x * k, HOME.y * k, 760 * k);
+  g.addColorStop(0, "rgba(245, 245, 247, 0.06)");
+  g.addColorStop(1, "rgba(245, 245, 247, 0)");
+  c.fillStyle = g;
+  c.fillRect(0, 0, miniW, miniH);
+  c.strokeStyle = "#1c2731";
+  c.lineWidth = Math.max(1.5, 60 * k);
+  c.beginPath();
+  for (let y = 0; y <= MAP_H; y += 40) c.lineTo(riverX(y) * k, y * k);
+  c.stroke();
+  for (const r of G.res) {
+    if (r.amt <= 0) continue;
+    c.fillStyle = r.type === "wood" ? "#2b3a30" : r.type === "food" ? "#9a5468" : "#c4a24f";
+    c.beginPath(); c.arc(r.x * k, r.y * k, r.t === "seam" ? 2.6 : 1.3, 0, TAU); c.fill();
+  }
+  c.fillStyle = "#2c2c30";
+  for (const r of G.rocks) { c.beginPath(); c.arc(r.x * k, r.y * k, 1.2, 0, TAU); c.fill(); }
+  miniDirty = false;
+}
+function drawMini(t) {
+  if (!G || state === "title") return;
+  if (miniDirty) drawMiniBase();
+  const k = miniW / MAP_W;
+  mctx.setTransform(1, 0, 0, 1, 0, 0);
+  mctx.clearRect(0, 0, mini.width, mini.height);
+  mctx.drawImage(miniBase, 0, 0);
+  mctx.setTransform(miniDPR, 0, 0, miniDPR, 0, 0);
+  mctx.save();
+  mctx.beginPath(); mctx.roundRect ? mctx.roundRect(0, 0, miniW, miniH, 12) : mctx.rect(0, 0, miniW, miniH); mctx.clip();
+  for (const b of G.blds) {
+    const s = SIZE[b.kind];
+    mctx.fillStyle = b.done ? "rgba(245, 245, 247, 0.9)" : "rgba(245, 245, 247, 0.4)";
+    mctx.fillRect(b.x * k - Math.max(1.5, (s.w * k) / 2), b.y * k - Math.max(1.2, (s.d * k) / 2), Math.max(3, s.w * k), Math.max(2.4, s.d * k));
+  }
+  for (const w of G.wolves) { mctx.fillStyle = "rgba(226, 150, 150, 0.95)"; mctx.beginPath(); mctx.arc(w.x * k, w.y * k, 1.8, 0, TAU); mctx.fill(); }
+  for (const u of G.units) { mctx.fillStyle = "rgba(245, 245, 247, 0.85)"; mctx.beginPath(); mctx.arc(u.x * k, u.y * k, u.kind === "militia" ? 1.8 : 1.4, 0, TAU); mctx.fill(); }
+  const sel = state === "play" || state === "ending" ? selected() : null;
+  if (sel) {
+    mctx.fillStyle = Y;
+    mctx.beginPath(); mctx.arc(sel.x * k, sel.y * k, 2.4, 0, TAU); mctx.fill();
+    mctx.strokeStyle = "rgba(255, 214, 10, 0.5)";
+    mctx.lineWidth = 1;
+    mctx.beginPath(); mctx.arc(sel.x * k, sel.y * k, 4.5 + (calm ? 0 : Math.sin(t / 300)), 0, TAU); mctx.stroke();
+  }
+  const s = scaleOf(), vw = (W / s) * k, vh = (H / s) * k;
+  mctx.strokeStyle = "rgba(245, 245, 247, 0.55)";
+  mctx.lineWidth = 1;
+  mctx.strokeRect(cam.x * k - vw / 2, cam.y * k - vh / 2, vw, vh);
+  mctx.restore();
+}
+let miniDrag = false;
+function miniLook(e) {
+  const r = mini.getBoundingClientRect();
+  cam.x = clamp(((e.clientX - r.left) / r.width) * MAP_W, 0, MAP_W);
+  cam.y = clamp(((e.clientY - r.top) / r.height) * MAP_H, 0, MAP_H);
+  cam.free = true;
+  cam.flight = null;
+  clampCam();
+}
+mini.addEventListener("pointerdown", (e) => { if (state !== "play") return; e.stopPropagation(); miniDrag = true; mini.setPointerCapture?.(e.pointerId); miniLook(e); });
+mini.addEventListener("pointermove", (e) => { if (miniDrag) miniLook(e); });
+mini.addEventListener("pointerup", () => { miniDrag = false; });
+mini.addEventListener("pointercancel", () => { miniDrag = false; });
+
+// ---------------------------------------------------------------- the puck on the page
+
+// It draws what the puck shows, from the same face; its slots and middle can be clicked
+const mirror = $("mirror"), rctx = mirror.getContext("2d");
+let mirrorSize = 148, mirrorDPR = 1, mirrorDrawn = "", lastFace = null;
+
+function drawMirror(f) {
+  const S = mirrorSize, k = S / 466, c = rctx, p = f.params;
+  c.setTransform(mirrorDPR, 0, 0, mirrorDPR, 0, 0);
+  c.clearRect(0, 0, S, S);
+  c.save();
+  c.translate(S / 2, S / 2);
+  c.fillStyle = "#000";
+  c.beginPath(); c.arc(0, 0, S / 2, 0, TAU); c.fill();
+  c.strokeStyle = "rgba(245, 245, 247, 0.16)";
+  c.lineWidth = 1;
+  c.beginPath(); c.arc(0, 0, S / 2 - 0.5, 0, TAU); c.stroke();
+  const rad = (deg) => ((deg - 90) * Math.PI) / 180;
+  if (p.seg >= 2) {
+    const span = 360 / p.seg;
+    c.lineWidth = 14 * k;
+    c.lineCap = "round";
+    for (let i = 0; i < p.seg; i++) {
+      const on = i === p.idx, a0 = i * span - (span - 10) / 2;
+      c.strokeStyle = on ? Y : "#2C2C2E";
+      c.shadowColor = on ? "rgba(255, 214, 10, 0.6)" : "transparent";
+      c.shadowBlur = on ? 8 : 0;
+      c.beginPath(); c.arc(0, 0, 204 * k, rad(a0 + 3), rad(a0 + span - 13)); c.stroke();
+    }
+    c.shadowBlur = 0;
+  } else if (typeof p.p === "number") {
+    const n = 50;
+    c.lineWidth = Math.max(1, 3 * k);
+    for (let i = 0; i <= n; i++) {
+      const a = rad(210 + (i / n) * 300), lit = i / n <= p.p + 1e-6, r0 = (i % 5 ? 199 : 188) * k, r1 = 214 * k;
+      c.strokeStyle = lit ? (p.on === 0 ? "#8E8E93" : Y) : "#2C2C2E";
+      c.beginPath(); c.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); c.lineTo(Math.cos(a) * r1, Math.sin(a) * r1); c.stroke();
+    }
+  }
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  const text = (s, y, size, weight, col, maxW) => {
+    let fs = size;
+    c.font = `${weight} ${fs}px Nunito, sans-serif`;
+    while (c.measureText(s).width > maxW && fs > 7) { fs -= 0.5; c.font = `${weight} ${fs}px Nunito, sans-serif`; }
+    c.fillStyle = col;
+    c.fillText(s, 0, y);
+  };
+  if (f.label) text(f.label, -108 * k, Math.max(10, 28 * k), 700, "#8E8E93", 300 * k);
+  if (p.msg) text(p.msg, 4 * k, Math.max(13, 42 * k), 800, p.ok ? Y : "#F5F5F7", 350 * k);
+  if (p.dn) {
+    for (let i = 0; i < p.dn; i++) {
+      c.fillStyle = i < (p.dk || 0) ? Y : "#2C2C2E";
+      c.beginPath(); c.arc((i - (p.dn - 1) / 2) * 20 * k, 112 * k, Math.max(1.6, 5 * k), 0, TAU); c.fill();
+    }
+  }
+  if (p.sub) text(p.sub, 150 * k, Math.max(8.5, 18 * k), 700, "#7C7C82", 240 * k);
+  c.restore();
+}
+
+let mirrorHold = null;
+mirror.addEventListener("pointerdown", (e) => {
+  e.stopPropagation();
+  unlockSound();
+  lastInput = e.pointerType === "touch" ? "touch" : "mouse";
+  if (state !== "play") { press(); return; }
+  const r = mirror.getBoundingClientRect(), x = e.clientX - r.left - r.width / 2, y = e.clientY - r.top - r.height / 2;
+  const d = Math.hypot(x, y) / (r.width / 2), f = lastFace && lastFace.params;
+  if (d > 0.62 && f && f.seg >= 2 && !placing) {
+    const a = ((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360, span = 360 / f.seg, i = Math.floor(((a + span / 2) % 360) / span);
+    const sel = selected();
+    if (i === hlOf(sel)) press();
+    else { sel.hl = i; pk.flash = ""; sound("step"); puckSound("click"); }
+    return;
+  }
+  mirrorHold = setTimeout(() => { mirrorHold = null; hold(); }, 450);
+});
+mirror.addEventListener("pointerup", () => { if (mirrorHold) { clearTimeout(mirrorHold); mirrorHold = null; press(); } });
+for (const ev of ["pointerleave", "pointercancel"]) mirror.addEventListener(ev, () => { if (mirrorHold) { clearTimeout(mirrorHold); mirrorHold = null; } });
+
+// ---------------------------------------------------------------- around the map
+
+const shortAt = { food: NEVER, wood: NEVER, gold: NEVER };
+const shown = {};
+let lastStock = null;
+function put(id, v) { if (shown[id] !== v) { shown[id] = v; $(id).textContent = v; } }
+function bump(el) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+
+function hud(t) {
+  if (!G) return;
+  for (const k of ["food", "wood", "gold"]) {
+    const v = Math.floor(G.stock[k]);
+    if (lastStock && v > lastStock[k] && state === "play") bump($("s-" + k));
+    put(k, String(v));
+    $("s-" + k).classList.toggle("short", t - shortAt[k] < 1200);
+  }
+  lastStock = { ...G.stock };
+  put("pop", String(pop()));
+  put("cap", String(cap()));
+  put("clock", fmt(state === "won" || state === "ending" ? G.wonAt : state === "play" || state === "lost" ? G.t : 0));
+  document.body.classList.toggle("playing", state === "play" || state === "ending");
+  document.body.classList.toggle("title", state === "title");
+  document.body.classList.toggle("placing", !!placing && state === "play");
+  if (state === "play" || state === "ending") {
+    const e = selected(), acts = actionsOf(e), a = acts[hlOf(e)];
+    put("whoName", nameOf(e));
+    put("whoDoing", doing(e));
+    let v = -1, yel = false;
+    if (e.t === "unit") v = e.hp / e.max;
+    else if (!e.done) v = e.prog;
+    else if (e.queue.length) { v = e.jt / TIME[e.queue[0]]; yel = e.queue[0] === "advance"; }
+    const bar = $("whoBar");
+    bar.classList.toggle("off", v < 0);
+    bar.classList.toggle("y", yel);
+    if (v >= 0) bar.style.setProperty("--v", clamp(v, 0, 1).toFixed(3));
+    const flash = pk.flash && t - pk.flashAt < 1800;
+    let act;
+    if (placing) act = `<b>Where?</b> ${canPlace(placing.kind, placing.x, placing.y) || "Click to build here"}`;
+    else if (flash) act = pk.flash;
+    else if (a) act = `<b>${a.name}</b> ${a.cost ? costText(a.cost) : ""}`;
+    else act = e.t === "bld" && !e.done ? "<b>Rising</b>" : `<b>Home for 5</b> ${pop()} of ${cap()} people`;
+    if (shown.act !== act) { shown.act = act; $("whoAct").innerHTML = act; }
+    $("whoAct").classList.toggle("no", !!flash && !placing);
+  }
+  put("hint", hintText());
+}
+
+function hintText() {
+  if (state !== "play") return "";
+  const puck = lastInput === "puck";
+  if (placing) return puck ? "Point the puck where it goes, then tap. Swipe to cancel." : "Click where it goes, or move it with the arrows and press Enter. Esc to cancel.";
+  if (G.t < 14) return puck ? "Turn the puck to choose, tap to do it. Swipe for the next one." : "Up and down to choose, Enter to do it. E and Q for the next one.";
+  const idle = G.units.filter((u) => u.kind === "villager" && u.st === "idle").length;
+  if (idle && G.t > 30) return `${idle === 1 ? "A villager is" : idle + " villagers are"} idle.${puck ? "" : " Press 1 to find them."}`;
+  return "";
+}
+
+// Toasts: what just happened; a click goes to it
+function toast(text, subject, warn) {
+  const box = $("toasts"), el = document.createElement("div");
+  el.className = "toast" + (warn ? " warn" : "");
+  el.innerHTML = "<i></i>";
+  el.append(text);
+  el.addEventListener("click", () => {
+    if (state !== "play" || !subject) return;
+    if (G.units.includes(subject) || G.blds.includes(subject)) pick(subject);
+  });
+  box.prepend(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  while (box.children.length > 3) box.lastChild.remove();
+  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 500); }, 3600);
+}
+
+// What the game said happened, turned into words, sounds and marks on the map
+let workAt = 0;
+function takeEvents() {
+  if (!G) return;
+  const live = state === "play" || state === "ending";
+  for (const ev of G.events) {
+    if (ev.k === "gone") { miniDirty = true; continue; }
+    if (ev.k === "drop") {
+      if (live && onScreen(G.tc, 0)) {
+        fx.push({ k: "text", x: G.tc.x + (Math.random() - 0.5) * 50, y: G.tc.y - 64, s: `+${ev.amt} ${ev.type}`, at: now });
+        sound("drop");
+      }
+      continue;
+    }
+    if (ev.k === "wolf") fx.push({ k: "puff", x: ev.x, y: ev.y, at: now });
+    if (!live) continue;
+    switch (ev.k) {
+      case "attack": toast(`${nameOf(ev.u)} is under attack`, ev.u, true); sound("growl"); break;
+      case "dead":
+        toast(`${nameOf(ev.u)} was lost`, null, true);
+        sound("lost");
+        if (ev.u.id === selId) { const r = roster(); pick(r.find((e) => kindOf(e) === kindOf(ev.u)) || G.tc, true); }
+        if (placing && placing.by === ev.u.id) placing = null;
+        break;
+      case "out": toast(ev.p.type === "gold" ? "The gold seam is empty" : `${ev.p.type === "wood" ? "Wood" : "Berries"} ran out ${ev.p.name}`); break;
+      case "none": toast(`No ${ev.type === "food" ? "berries" : ev.type} left to gather`); break;
+      case "trained": toast(`${nameOf(ev.u)} is ready`, ev.u); sound("trained"); break;
+      case "built": toast(ev.b.kind === "barracks" ? "The barracks are built" : `${nameOf(ev.b)} is built`, ev.b); sound("built"); break;
+      case "wolf": toast(ev.left ? `A wolf is down, ${ev.left} left` : "The last wolf is down"); sound("wolf"); break;
+      case "advancing": toast("Advancing to a new age", G.tc, true); sound("begin"); break;
+      case "age": break;
+      case "lost": break;
+    }
+  }
+  G.events.length = 0;
+}
+
+// Work sounds: the picked villager's, and now and then one in view
+function workSounds() {
+  if (state !== "play" || !audio) return;
+  const sel = selected();
+  for (const u of G.units) {
+    if (u.kind !== "villager" || u.moving || (u.st !== "work" && u.st !== "build")) continue;
+    const beat = Math.floor((G.t + u.id * 0.37) / 0.85);
+    if (u.beat === beat) continue;
+    u.beat = beat;
+    const mine = u === sel;
+    if (!mine && (now - workAt < 450 || !onScreen(u, 0))) continue;
+    if (!mine) workAt = now;
+    sound(u.st === "build" ? "hammer" : u.task === "wood" ? "chop" : u.task === "gold" ? "mine" : "pick", mine ? 1 : 0.35);
+  }
+}
+
+const PANELS = {
+  title: () => `<h1>Hamlet</h1>
+    <p>Three villagers, a Town Centre and a clearing in the woods. Gather food, wood and gold, mind the wolves, and <b>advance to a new age.</b></p>
+    <p class="how">${bridge.up ? "Swipe on the puck to pick a villager or a building, and the map goes to it. Turn the puck to choose what it does, tap to do it. On a building, hold, then point the puck where it goes."
+      : "Tab, or Q and E, picks a villager or a building. Up and down, or the wheel, choose what it does, and Enter does it. Click to pick, drag to look around, and hold Enter to choose where a building goes."}</p>
+    ${best ? `<p class="how">Best time ${fmt(best)}</p>` : ""}
+    <div class="go"><button class="btn" type="button" data-go>Start</button><span class="or">${bridge.up ? "or tap the puck" : "or press Enter"}</span></div>`,
+  won: () => {
+    const v = G.units.filter((u) => u.kind === "villager").length, h = G.blds.filter((b) => b.kind === "house" && b.done).length;
+    return `<h1>A new age</h1>
+    <p>Your hamlet advanced in ${fmt(G.wonAt)}${newBest ? ", a new best." : prevBest ? `. Best ${fmt(prevBest)}.` : "."}</p>
+    <p class="how">${v} villager${v === 1 ? "" : "s"}, ${h} house${h === 1 ? "" : "s"}${G.stats.wolves ? `, ${G.stats.wolves} wol${G.stats.wolves === 1 ? "f" : "ves"} down` : ""}${G.stats.lost ? `, ${G.stats.lost} lost to wolves` : ""}.</p>
+    <div class="go"><button class="btn" type="button" data-go>Play again</button><a class="btn quiet" href="../">More games</a></div>`;
+  },
+  lost: () => `<h1>The hamlet is empty</h1>
+    <p>No villagers are left, and there isn't the food for another. Keep them clear of the wolves, or send militia first.</p>
+    <div class="go"><button class="btn" type="button" data-go>Try again</button><a class="btn quiet" href="../">More games</a></div>`,
+};
+function showPanel() {
+  const make = PANELS[state];
+  $("panel").classList.toggle("show", !!make);
+  $("panel").inert = !make;  // hidden, its buttons can't be pressed: space would start the game again
+  if (!make) { document.activeElement?.blur?.(); return; }
+  $("card").innerHTML = make();
+  $("card").querySelector("[data-go]")?.addEventListener("click", (e) => { e.stopPropagation(); unlockSound(); start(); });
+}
+
+// ---------------------------------------------------------------- playing
+
+function start() {
+  newGame();
+  state = "play";
+  stateAt = now;
+  placing = null;
+  pk.turn = 0;
+  pk.flash = "";
+  selId = 0;
+  pick(G.units[0], true);
+  showPanel();
+  miniDirty = true;
+  $("toasts").replaceChildren();
+  lastStock = null;
+  sound("select");
+  count("game_start", { game: "hamlet", input: lastInput });
+}
+function beginEnding() {
+  state = "ending";
+  stateAt = now;
+  placing = null;
+  pick(G.tc, true);
+  sound("age");
+  puckSound("ok");
+  toast("A new age", G.tc, true);
+}
+function win() {
+  state = "won";
+  stateAt = now;
+  prevBest = best;
+  newBest = !!prevBest && G.wonAt < prevBest;
+  if (!prevBest || G.wonAt < prevBest) { best = G.wonAt; try { localStorage.setItem("hamlet.best", String(best)); } catch {} }
+  showPanel();
+  count("game_end", { game: "hamlet", result: "won", seconds: Math.round(G.wonAt) });
+}
+function lose() {
+  state = "lost";
+  stateAt = now;
+  placing = null;
+  showPanel();
+  count("game_end", { game: "hamlet", result: "lost", seconds: Math.round(G.t) });
+}
+
+// The title: the same clearing behind it, three villagers at work
+function backdrop() {
+  newGame();
+  G.units.forEach((v, i) => setTask(v, ["food", "wood", "wood"][i]));
+}
+
+// ---------------------------------------------------------------- the puck, through Watt
+
+const bridge = { ws: null, up: false, sent: "", sentAt: 0, retry: 3000, heard: NEVER };
+
+function connect() {
+  let ws;
+  try { ws = new WebSocket(BRIDGE); } catch { setTimeout(connect, bridge.retry); return; }
+  ws.onopen = () => {
+    bridge.ws = ws;
+    bridge.up = true;
+    bridge.retry = 3000;
+    bridge.sent = "";
+    send({ type: "hello", kind: "game", name: "Hamlet" });
+    presence();
+    if (state === "title") showPanel();
+  };
+  ws.onmessage = (e) => {
+    let m;
+    try { m = JSON.parse(e.data); } catch { return; }
+    const t = performance.now();
+    if (m.type === "aim") { bridge.heard = t; aimMove(m.dx, m.dy); }
+    else if (m.type === "input") {
+      bridge.heard = t;
+      pk.inputAt = t;
+      lastInput = "puck";
+      if (m.input === "tap") press();
+      else if (m.input === "hold") hold();
+      else if (m.input === "swipe") swipe(m.value);
+      else if (m.input === "turn" && typeof m.value === "number" && state === "play" && !placing) turn(m.value);
+    }
+  };
+  ws.onclose = () => {
+    const was = bridge.up;
+    bridge.ws = null;
+    bridge.up = false;
+    if (was && state === "title") showPanel();
+    setTimeout(connect, bridge.retry);
+    bridge.retry = Math.min(bridge.retry * 1.5, 15000);  // Watt isn't open: ask less often
+  };
+}
+function send(o) { if (bridge.ws && bridge.ws.readyState === 1) bridge.ws.send(JSON.stringify(o)); }
+
+// Watt gives the puck to the page you're looking at
+function presence() { send({ type: "presence", visible: !document.hidden, focused: document.hasFocus(), title: document.title }); }
+addEventListener("focus", presence);
+addEventListener("blur", presence);
+document.addEventListener("visibilitychange", presence);
+setInterval(presence, 2000);
+
+function swipe(d) {
+  if (state !== "play") return;
+  if (placing) { cancelPlacing(); return; }
+  if (d === "l") cycle(-1);
+  else if (d === "r") cycle(1);
+  else if (d === "d") jumpKind(1);
+  else if (d === "u") jumpKind(-1);
+}
+// Pointing the puck moves the new building, as an air mouse moves a pointer
+function aimMove(dx, dy) {
+  if (!placing || state !== "play" || typeof dx !== "number" || typeof dy !== "number") return;
+  const k = W / (SWEEP_DEG * 100) / scaleOf();
+  placing.x = clamp(placing.x + dx * k, 40, MAP_W - 40);
+  placing.y = clamp(placing.y + dy * k, 40, MAP_H - 40);
+  placing.lock = false;
+  lastInput = "puck";
+}
+
+// The face goes when it changes: quickly right after the puck is used, at most every 100 ms otherwise
+function face(t) {
+  const f = faceNow();
+  lastFace = f;
+  const s = JSON.stringify(f);
+  if (s !== mirrorDrawn) { mirrorDrawn = s; drawMirror(f); }
+  if (!bridge.up) return;
+  const gap = t - pk.inputAt < 400 ? 40 : 100;
+  if (s === bridge.sent || t - bridge.sentAt < gap) return;
+  bridge.sent = s;
+  bridge.sentAt = t;
+  send(f);
+}
+
+function connState() {
+  const puck = bridge.up && performance.now() - bridge.heard < 4000;
+  $("conn").classList.toggle("puck", puck);
+  put("connText", puck ? "Puck" : bridge.up ? "Watt is on: try the puck" : "Mouse");
+}
+
+// ---------------------------------------------------------------- mouse, touch, keys
+
+let drag = null, wheelAcc = 0, wheelAt = 0;
+cv.addEventListener("pointerdown", (e) => {
+  unlockSound();
+  if (state !== "play") return;
+  drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false, touch: e.pointerType === "touch" };
+  cv.setPointerCapture?.(e.pointerId);
+});
+cv.addEventListener("pointermove", (e) => {
+  if (state !== "play") return;
+  if (placing && e.pointerType === "mouse" && (!drag || !drag.moved)) {
+    const w = toWorld(e.clientX, e.clientY);
+    placing.x = w.x;
+    placing.y = w.y;
+    placing.lock = false;
+    lastInput = "mouse";
+  }
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved && Math.hypot(dx, dy) > 6) { drag.moved = true; document.body.classList.add("dragging"); }
+  if (drag.moved) {
+    const s = scaleOf();
+    cam.x = drag.cx - dx / s;
+    cam.y = drag.cy - dy / s;
+    cam.free = true;
+    cam.flight = null;
+    clampCam();
+  }
+});
+cv.addEventListener("pointerup", (e) => {
+  const d = drag;
+  drag = null;
+  document.body.classList.remove("dragging");
+  if (!d || d.moved || state !== "play") return;
+  lastInput = d.touch ? "touch" : "mouse";
+  const w = toWorld(e.clientX, e.clientY);
+  if (placing) { placing.x = w.x; placing.y = w.y; place(); return; }
+  const hit = hitTest(w.x, w.y, d.touch ? 26 : 18);
+  if (hit) pick(hit);
+});
+cv.addEventListener("pointercancel", () => { drag = null; document.body.classList.remove("dragging"); });
+cv.addEventListener("contextmenu", (e) => { e.preventDefault(); if (placing) cancelPlacing(); });
+cv.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  if (state !== "play" || placing) return;
+  const t = performance.now();
+  if (t - wheelAt > 400) wheelAcc = 0;
+  wheelAcc += e.deltaMode ? e.deltaY * 30 : e.deltaY;
+  if (Math.abs(wheelAcc) >= 50 && t - wheelAt > 90) { moveHl(Math.sign(wheelAcc)); wheelAcc = 0; wheelAt = t; lastInput = "mouse"; }
+}, { passive: false });
+
+function hitTest(x, y, reach) {
+  let best = null, bd = reach;
+  for (const u of G.units) { const d = Math.hypot(u.x - x, u.y - 10 * FIG - y); if (d < bd) { bd = d; best = u; } }
+  if (best) return best;
+  for (let i = G.blds.length - 1; i >= 0; i--) {
+    const b = G.blds[i], s = SIZE[b.kind];
+    if (x > b.x - s.w / 2 - 6 && x < b.x + s.w / 2 + 6 && y > b.y - s.d / 2 - s.h - 12 && y < b.y + s.d / 2 + 6) return b;
+  }
+  return null;
+}
+
+// Enter or space: a press is a tap, held a moment it's a hold
+let keyHeld = false, keyTimer = 0;
+addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.code;
+  if ((k === "Space" || k === "Enter") && e.target.closest && e.target.closest("a, button")) return;
+  if (k === "Space" || k === "Enter") {
+    e.preventDefault();
+    unlockSound();
+    lastInput = "keys";
+    if (e.repeat) return;
+    if (state !== "play") { press(); return; }
+    keyHeld = true;
+    clearTimeout(keyTimer);
+    keyTimer = setTimeout(() => { if (keyHeld) { keyHeld = false; hold(); } }, 450);
+    return;
+  }
+  if (state !== "play") return;
+  if (["Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(k)) e.preventDefault();
+  unlockSound();
+  lastInput = "keys";
+  if (k === "Escape") { if (placing) cancelPlacing(); return; }
+  if (placing) {  // the arrows move the new building
+    const step = 24, mv = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[k];
+    if (mv) { placing.x = clamp(placing.x + mv[0], 40, MAP_W - 40); placing.y = clamp(placing.y + mv[1], 40, MAP_H - 40); placing.lock = false; }
+    return;
+  }
+  if (k === "Tab") cycle(e.shiftKey ? -1 : 1);
+  else if (k === "KeyE" || k === "ArrowRight") cycle(1);
+  else if (k === "KeyQ" || k === "ArrowLeft") cycle(-1);
+  else if (k === "ArrowUp") moveHl(-1);
+  else if (k === "ArrowDown") moveHl(1);
+  else if (k === "Digit1") jumpTo(0);
+  else if (k === "Digit2") jumpTo(1);
+  else if (k === "Digit3") jumpTo(2);
+});
+addEventListener("keyup", (e) => {
+  if ((e.code === "Space" || e.code === "Enter") && keyHeld) { keyHeld = false; clearTimeout(keyTimer); press(); }
+});
+addEventListener("blur", () => { keyHeld = false; clearTimeout(keyTimer); });
+
+// ---------------------------------------------------------------- sound (once the page has been clicked or a key pressed)
+
+let audio = null;
+function unlockSound() {
+  if (!audio) { try { audio = new AudioContext(); } catch { audio = null; } }
+  audio?.resume?.();
+}
+function sound(kind, vol = 1) {
+  if (!audio || audio.state !== "running") return;
+  const t = audio.currentTime;
+  const tone = (f, at, len, gain, type = "sine", to) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f, t + at);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + at + len);
+    g.gain.setValueAtTime(0, t + at);
+    g.gain.linearRampToValueAtTime(gain * vol, t + at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + at + len);
+    o.connect(g);
+    g.connect(audio.destination);
+    o.start(t + at);
+    o.stop(t + at + len + 0.02);
+  };
+  if (kind === "select") { tone(1180, 0, 0.06, 0.035); tone(1770, 0.02, 0.07, 0.018); }
+  else if (kind === "step") tone(2300, 0, 0.025, 0.016, "triangle");
+  else if (kind === "ok") { tone(660, 0, 0.09, 0.04); tone(990, 0.06, 0.14, 0.035); }
+  else if (kind === "place") { tone(300, 0, 0.1, 0.05, "triangle", 190); tone(900, 0.05, 0.1, 0.025); }
+  else if (kind === "no") tone(220, 0, 0.14, 0.05, "triangle", 150);
+  else if (kind === "chop") { tone(210, 0, 0.05, 0.028, "triangle", 120); tone(1100, 0, 0.012, 0.01, "square"); }
+  else if (kind === "hammer") tone(420, 0, 0.04, 0.022, "triangle", 260);
+  else if (kind === "pick") tone(1500 + Math.random() * 300, 0, 0.03, 0.012);
+  else if (kind === "mine") { tone(2600, 0, 0.05, 0.012); tone(3900, 0.005, 0.04, 0.006); }
+  else if (kind === "drop") tone(520, 0, 0.05, 0.014, "triangle");
+  else if (kind === "trained") { tone(880, 0, 0.14, 0.045); tone(1320, 0.09, 0.22, 0.04); }
+  else if (kind === "built") { tone(523, 0, 0.18, 0.045); tone(784, 0.1, 0.3, 0.04); }
+  else if (kind === "growl") tone(140, 0, 0.32, 0.04, "triangle", 95);
+  else if (kind === "lost") tone(440, 0, 0.6, 0.04, "triangle", 160);
+  else if (kind === "wolf") { tone(660, 0, 0.12, 0.035); tone(495, 0.1, 0.2, 0.03); }
+  else if (kind === "begin") { tone(392, 0, 0.5, 0.03); tone(523, 0.15, 0.6, 0.03); }
+  else if (kind === "age") { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.12, 1 - i * 0.1, 0.045)); tone(262, 0, 1.5, 0.03, "triangle"); }
+}
+
+function count(name, params) { gtag("event", name, params); }
+
+// ---------------------------------------------------------------- the frame
+
+function resize() {
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth;
+  H = innerHeight;
+  cv.width = Math.round(W * DPR);
+  cv.height = Math.round(H * DPR);
+  const mr = mirror.getBoundingClientRect();
+  mirrorSize = Math.round(mr.width) || 148;
+  mirrorDPR = DPR;
+  mirror.width = Math.round(mirrorSize * DPR);
+  mirror.height = Math.round(mirrorSize * DPR);
+  mirrorDrawn = "";
+  const nr = mini.getBoundingClientRect();
+  miniW = Math.round(nr.width) || 180;
+  miniH = Math.round(nr.height) || 120;
+  miniDPR = DPR;
+  mini.width = Math.round(miniW * DPR);
+  mini.height = Math.round(miniH * DPR);
+  miniDirty = true;
+  if (!groundPat) {
+    groundPat = ctx.createPattern(makeGround(), "repeat");
+    if (groundPat && groundPat.setTransform && typeof DOMMatrix === "function") groundPat.setTransform(new DOMMatrix([0.5, 0, 0, 0.5, 0, 0]));
+  }
+}
+
+let last = performance.now(), acc = 0;
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000);
+  last = t;
+  now = t;
+  if (G) {
+    acc += dt;
+    let n = 0;
+    while (acc >= STEP && n < 4) { step(STEP); acc -= STEP; n++; }
+    if (n === 4) acc = 0;
+  }
+  takeEvents();
+  workSounds();
+  if (state === "play") { if (G.won) beginEnding(); else if (G.lost) lose(); }
+  if (state === "ending" && t - stateAt > 2800) win();
+  if (state === "title" && G.t > 240) backdrop();  // keep the title's clearing fresh
+  if (t - pk.turnAt > 700) pk.turn = 0;
+  camStep(dt);
+  render(t);
+  drawMini(t);
+  hud(t);
+  face(t);
+  connState();
+  requestAnimationFrame(frame);
+}
+
+addEventListener("resize", resize);
+backdrop();
+mood = makeMood();
+resize();
+showPanel();
+connect();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

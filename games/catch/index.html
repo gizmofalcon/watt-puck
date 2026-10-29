@@ -1,0 +1,1547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catch · Puck games</title>
+<meta name="description" content="Small creatures hide in the long grass of a meadow at dusk. Ten balls a round: point Watt, the puck, and swipe up to throw. Or play with a mouse.">
+<meta name="theme-color" content="#0A0A0B">
+<link rel="icon" href="../../assets/icon.png">
+<link rel="canonical" href="https://watt.sourabhdaroji.com/games/catch/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Watt, the puck">
+<meta property="og:title" content="Catch">
+<meta property="og:description" content="Small creatures hide in the long grass. Point the puck and swipe up to throw.">
+<meta property="og:url" content="https://watt.sourabhdaroji.com/games/catch/">
+<meta property="og:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  // Google Analytics, as on the home page: only on the real site, and loaded once the page is idle
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0A0A0B; --w: #F5F5F7; --mute: rgba(245, 245, 247, 0.56); --faint: rgba(245, 245, 247, 0.4); --y: #FFD60A; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color-scheme: dark; overflow: hidden; }
+  body { color: var(--w); -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; touch-action: none;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--w); }
+  #field { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+  body.aiming #field { cursor: none; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: rgba(255, 255, 255, 0.08); color: var(--w); font-weight: 700; }
+  .btn.quiet:hover { filter: none; background: rgba(255, 255, 255, 0.13); }
+  .btn.small { height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; }
+  .btn svg { width: 8px; height: 12px; margin-right: 8px; opacity: 0.6; }
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
+
+  /* what stays on screen: the way back, the balls left, the collection */
+  .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; pointer-events: none; }
+  .hud > * { pointer-events: auto; }
+  .side { display: flex; align-items: center; gap: 18px; }
+  .balls { display: flex; gap: 6px; }
+  .balls i { width: 7px; height: 7px; border-radius: 50%; background: rgba(245, 245, 247, 0.16); transition: background-color 0.3s, transform 0.5s var(--ease); }
+  .balls i.on { background: var(--y); }
+  .balls i:not(.on) { transform: scale(0.7); }
+  .btn.dex svg { width: 13px; height: 13px; opacity: 0.7; }
+  .btn.dex .n { margin-left: 8px; font: 500 13px/1 "Roboto Mono", ui-monospace, Menlo, monospace; color: var(--mute); }
+
+  /* between rounds, and the collection */
+  .panel { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; pointer-events: none; opacity: 0; transition: opacity 0.5s var(--ease);
+    background: radial-gradient(ellipse at center, rgba(10, 10, 11, 0.86), rgba(10, 10, 11, 0.55) 60%, rgba(10, 10, 11, 0.2)); }
+  .panel.show { opacity: 1; }
+  .panel.show .card { pointer-events: auto; }
+  #dex { overflow-y: auto; background: rgba(10, 10, 11, 0.9); }
+  #dex.show { pointer-events: auto; }
+  .card { max-width: 470px; text-align: center; transform: translateY(8px); transition: transform 0.6s var(--ease); }
+  .card.wide { width: 100%; max-width: 560px; }
+  .panel.show .card { transform: none; }
+  .card h1 { margin: 0; font-size: 44px; line-height: 52px; font-weight: 800; letter-spacing: -0.02em; }
+  .card p { margin: 14px 0 0; font-size: 18px; line-height: 28px; color: var(--mute); text-wrap: pretty; }
+  .card .how { margin-top: 18px; font-size: 15px; line-height: 23px; color: var(--faint); }
+  .card .go { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; margin-top: 28px; }
+  .card .or { font-size: 14px; color: var(--faint); }
+
+  /* the round's catches, and the collection's cells */
+  .mons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 4px; margin-top: 22px; }
+  .mon { width: 76px; font-size: 13px; line-height: 18px; color: var(--mute); }
+  .mon canvas, .cell canvas { display: block; margin: 0 auto 4px; }
+  .mon canvas { width: 60px; height: 60px; }
+  .mon .new { display: block; color: var(--y); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 24px; }
+  .cell { padding: 12px 6px 14px; border-radius: 16px; background: #141416; }
+  .cell canvas { width: 72px; height: 72px; }
+  .cell b { display: block; font-size: 15px; line-height: 20px; font-weight: 800; }
+  .cell span { display: block; font-size: 13px; line-height: 18px; color: var(--faint); }
+  .cell.unknown b { color: var(--faint); font-weight: 700; }
+
+  .hint { position: fixed; left: 0; right: 0; bottom: 22px; margin: 0; text-align: center; font-size: 14px; line-height: 20px; color: var(--faint); pointer-events: none; }
+  .conn { position: fixed; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 24px; color: var(--faint); }
+  .conn i { width: 7px; height: 7px; border-radius: 50%; background: rgba(245, 245, 247, 0.25); transition: background-color 0.3s, box-shadow 0.3s; }
+  .conn.puck i { background: var(--y); box-shadow: 0 0 10px rgba(255, 214, 10, 0.6); }
+  /* the puck, as it looks now */
+  .mirror { position: fixed; left: 24px; bottom: 20px; width: 140px; height: 140px; pointer-events: none; }
+
+  @media (max-width: 640px) {
+    .hud { padding: 16px; }
+    .side { gap: 12px; }
+    .balls { gap: 4px; }
+    .balls i { width: 6px; height: 6px; }
+    .btn.dex .word { display: none; }
+    .card h1 { font-size: 36px; line-height: 44px; }
+    .card p { font-size: 17px; line-height: 26px; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .conn { right: 16px; bottom: 14px; }
+    .hint { bottom: 110px; }
+    .mirror { left: 16px; bottom: 14px; width: 84px; height: 84px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .panel, .card, .balls i { transition: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="field" aria-label="A meadow at dusk. Small creatures hide in the long grass."></canvas>
+
+<div class="hud">
+  <a class="btn quiet small" href="../"><svg viewBox="0 0 8 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 1 1.5 6l5 5"/></svg>Games</a>
+  <div class="side">
+    <div class="balls" id="balls" role="img" aria-label="10 balls left"></div>
+    <button class="btn quiet small dex" id="dexBtn" type="button" aria-label="Collection"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="1" y="1" width="5" height="5" rx="1.5"/><rect x="8" y="1" width="5" height="5" rx="1.5"/><rect x="1" y="8" width="5" height="5" rx="1.5"/><rect x="8" y="8" width="5" height="5" rx="1.5"/></svg><span class="word">Collection</span><span class="n" id="dexN">0/8</span></button>
+  </div>
+</div>
+
+<div class="panel" id="panel"><div class="card" id="card"></div></div>
+<div class="panel" id="dex" role="dialog" aria-modal="true" aria-label="Collection"><div class="card wide" id="dexCard"></div></div>
+
+<p class="hint" id="hint"></p>
+<canvas class="mirror" id="mirror" aria-hidden="true"></canvas>
+<div class="conn" id="conn"><i></i><span id="connText">Mouse</span></div>
+
+<script>
+// Catch: small creatures hide in the long grass of a meadow at dusk. Ten balls a round, and what
+// you catch stays in your collection.
+//
+// The puck is the ball, through Watt on this Mac: the page joins Watt's local bridge as a game and
+// asks for the "ball" face, with the puck's pointing ("aim", the air mouse's motion in 1/100 degree).
+// Point it to aim, swipe up on the glass to throw. While the ball rocks in the grass, the puck rocks
+// in your hand and clicks with it. A mouse, the space bar or a finger play it too.
+
+const BALLS = 10;          // balls in a round
+const RING_S = 1.6;        // the catch ring shrinks and grows again in this long
+const ROCK_S = 0.9;        // one rock of the ball in the grass
+const SWEEP_DEG = 40;      // turning the puck this far moves the aim across the width of the meadow
+const BRIDGE = "ws://127.0.0.1:47824";
+const SAVE = "watt-catch";
+
+const cv = document.getElementById("field");
+const ctx = cv.getContext("2d");
+const bgCv = document.createElement("canvas");
+const bctx = bgCv.getContext("2d");
+const mirror = document.getElementById("mirror");
+const mctx = mirror.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const lerp = (a, b, t) => a + (b - a) * t;
+const out3 = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+const TAU = Math.PI * 2;
+const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---------------------------------------------------------------- the creatures
+
+// w: how often it turns up; rate: how often a hit becomes a catch, before the ring's bonus;
+// flee: how ready it is to run off; size: of the screen's short side, close by
+const KINDS = [
+  { id: "sprig", name: "Sprig", col: "#8DB592", rarity: "common", w: 30, rate: 0.62, flee: 0.05, move: "hop", size: 0.04 },
+  { id: "pebbit", name: "Pebbit", col: "#A39B91", rarity: "common", w: 30, rate: 0.68, flee: 0.04, move: "waddle", size: 0.042 },
+  { id: "mothlet", name: "Mothlet", col: "#B1A4C8", rarity: "common", w: 30, rate: 0.55, flee: 0.07, move: "flutter", size: 0.034 },
+  { id: "drizzle", name: "Drizzle", col: "#7FA6C9", rarity: "uncommon", w: 14, rate: 0.46, flee: 0.08, move: "glide", size: 0.037 },
+  { id: "embry", name: "Embry", col: "#D3895B", rarity: "uncommon", w: 14, rate: 0.4, flee: 0.1, move: "dash", size: 0.038 },
+  { id: "bloop", name: "Bloop", col: "#C98CA6", rarity: "uncommon", w: 14, rate: 0.42, flee: 0.09, move: "bounce", size: 0.037 },
+  { id: "volta", name: "Volta", col: "#FFD60A", rarity: "rare", w: 7, rate: 0.26, flee: 0.16, move: "zip", size: 0.034 },
+  { id: "lumi", name: "Lumi", col: "#DDE7FF", rarity: "very rare", w: 3, rate: 0.16, flee: 0.2, move: "float", size: 0.03 },
+];
+
+function pickKind() {
+  let r = Math.random() * KINDS.reduce((a, k) => a + k.w, 0);
+  for (const k of KINDS) if ((r -= k.w) < 0) return k;
+  return KINDS[0];
+}
+
+// ---------------------------------------------------------------- the meadow
+
+let W = 0, H = 0, S = 0, DPR = 1, HOR = 0;   // HOR: the horizon
+let clumps = [], tufts = [], stars = [];
+
+const depth = (y) => clamp((y - HOR) / Math.max(1, H - HOR), 0, 1);   // 0 at the horizon, 1 at the bottom
+const near = (y) => 0.45 + 0.85 * depth(y);                          // how big things look there
+const BAND = [0.15, 0.74];                                            // where creatures go, of the ground's depth
+const bandY = (f) => HOR + (H - HOR) * lerp(BAND[0], BAND[1], f);
+const clumpAt = (cl) => ({ x: cl.fx * W, y: bandY(cl.fy) });
+
+// Tall grass in clumps (where they hide), short grass all over, a few stars
+function makeMeadow() {
+  clumps = [];
+  for (let i = 0; clumps.length < 11 && i < 600; i++) {
+    const fx = rand(0.07, 0.93), fy = rand(0, 1);
+    if (clumps.some((c) => Math.abs(c.fx - fx) < 0.1 && Math.abs(c.fy - fy) < 0.28)) continue;
+    const n = 11 + Math.floor(Math.random() * 5);
+    const blades = Array.from({ length: n }, (_, j) => {
+      const bx = (j / (n - 1)) * 2 - 1 + rand(-0.12, 0.12);
+      return { bx, h: rand(0.55, 1), lean: rand(-0.2, 0.2) + bx * 0.32, ph: rand(0, TAU), tone: Math.floor(Math.random() * 4) };
+    });
+    clumps.push({ fx, fy, blades, shake: 0 });
+  }
+  tufts = Array.from({ length: 150 }, () => ({ fx: Math.random(), d: Math.pow(Math.random(), 0.8), s: rand(0.7, 1.3), a: rand(-0.3, 0.3) }));
+  stars = Array.from({ length: 46 }, () => ({ x: Math.random(), y: Math.pow(Math.random(), 1.4), r: rand(0.5, 1.3), p: rand(0, TAU), v: rand(0.6, 1.8) }));
+}
+
+// What doesn't move, drawn once a size: the sky, the hills, the ground and its short grass
+function drawBg() {
+  bgCv.width = Math.round(W * DPR);
+  bgCv.height = Math.round(H * DPR);
+  const c = bctx;
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const sky = c.createLinearGradient(0, 0, 0, HOR);
+  sky.addColorStop(0, "#05060A"); sky.addColorStop(0.55, "#0B0D16"); sky.addColorStop(1, "#191A26");
+  c.fillStyle = sky; c.fillRect(0, 0, W, HOR + 2);
+  // the last of the day, low on one side
+  const dusk = c.createRadialGradient(W * 0.64, HOR, 0, W * 0.64, HOR, Math.max(W, H) * 0.6);
+  dusk.addColorStop(0, "rgba(232, 168, 128, 0.13)"); dusk.addColorStop(0.5, "rgba(190, 130, 140, 0.04)"); dusk.addColorStop(1, "rgba(190, 130, 140, 0)");
+  c.fillStyle = dusk; c.fillRect(0, 0, W, HOR + 2);
+  hill(c, HOR - H * 0.075, H * 0.05, 1.3, 0.7, "#0D0F16");
+  hill(c, HOR - H * 0.03, H * 0.03, 2.4, 2.2, "#10121A");
+  // the ground: hazy far away, darker close by
+  const g = c.createLinearGradient(0, HOR, 0, H);
+  g.addColorStop(0, "#131622"); g.addColorStop(0.35, "#0F1416"); g.addColorStop(1, "#0A0C0B");
+  c.fillStyle = g; c.fillRect(0, HOR, W, H - HOR);
+  c.lineCap = "round";
+  for (const t of tufts) {
+    const y = HOR + (H - HOR) * t.d, k = near(y), x = t.fx * W, h = S * 0.016 * k * t.s;
+    c.strokeStyle = `rgba(150, 178, 156, ${0.05 + 0.1 * t.d})`;
+    c.lineWidth = Math.max(0.6, 1.1 * k);
+    c.beginPath();
+    for (const o of [-1, 0, 1]) { c.moveTo(x + o * h * 0.3, y); c.lineTo(x + o * h * 0.55 + t.a * h, y - h * (o ? 0.75 : 1)); }
+    c.stroke();
+  }
+}
+
+function hill(c, base, amp, f, ph, col) {
+  c.fillStyle = col;
+  c.beginPath();
+  c.moveTo(0, HOR + 1);
+  for (let x = 0; x <= W + 12; x += 12) {
+    const u = x / Math.max(1, W);
+    c.lineTo(x, base - amp * (0.65 * Math.sin(u * f * Math.PI + ph) + 0.35 * Math.sin(u * f * 2.7 * Math.PI + ph * 1.9)));
+  }
+  c.lineTo(W + 12, HOR + 1);
+  c.closePath();
+  c.fill();
+}
+
+function drawStars(T) {
+  const top = HOR - H * 0.14;
+  for (const s of stars) {
+    const a = (calm ? 0.5 : 0.35 + 0.3 * Math.sin(T * s.v + s.p)) * (1 - s.y * 0.5);
+    ctx.fillStyle = `rgba(245, 245, 247, ${a})`;
+    ctx.beginPath(); ctx.arc(s.x * W, s.y * top, s.r, 0, TAU); ctx.fill();
+  }
+}
+
+// A clump of tall grass: stroked blades that sway a little, and shake when something's in there
+const GRASS = ["#2B3A30", "#33453A", "#3E5245", "#4A6152"];
+function drawClump(cl, T) {
+  const p = clumpAt(cl), k = near(p.y), h = S * 0.09 * k, half = h * 0.34;
+  const wind = calm ? 0 : Math.sin(T * 0.9 + cl.fx * 5) * 0.05;
+  ctx.lineCap = "round";
+  ctx.lineWidth = Math.max(1, 2 * k);
+  for (const b of cl.blades) {
+    let a = b.lean + wind;
+    if (calm) a += b.bx * 0.22 * cl.shake;   // still: it parts instead of shaking
+    else a += Math.sin(T * 1.6 + b.ph) * 0.045 + Math.sin(T * 34 + b.ph * 3) * 0.22 * cl.shake;
+    const len = h * b.h, x0 = p.x + b.bx * half;
+    ctx.strokeStyle = GRASS[b.tone];
+    ctx.beginPath();
+    ctx.moveTo(x0, p.y + 1);
+    ctx.quadraticCurveTo(x0 + Math.sin(a * 0.4) * len * 0.5, p.y - len * 0.55, x0 + Math.sin(a) * len, p.y - Math.cos(a) * len);
+    ctx.stroke();
+  }
+}
+
+// ---------------------------------------------------------------- the creatures, drawn
+
+const INK = "rgba(245, 245, 247, 0.92)";
+const EYE = "#141317";
+function mix(hex, to, t) {
+  const a = parseInt(hex.slice(1), 16), b = parseInt(to.slice(1), 16);
+  const m = (s) => Math.round(lerp((a >> s) & 255, (b >> s) & 255, t));
+  return `rgb(${m(16)}, ${m(8)}, ${m(0)})`;
+}
+// How one is painted: in its colour, as a silhouette (not caught yet), or as light (going into the ball)
+function looks(k, look) {
+  if (look === "sil") return { fill: "#1B1D23", fill2: "#1B1D23", dark: "#1B1D23", line: "rgba(245, 245, 247, 0.16)", eyes: false };
+  if (look === "light") return { fill: "#FFF9E6", fill2: "#FFFFFF", dark: "#FFF3CC", line: "#FFFFFF", eyes: false };
+  return { fill: k.col, fill2: mix(k.col, "#FFFFFF", 0.3), dark: mix(k.col, "#0A0A0B", 0.3), line: INK, eyes: true };
+}
+
+// One creature at the origin (the middle of its body; its feet are at y = R), facing o.dir.
+// o: t (time), blink, dir, sq (squash), flap (wings open, 0..1), nap, step (walk phase), run
+function drawKind(c, k, R, o, look = "live") {
+  const st = looks(k, look), lw = Math.max(1.1, R * 0.08);
+  c.save();
+  c.lineJoin = "round";
+  c.lineCap = "round";
+  c.scale(o.dir || 1, 1);
+  DRAW[k.id](c, R, o, st, lw);
+  c.restore();
+}
+
+function fillLine(c, st, lw, fill) {
+  c.fillStyle = fill || st.fill; c.fill();
+  c.strokeStyle = st.line; c.lineWidth = lw; c.stroke();
+}
+function eyePair(c, st, x, y, gap, r, o, kind = "open") {
+  if (!st.eyes) return;
+  for (const s of [-1, 1]) {
+    const ex = x + s * gap;
+    if (o.blink || kind === "shut") {      // closed: a little curve
+      c.strokeStyle = EYE; c.lineWidth = Math.max(1, r * 0.55);
+      c.beginPath(); c.arc(ex, y - r * 0.3, r * 0.85, 0.2 * Math.PI, 0.8 * Math.PI); c.stroke();
+    } else if (kind === "sleepy") {        // half shut
+      c.fillStyle = EYE; c.beginPath(); c.ellipse(ex, y, r, r * 0.9, 0, 0, Math.PI); c.fill();
+      c.strokeStyle = EYE; c.lineWidth = Math.max(1, r * 0.45);
+      c.beginPath(); c.moveTo(ex - r * 1.05, y); c.lineTo(ex + r * 1.05, y); c.stroke();
+    } else {
+      c.fillStyle = EYE; c.beginPath(); c.ellipse(ex, y, r * 0.86, r, 0, 0, TAU); c.fill();
+      c.fillStyle = "rgba(255, 255, 255, 0.9)"; c.beginPath(); c.arc(ex - r * 0.3, y - r * 0.35, r * 0.32, 0, TAU); c.fill();
+    }
+  }
+}
+function smile(c, st, x, y, r) {
+  if (!st.eyes) return;
+  c.strokeStyle = EYE; c.lineWidth = Math.max(1, r * 0.35);
+  c.beginPath(); c.arc(x, y - r * 0.4, r, 0.25 * Math.PI, 0.75 * Math.PI); c.stroke();
+}
+function twinkle(c, x, y, s, col) {   // a four-point sparkle
+  c.fillStyle = col;
+  c.beginPath();
+  c.moveTo(x, y - s); c.quadraticCurveTo(x, y, x + s, y); c.quadraticCurveTo(x, y, x, y + s);
+  c.quadraticCurveTo(x, y, x - s, y); c.quadraticCurveTo(x, y, x, y - s);
+  c.fill();
+}
+
+const DRAW = {
+  // a round sprout with two leaves
+  sprig(c, R, o, st, lw) {
+    const sq = o.sq || 0;
+    c.save();
+    c.translate(0, -R * 0.92 * (1 - sq * 0.12));
+    c.rotate(calm ? 0 : Math.sin(o.t * 2.3) * 0.12);
+    c.strokeStyle = st.line; c.lineWidth = lw;
+    c.beginPath(); c.moveTo(0, R * 0.05); c.quadraticCurveTo(R * 0.08, -R * 0.2, 0, -R * 0.38); c.stroke();
+    for (const s of [-1, 1]) {
+      const L = R * 0.62;
+      c.save();
+      c.translate(0, -R * 0.36); c.scale(s, 1); c.rotate(-0.55 + (calm ? 0 : Math.sin(o.t * 3.1 + s) * 0.1));
+      c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(L * 0.5, -L * 0.4, L, 0); c.quadraticCurveTo(L * 0.5, L * 0.4, 0, 0); c.closePath();
+      fillLine(c, st, lw, st.fill2);
+      c.restore();
+    }
+    c.restore();
+    c.beginPath(); c.ellipse(0, sq * R * 0.06, R * (1.02 + sq * 0.12), R * (0.97 - sq * 0.12), 0, 0, TAU);
+    fillLine(c, st, lw);
+    eyePair(c, st, 0, -R * 0.02, R * 0.36, R * 0.12, o);
+    smile(c, st, 0, R * 0.32, R * 0.11);
+  },
+
+  // a sleepy pebble on stubby feet
+  pebbit(c, R, o, st, lw) {
+    const step = o.step || 0;
+    for (const s of [-1, 1]) {
+      const lift = Math.max(0, Math.sin(step + (s > 0 ? Math.PI : 0))) * R * 0.12;
+      c.beginPath(); c.ellipse(s * R * 0.48, R * 0.86 - lift, R * 0.26, R * 0.17, 0, 0, TAU);
+      fillLine(c, st, lw, st.dark);
+    }
+    c.beginPath();
+    c.moveTo(-R * 1.08, R * 0.3);
+    c.bezierCurveTo(-R * 1.16, -R * 0.55, -R * 0.42, -R * 0.98, R * 0.16, -R * 0.92);
+    c.bezierCurveTo(R * 0.86, -R * 0.86, R * 1.18, -R * 0.28, R * 1.1, R * 0.3);
+    c.bezierCurveTo(R * 1.02, R * 0.86, -R * 1.0, R * 0.9, -R * 1.08, R * 0.3);
+    c.closePath();
+    fillLine(c, st, lw);
+    if (st.eyes) {   // speckles
+      c.fillStyle = st.dark;
+      for (const [x, y, r] of [[-0.6, -0.45, 0.08], [0.55, -0.55, 0.06], [0.72, 0.18, 0.07], [-0.4, 0.5, 0.05]]) {
+        c.beginPath(); c.arc(x * R, y * R, r * R, 0, TAU); c.fill();
+      }
+    }
+    eyePair(c, st, R * 0.08, -R * 0.08, R * 0.34, R * 0.12, o, o.nap ? "shut" : "sleepy");
+  },
+
+  // a fluffy small moth
+  mothlet(c, R, o, st, lw) {
+    const fw = 0.3 + 0.7 * (o.flap ?? 0.6);
+    for (const s of [-1, 1]) {
+      c.save();
+      c.scale(s, 1);
+      c.beginPath(); c.ellipse(R * (0.25 + 0.62 * fw), -R * 0.42, R * 0.72 * fw, R * 0.52, -0.35, 0, TAU);
+      fillLine(c, st, lw, st.fill2);
+      c.beginPath(); c.ellipse(R * (0.22 + 0.45 * fw), R * 0.32, R * 0.48 * fw, R * 0.36, 0.4, 0, TAU);
+      fillLine(c, st, lw, st.fill2);
+      if (st.eyes) { c.fillStyle = st.dark; c.beginPath(); c.arc(R * (0.3 + 0.62 * fw), -R * 0.45, R * 0.12 * fw, 0, TAU); c.fill(); }
+      c.restore();
+    }
+    c.strokeStyle = st.line; c.lineWidth = lw * 0.8;
+    for (const s of [-1, 1]) {   // feelers
+      const tw = calm ? 0 : Math.sin(o.t * 4 + s) * 0.06 * R;
+      c.beginPath(); c.moveTo(s * R * 0.18, -R * 0.6); c.quadraticCurveTo(s * R * 0.25, -R * 1.05, s * R * 0.52 + tw, -R * 1.12); c.stroke();
+      c.fillStyle = st.line; c.beginPath(); c.arc(s * R * 0.52 + tw, -R * 1.12, lw * 0.9, 0, TAU); c.fill();
+    }
+    c.beginPath();   // the fluffy body
+    const n = 14;
+    for (let i = 0; i <= n; i++) {
+      const a = (i / n) * TAU, x = Math.cos(a) * R * 0.66, y = Math.sin(a) * R * 0.7;
+      if (!i) { c.moveTo(x, y); continue; }
+      const m = ((i - 0.5) / n) * TAU;
+      c.quadraticCurveTo(Math.cos(m) * R * 0.84, Math.sin(m) * R * 0.88, x, y);
+    }
+    c.closePath();
+    fillLine(c, st, lw);
+    eyePair(c, st, 0, -R * 0.05, R * 0.27, R * 0.16, o);
+  },
+
+  // a droplet with a small cloud for a hat
+  drizzle(c, R, o, st, lw) {
+    c.beginPath();
+    c.moveTo(0, -R * 1.2);
+    c.bezierCurveTo(R * 0.3, -R * 0.78, R * 0.98, -R * 0.3, R * 0.98, R * 0.15);
+    c.arc(0, R * 0.15, R * 0.98, 0, Math.PI);
+    c.bezierCurveTo(-R * 0.98, -R * 0.3, -R * 0.3, -R * 0.78, 0, -R * 1.2);
+    c.closePath();
+    fillLine(c, st, lw);
+    if (st.eyes) { c.strokeStyle = "rgba(255, 255, 255, 0.5)"; c.lineWidth = lw; c.beginPath(); c.arc(-R * 0.05, R * 0.1, R * 0.62, Math.PI * 1.08, Math.PI * 1.38); c.stroke(); }
+    eyePair(c, st, 0, R * 0.2, R * 0.3, R * 0.11, o);
+    smile(c, st, 0, R * 0.5, R * 0.1);
+    const puffs = [[-0.32, 0.02, 0.24], [0, -0.1, 0.32], [0.32, 0.03, 0.22]];
+    c.save();
+    c.translate(R * 0.05, -R * 1.2 + (calm ? 0 : Math.sin(o.t * 2.6) * R * 0.05));
+    c.rotate(0.12);
+    c.strokeStyle = st.line; c.lineWidth = lw * 2;   // outline twice as wide, then filled over: one clean edge
+    for (const [x, y, r] of puffs) { c.beginPath(); c.arc(x * R, y * R, r * R, 0, TAU); c.stroke(); }
+    c.fillStyle = st.eyes ? "#D9DEE6" : st.fill2;
+    for (const [x, y, r] of puffs) { c.beginPath(); c.arc(x * R, y * R, r * R, 0, TAU); c.fill(); }
+    c.restore();
+  },
+
+  // an ember fox-blob with a flame for a tail
+  embry(c, R, o, st, lw) {
+    const fl = calm ? 0 : Math.sin(o.t * 13) * 0.12 + Math.sin(o.t * 7.3) * 0.08, big = 1 + (o.run || 0) * 0.25;
+    const flame = (s) => {
+      c.beginPath();
+      c.moveTo(-R * 0.26 * s, 0);
+      c.quadraticCurveTo(-R * 0.4 * s, -R * 0.62 * s, fl * R * s, -R * 1.05 * s);
+      c.quadraticCurveTo(R * 0.42 * s, -R * 0.55 * s, R * 0.26 * s, 0);
+      c.quadraticCurveTo(0, R * 0.28 * s, -R * 0.26 * s, 0);
+      c.closePath();
+    };
+    c.save();
+    c.translate(-R * 0.85, R * 0.2); c.rotate(-0.95 + fl * 0.5); c.scale(big, big);
+    flame(1); fillLine(c, st, lw / big, st.eyes ? "#E6A064" : st.fill2);
+    if (st.eyes) { flame(0.55); c.fillStyle = "#F4CF8E"; c.fill(); }
+    c.restore();
+    for (const s of [-1, 1]) {   // ears
+      c.beginPath(); c.moveTo(s * R * 0.2, -R * 0.72); c.lineTo(s * R * 0.52, -R * 1.22); c.lineTo(s * R * 0.82, -R * 0.5); c.closePath();
+      fillLine(c, st, lw);
+      if (st.eyes) {
+        c.beginPath(); c.moveTo(s * R * 0.36, -R * 0.74); c.lineTo(s * R * 0.52, -R * 1.02); c.lineTo(s * R * 0.66, -R * 0.62); c.closePath();
+        c.fillStyle = st.dark; c.fill();
+      }
+    }
+    c.beginPath(); c.ellipse(0, 0, R * 1.06, R * 0.9, 0, 0, TAU);
+    fillLine(c, st, lw);
+    if (st.eyes) { c.fillStyle = "rgba(255, 240, 226, 0.4)"; c.beginPath(); c.ellipse(R * 0.1, R * 0.42, R * 0.5, R * 0.3, 0, 0, TAU); c.fill(); }
+    eyePair(c, st, R * 0.12, -R * 0.12, R * 0.3, R * 0.115, o);
+    if (st.eyes) { c.fillStyle = EYE; c.beginPath(); c.ellipse(R * 0.12, R * 0.12, R * 0.08, R * 0.06, 0, 0, TAU); c.fill(); }
+  },
+
+  // a jelly that bounces
+  bloop(c, R, o, st, lw) {
+    const sq = o.sq || 0, wob = calm ? 0 : Math.sin(o.t * 5) * R * 0.05;
+    c.save();
+    c.translate(0, R); c.scale(1 + sq * 0.22, 1 - sq * 0.22); c.translate(0, -R * 0.8);
+    c.beginPath();
+    c.moveTo(-R, R * 0.6);
+    c.bezierCurveTo(-R * 1.06, -R * 0.6, -R * 0.52, -R * 1.02, 0, -R * 1.02);
+    c.bezierCurveTo(R * 0.52, -R * 1.02, R * 1.06, -R * 0.6, R, R * 0.6);
+    c.quadraticCurveTo(R * 0.75, R * 0.82 + wob, R * 0.5, R * 0.64);
+    c.quadraticCurveTo(R * 0.25, R * 0.84 - wob, 0, R * 0.64);
+    c.quadraticCurveTo(-R * 0.25, R * 0.84 + wob, -R * 0.5, R * 0.64);
+    c.quadraticCurveTo(-R * 0.75, R * 0.82 - wob, -R, R * 0.6);
+    c.closePath();
+    fillLine(c, st, lw);
+    if (st.eyes) {   // it shines a little
+      c.fillStyle = "rgba(255, 255, 255, 0.45)"; c.beginPath(); c.ellipse(-R * 0.48, -R * 0.52, R * 0.17, R * 0.1, -0.7, 0, TAU); c.fill();
+      c.strokeStyle = "rgba(255, 255, 255, 0.3)"; c.lineWidth = lw * 0.7; c.beginPath(); c.arc(R * 0.52, -R * 0.12, R * 0.09, 0, TAU); c.stroke();
+    }
+    eyePair(c, st, 0, -R * 0.12, R * 0.3, R * 0.11, o);
+    if (st.eyes) { c.strokeStyle = EYE; c.lineWidth = Math.max(1, R * 0.05); c.beginPath(); c.arc(0, R * 0.2, R * 0.07, 0, TAU); c.stroke(); }
+    c.restore();
+  },
+
+  // a ball of static, its edge all small zigzags, with a thin zigzag for a tail and a spark at its end
+  volta(c, R, o, st, lw) {
+    const z = [[-0.7, 0.3], [-1.08, 0.02], [-0.92, -0.12], [-1.3, -0.46], [-1.12, -0.58], [-1.45, -0.92]];
+    c.save();
+    c.rotate(calm ? 0 : Math.sin(o.t * 9) * 0.05);
+    for (const [col, w] of [[st.line, R * 0.12 + lw * 2], [st.eyes ? st.fill : st.fill2, R * 0.12]]) {
+      c.beginPath(); z.forEach(([x, y], i) => c[i ? "lineTo" : "moveTo"](x * R, y * R));
+      c.strokeStyle = col; c.lineWidth = w; c.stroke();
+    }
+    if (st.eyes) twinkle(c, -1.45 * R, -0.92 * R, R * (0.24 + (calm ? 0 : 0.08 * Math.sin(o.t * 11))), "rgba(255, 246, 200, 0.95)");
+    c.restore();
+    c.beginPath();
+    const n = 26;
+    for (let i = 0; i < n; i++) {   // it crackles: the points flicker
+      const a = (i / n) * TAU, out = i % 2 === 0;
+      const r = R * (out ? 1.02 + (calm ? 0 : 0.05 * Math.sin(o.t * 23 + i * 1.7)) : 0.86);
+      c[i ? "lineTo" : "moveTo"](Math.cos(a) * r, Math.sin(a) * r);
+    }
+    c.closePath();
+    fillLine(c, st, lw);
+    eyePair(c, st, R * 0.05, -R * 0.02, R * 0.3, R * 0.12, o);
+    smile(c, st, R * 0.05, R * 0.32, R * 0.1);
+  },
+
+  // a small star that glows
+  lumi(c, R, o, st, lw) {
+    if (st.eyes) {
+      const p = calm ? 0.8 : 0.7 + 0.3 * Math.sin(o.t * 2.4);
+      const g = c.createRadialGradient(0, 0, R * 0.3, 0, 0, R * 2.6);
+      g.addColorStop(0, `rgba(214, 228, 255, ${0.42 * p})`); g.addColorStop(1, "rgba(214, 228, 255, 0)");
+      c.fillStyle = g; c.beginPath(); c.arc(0, 0, R * 2.6, 0, TAU); c.fill();
+    }
+    c.save();
+    c.rotate(calm ? 0 : Math.sin(o.t * 1.3) * 0.16);
+    c.beginPath();
+    for (let i = 0; i < 5; i++) {   // five soft points
+      const a = -Math.PI / 2 + (i / 5) * TAU, b0 = a - Math.PI / 5, b1 = a + Math.PI / 5;
+      if (!i) c.moveTo(Math.cos(b0) * R * 0.56, Math.sin(b0) * R * 0.56);
+      c.quadraticCurveTo(Math.cos(a) * R * 1.45, Math.sin(a) * R * 1.45, Math.cos(b1) * R * 0.56, Math.sin(b1) * R * 0.56);
+    }
+    c.closePath();
+    fillLine(c, st, lw);
+    eyePair(c, st, 0, R * 0.02, R * 0.2, R * 0.09, o);
+    smile(c, st, 0, R * 0.26, R * 0.08);
+    c.restore();
+    if (st.eyes && !calm) {
+      for (let i = 0; i < 3; i++) {
+        const a = o.t * 0.9 + i * 2.1, s = R * 0.16 * (0.5 + 0.5 * Math.sin(o.t * 3 + i * 2));
+        twinkle(c, Math.cos(a) * R * 1.7, Math.sin(a) * R * 1.2, s, "rgba(235, 242, 255, 0.85)");
+      }
+    }
+  },
+};
+
+// ---------------------------------------------------------------- their lives
+
+let cr = null;            // the creature in the meadow now
+let nextAt = 0;           // when the next one comes, while there's none
+const radius = (c) => S * c.k.size * near(c.y);
+const visible = (c) => !!c && ["pop", "out", "toDuck", "duck", "flee", "breakout"].includes(c.mode);
+const catchable = (c) => !!c && (c.mode === "out" || c.mode === "toDuck") && c.alpha > 0.5;
+const flies = (c) => c.k.move === "flutter" || c.k.move === "float";
+
+// A new one, hidden in a clump of grass
+function spawn(T) {
+  const k = pickKind(), cl = clumps[Math.floor(Math.random() * clumps.length)], p = clumpAt(cl);
+  cr = { k, clump: cl, x: p.x, y: p.y, h: 0, h0: 0, tx: p.x, ty: p.y, dir: Math.random() < 0.5 ? -1 : 1, alpha: 1,
+    mode: "hidden", at: T, until: T + rand(0.6, 1.5), intro: true, introAt: -9, misses: 0, breaks: 0,
+    hopT: 0, bT: 0, rest: 0, step: 0, flap: 0.6, sq: 0, run: 0, tilt: 0, nap: 0, fade: 0, jumped: false, winkAt: 0,
+    duckAt: 0, phase: rand(0, 100), blink: 0, blinkAt: T + rand(1.5, 4) };
+}
+
+function pose(c, T) {
+  return { t: T + c.phase, blink: c.blink, dir: c.dir, sq: c.sq, flap: c.flap, nap: c.nap > 0, step: c.step, run: c.run };
+}
+
+// Somewhere new to go, within reach radii, inside the meadow
+function newTarget(c, reach) {
+  const R = radius(c), y0 = bandY(0), y1 = bandY(1);
+  for (let i = 0; i < 12; i++) {
+    const a = rand(0, TAU), d = rand(0.45, 1) * reach * R, x = c.x + Math.cos(a) * d, y = c.y + Math.sin(a) * d * 0.5;
+    if (x > W * 0.07 && x < W * 0.93 && y > y0 && y < y1) { c.tx = x; c.ty = y; return; }
+  }
+  c.tx = clamp(c.x + rand(-1, 1) * reach * R, W * 0.1, W * 0.9);
+  c.ty = clamp(c.y + rand(-0.3, 0.3) * reach * R, y0, y1);
+}
+
+// Toward the target at sp radii a second; what's left of the way
+function stepTo(c, R, sp, dt) {
+  const dx = c.tx - c.x, dy = c.ty - c.y, d = Math.hypot(dx, dy);
+  if (d < 0.5) return 0;
+  const m = Math.min(d, sp * R * dt);
+  c.x += (dx / d) * m;
+  c.y += (dy / d) * m;
+  if (Math.abs(dx) > R * 0.05) c.dir = dx > 0 ? 1 : -1;
+  return d - m;
+}
+
+// How each kind gets about
+function move(c, T, dt, R) {
+  const going = c.mode === "toDuck";
+  const there = (f) => Math.hypot(c.tx - c.x, c.ty - c.y) < R * f;
+  const onward = (reach) => { if (!going) newTarget(c, reach); };
+  c.run = 0;
+  switch (c.k.move) {
+    case "hop":       // Sprig: a hop, a rest, a hop
+      if (c.hopT > 0) {
+        c.hopT += dt / 0.42;
+        c.h = Math.sin(Math.PI * Math.min(c.hopT, 1)) * R * 0.75;
+        stepTo(c, R, 4.4, dt);
+        if (c.hopT >= 1) { c.hopT = 0; c.h = 0; c.sq = 0.6; c.rest = rand(0.15, 0.7); }
+      } else if ((c.rest -= dt) <= 0) {
+        if (there(0.8)) onward(6);
+        c.hopT = 1e-3;
+      }
+      break;
+    case "waddle":    // Pebbit: slow steps side to side, and naps
+      c.h = 0;
+      if (c.nap > 0) { c.nap -= dt; c.tilt *= Math.exp(-dt * 6); if (c.nap <= 0) onward(4); break; }
+      if (there(0.5)) { if (!going && Math.random() < 0.5) c.nap = rand(1.6, 3.4); else onward(4); break; }
+      stepTo(c, R, 1.15, dt);
+      c.step += dt * 7;
+      c.tilt = Math.sin(c.step) * 0.09;
+      c.h = Math.abs(Math.sin(c.step)) * R * 0.05;
+      break;
+    case "flutter": { // Mothlet: flits about over the grass
+      c.flap = calm ? 0.6 : Math.abs(Math.sin(T * 15 + c.phase));
+      const hover = going && there(2.5) ? 0 : R * (1.5 + 0.45 * Math.sin(T * 1.7 + c.phase));
+      c.h += (hover - c.h) * (1 - Math.exp(-dt * 3));
+      c.tilt = calm ? 0 : Math.sin(T * 3.3 + c.phase) * 0.12;
+      if (c.rest > 0) { c.rest -= dt; break; }
+      if (stepTo(c, R, 2.8, dt) < R * 0.4 && !going) { onward(6); if (Math.random() < 0.3) c.rest = rand(0.4, 1); }
+      if (!going) c.x += Math.cos(T * 3.3 + c.phase) * R * 0.9 * dt;
+      break;
+    }
+    case "glide":     // Drizzle: drifts low over the grass, and stops to look about
+      c.h = R * (0.3 + 0.12 * Math.sin(T * 2.2 + c.phase));
+      c.tilt = Math.sin(T * 1.6 + c.phase) * 0.06;
+      if (c.rest > 0) { c.rest -= dt; break; }
+      if (stepTo(c, R, 1.7, dt) < R * 0.3 && !going) { onward(5); c.rest = rand(0.6, 1.6); }
+      break;
+    case "dash":      // Embry: still, then off like a spark
+      if (c.rest > 0) { c.rest -= dt; c.h = 0; break; }
+      c.run = 1;
+      c.h = Math.abs(Math.sin(T * 16)) * R * 0.14;
+      if (stepTo(c, R, 10, dt) < R * 0.2) { c.h = 0; c.run = 0; if (!going) { c.sq = 0.5; onward(7); c.rest = rand(0.5, 1.3); } }
+      break;
+    case "bounce": {  // Bloop: bounces, all the time
+      const was = c.bT % 1;
+      c.bT += dt / 0.66;
+      if (c.bT % 1 < was) c.sq = 1;
+      c.h = Math.sin(Math.PI * (c.bT % 1)) * R * 1.15;
+      if (c.rest > 0) { c.rest -= dt; break; }
+      if (stepTo(c, R, 2.1, dt) < R * 0.3 && !going) { onward(5); if (Math.random() < 0.35) c.rest = rand(0.6, 1.4); }
+      break;
+    }
+    case "zip":       // Volta: quick zigzags, never still for long
+      if (c.rest > 0) { c.rest -= dt; c.h = 0; break; }
+      c.run = 1;
+      c.h = Math.abs(Math.sin(T * 20)) * R * 0.1;
+      if (stepTo(c, R, 9.5, dt) < R * 0.2) { c.h = 0; if (!going) { onward(4.5); c.rest = rand(0.15, 0.6); } }
+      break;
+    case "float": {   // Lumi: floats, and now and then winks out and shows up nearby
+      const hover = going && there(2.5) ? 0 : R * (1.3 + 0.35 * Math.sin(T * 1.3 + c.phase));
+      c.h += (hover - c.h) * (1 - Math.exp(-dt * 3));
+      if (c.fade > 0) {
+        c.fade += dt / 0.7;
+        c.alpha = Math.abs(1 - 2 * Math.min(c.fade, 1));
+        if (c.fade >= 0.5 && !c.jumped) { c.jumped = true; newTarget(c, 6); c.x = c.tx; c.y = c.ty; newTarget(c, 4); }
+        if (c.fade >= 1) { c.fade = 0; c.alpha = 1; c.jumped = false; c.winkAt = T + rand(2.5, 5.5); }
+        break;
+      }
+      if (!going && T > c.winkAt) { c.fade = 1e-3; break; }
+      if (stepTo(c, R, 1.3, dt) < R * 0.3 && !going) onward(5);
+      break;
+    }
+  }
+  c.x = clamp(c.x, W * 0.04, W * 0.96);
+  c.y = clamp(c.y, bandY(0), bandY(1));
+}
+
+function live(c, T, dt) {
+  if (T > c.blinkAt) { c.blink = 1; if (T > c.blinkAt + 0.13) { c.blink = 0; c.blinkAt = T + rand(1.8, 4.5); } }
+  c.sq *= Math.exp(-dt * 9);
+  const R = radius(c);
+  switch (c.mode) {
+    case "hidden":
+      if (T > c.until) { c.mode = "rustle"; c.until = T + (c.intro ? rand(1, 1.4) : rand(0.6, 0.9)); }
+      break;
+    case "rustle":    // the grass shakes, then out it comes
+      if (T > c.until) {
+        const p = clumpAt(c.clump);
+        Object.assign(c, { mode: "pop", at: T, x: p.x, y: p.y, h: -R * 2.4, alpha: 1, nap: 0, tilt: 0, fade: 0 });
+        if (c.intro) { c.intro = false; c.introAt = T; }
+      }
+      break;
+    case "pop": {     // out of the grass, with a little jump
+      const u = (T - c.at) / 0.55;
+      c.h = lerp(-R * 2.4, 0, out3(u)) + Math.sin(Math.PI * clamp(u, 0, 1)) * R * 0.9;
+      if (u >= 1) {
+        Object.assign(c, { mode: "out", h: 0, sq: 0.7, rest: 0.25, hopT: 0, duckAt: T + rand(7, 13), winkAt: T + rand(2.5, 5.5) });
+        newTarget(c, 5);
+      }
+      break;
+    }
+    case "out": case "toDuck":
+      move(c, T, dt, R);
+      if (c.mode === "out" && T > c.duckAt && !ball) {
+        if (Math.random() < 0.6 && clumps.length > 1) {   // off to hide in other grass nearby
+          const d = (k) => Math.hypot(clumpAt(k).x - c.x, clumpAt(k).y - c.y);
+          const others = clumps.filter((k) => k !== c.clump).sort((a, b) => d(a) - d(b));
+          c.clump = others[Math.floor(Math.random() * Math.min(3, others.length))];
+          const p = clumpAt(c.clump);
+          Object.assign(c, { mode: "toDuck", tx: p.x, ty: p.y, rest: 0, nap: 0, fade: 0, alpha: 1 });
+        } else c.duckAt = T + rand(5, 9);
+      }
+      if (c.mode === "toDuck" && Math.hypot(c.tx - c.x, c.ty - c.y) < R * 0.7 && c.h < R * 0.5) Object.assign(c, { mode: "duck", at: T, h0: c.h });
+      break;
+    case "duck": {    // back into the grass
+      const u = clamp((T - c.at) / 0.45, 0, 1);
+      c.h = lerp(c.h0, -R * 2.4, u * u) + Math.sin(Math.PI * u) * R * 0.5;
+      if (u >= 1) Object.assign(c, { mode: "hidden", until: T + rand(1, 2.4), tilt: 0 });
+      break;
+    }
+    case "breakout": { // out of the ball again
+      const u = (T - c.at) / 0.5;
+      c.h = Math.sin(Math.PI * clamp(u, 0, 1)) * R * 1.1;
+      if (u >= 1) {
+        Object.assign(c, { h: 0, sq: 0.8, rest: 0.3, hopT: 0, duckAt: T + rand(6, 11), winkAt: T + rand(2, 4) });
+        if (Math.random() < c.k.flee + 0.15 + 0.1 * (c.breaks - 1)) flee(c, T);
+        else { c.mode = "out"; newTarget(c, 6); }
+      }
+      break;
+    }
+    case "flee":      // off out of the meadow, in hops
+      c.hopT += dt / 0.3;
+      c.h = (flies(c) ? R * 1.4 : 0) + Math.abs(Math.sin(Math.PI * c.hopT)) * R * 0.9;
+      c.x += c.dir * R * 8 * dt;
+      c.y = Math.max(bandY(0), c.y - R * 0.8 * dt);
+      if (c.x < -R * 4 || c.x > W + R * 4) { cr = null; nextAt = T + 1.4; }
+      break;
+  }
+}
+
+function flee(c, T) {
+  Object.assign(c, { mode: "flee", at: T, hopT: 0, nap: 0, alpha: 1, fade: 0, tilt: 0, dir: c.x < W / 2 ? -1 : 1 });
+  say("Ran off", c.x, c.y - c.h - radius(c) * 2.6, T, 0.022, "faint");
+}
+
+// ---------------------------------------------------------------- the ball
+
+let ball = null;          // from the throw until it's done with
+let ringPh = 0;           // the catch ring: big at 0, small at 0.5
+const ringNow = () => 0.5 + 0.5 * Math.cos(TAU * ringPh);   // 1 big .. 0 small
+let words = [], bits = [];
+let book = {};            // what's been caught, ever: { id: count }
+let state = "title", stateAt = 0, startAt = 0, left = BALLS, round = [], fresh = new Set(), held = null, goneAt = 0;
+let lastInput = "mouse";  // what aimed last: "puck", "mouse" or "touch"
+const aim = { x: 0, y: 0 };   // where the ball will come down
+
+function say(text, x, y, T, size = 0.03, col = "w", life = 1.1) { words.push({ text, x, y, at: T, size, col, life }); }
+
+// From the bottom of the screen to the aim, in an arc, smaller as it goes into the meadow
+function throwBall(T) {
+  if (state !== "play" || ball || left <= 0 || dexOpen) return;
+  left--;
+  held = null;   // the puck stops saying what happened last time
+  const tx = aim.x, ty = aim.y, far = 1 - depth(ty), y0 = H + S * 0.04;
+  ball = { mode: "fly", at: T, x0: W / 2, y0, tx, ty, dur: 0.55 + 0.3 * far, peak: S * (0.14 + 0.16 * far),
+    r0: S * 0.05, r1: S * 0.021 * near(ty), spin: Math.random() < 0.5 ? -1 : 1, ring: ringNow(),
+    x: W / 2, y: y0, gx: W / 2, gy: y0, r: S * 0.05, rot: 0, alpha: 1, lit: 0 };
+  sound("throw");
+}
+
+const LONG = { absorb: 0.55, drop: 0.5, miss: 0.5, caught: 2.1, free: 0.45 };
+function updateBall(T, dt) {
+  const b = ball, u = (T - b.at) / (b.mode === "fly" ? b.dur : LONG[b.mode] || 1), k = clamp(u, 0, 1);
+  switch (b.mode) {
+    case "fly": {
+      const e = 1 - Math.pow(1 - k, 1.5);   // slower as it goes away
+      b.gx = lerp(b.x0, b.tx, e); b.gy = lerp(b.y0, b.ty, e);
+      b.x = b.gx; b.y = b.gy - b.peak * 4 * k * (1 - k);
+      b.r = lerp(b.r0, b.r1, e);
+      b.rot = b.spin * k * 14;
+      if (u >= 1) land(T);
+      break;
+    }
+    case "absorb":   // it takes the creature in, as light
+      b.y = b.hy - Math.sin(Math.PI * k) * b.r * 0.6;
+      b.rot *= Math.exp(-dt * 8);
+      b.lit = Math.sin(Math.PI * k);
+      if (u >= 1) Object.assign(b, { mode: "drop", at: T, y0: b.y, lit: 0 });
+      break;
+    case "drop": {   // down into the grass, and a little bounce
+      const fall = 0.62, rest = b.gy - b.r * 0.9;
+      b.rot *= Math.exp(-dt * 8);
+      if (k < fall) b.y = lerp(b.y0, rest, (k / fall) ** 2);
+      else {
+        if (!b.thud) { b.thud = true; sound("thud"); }
+        b.y = rest - Math.sin((Math.PI * (k - fall)) / (1 - fall)) * b.r * 0.35;
+      }
+      if (u >= 1) Object.assign(b, { mode: "rock", at: T, y: rest, rot: 0, rocked: 0 });
+      break;
+    }
+    case "rock": {   // one to three rocks, each with a click (on the puck too), then it shuts or breaks open
+      const t = T - b.at - 0.2, i = Math.floor(t / ROCK_S), p = t / ROCK_S - i, rest = b.gy - b.r * 0.9;
+      if (t >= b.rocks * ROCK_S) { settle(T); break; }
+      if (t >= 0 && i >= b.rocked) { b.rocked = i + 1; sound("rock"); puckSound("tock"); }
+      const swing = t >= 0 && p < 0.55 ? Math.sin((Math.PI * p) / 0.55) : 0;
+      b.rot = swing * 0.42 * (i % 2 ? -1 : 1);
+      b.y = rest - swing * b.r * 0.12;
+      b.lit = t >= 0 && Math.sin(T * TAU * 2.4) > 0 ? 0.6 : 0;   // the button blinks, as on the puck
+      break;
+    }
+    case "caught":   // shut: it glows a while, then it's gone
+      b.lit = 1;
+      b.alpha = k < 0.8 ? 1 : 1 - (k - 0.8) / 0.2;
+      if (u >= 1) { ball = null; goneAt = T; }
+      break;
+    case "free":     // broken open
+      b.alpha = 1 - k;
+      if (u >= 1) { ball = null; goneAt = T; }
+      break;
+    case "miss":     // into the grass, and gone
+      b.y = b.y0 + b.r * 0.9 * k * k;
+      b.alpha = 1 - k;
+      b.rot += b.spin * dt * 4 * (1 - k);
+      if (u >= 1) { ball = null; goneAt = T; }
+      break;
+  }
+}
+
+// Where it comes down: on the creature, or in the grass
+function land(T) {
+  const b = ball, c = cr;
+  if (catchable(c)) {
+    const R = radius(c);
+    if (Math.hypot(b.tx - c.x, b.ty - (c.y - c.h - R)) < R * 1.3 + b.r * 0.5) { hit(T); return; }
+  }
+  Object.assign(b, { mode: "miss", at: T, y0: b.y });
+  sound("miss");
+  grass(b.x, b.y, b.r);
+  if (c && (c.mode === "out" || c.mode === "toDuck")) {
+    const R = radius(c);
+    if (Math.hypot(b.tx - c.x, b.ty - (c.y - c.h - R)) < R * 7) {   // close enough to notice
+      c.misses++;
+      if (c.misses >= 2 && Math.random() < c.k.flee + 0.12 * (c.misses - 1)) flee(c, T);
+      else if (c.mode === "out") { c.nap = 0; c.rest = 0; newTarget(c, 6); }
+    }
+  }
+}
+
+// The ring's size when the ball left says how well it was thrown: a small ring makes a catch likelier
+const GRADES = ["", "Nice", "Great", "Excellent"];
+const gradeOf = (ring) => (ring < 0.15 ? 3 : ring < 0.33 ? 2 : ring < 0.52 ? 1 : 0);
+const catchChance = (k, grade) => 1 - (1 - k.rate) * (1 - [0, 0.15, 0.3, 0.45][grade]);
+
+function hit(T) {
+  const b = ball, c = cr, R = radius(c), grade = gradeOf(b.ring);
+  // three rocks, each a check: fail one and it breaks out after that rock
+  const per = Math.pow(catchChance(c.k, grade), 1 / 3);
+  b.rocks = 3; b.caught = true;
+  for (let i = 1; i <= 3; i++) if (Math.random() >= per) { b.rocks = i; b.caught = false; break; }
+  Object.assign(b, { mode: "absorb", at: T, hy: b.y, gy: c.y, grade, kind: c.k });
+  Object.assign(c, { mode: "held", lx: c.x, ly: c.y - c.h - R, lr: R, nap: 0 });
+  if (grade) say(GRADES[grade], b.x, b.y - R * 2.4, T, 0.03, grade === 3 ? "y" : "w");
+  sound("hit");
+}
+
+function settle(T) {
+  const b = ball, c = cr;
+  if (b.caught) {
+    const id = b.kind.id, first = !book[id];
+    book[id] = (book[id] || 0) + 1;
+    saveBook();
+    round.push(id);
+    if (first) fresh.add(id);
+    Object.assign(b, { mode: "caught", at: T, rot: 0, name: b.kind.name, fresh: first });
+    cr = null;
+    nextAt = T + 2.8;
+    held = { state: "caught", msg: b.kind.name, until: T + 2.1 };
+    sound("catch"); puckSound("ok");
+    burst(b.x, b.y - b.r * 0.5, b.r);
+  } else {
+    Object.assign(b, { mode: "free", at: T });
+    if (c) Object.assign(c, { mode: "breakout", at: T, x: b.x, y: b.gy, h: 0, alpha: 1, breaks: c.breaks + 1 });
+    held = { state: "free", until: T + 1.3 };
+    sound("pop"); puckSound("no");
+    say("Broke free", b.x, b.y - b.r * 3.2, T, 0.022, "faint");
+  }
+}
+
+function burst(x, y, r) {   // stars, from a catch
+  for (let i = 0; i < 7; i++) {
+    const a = -Math.PI / 2 + rand(-1.1, 1.1), v = r * rand(7, 12);
+    bits.push({ star: true, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.25, t: 0, life: rand(0.8, 1.2), s: r * rand(0.25, 0.42), col: i % 3 ? "255, 214, 10" : "245, 245, 247" });
+  }
+}
+function grass(x, y, r) {   // a few blades, from a miss
+  if (calm) return;
+  for (let i = 0; i < 6; i++) {
+    const a = -Math.PI / 2 + rand(-0.9, 0.9), v = r * rand(4, 7);
+    bits.push({ star: false, x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 1.4, t: 0, life: rand(0.4, 0.6), s: r * rand(0.4, 0.7), a: rand(0, TAU) });
+  }
+}
+
+// ---------------------------------------------------------------- playing
+
+function start() {
+  const T = performance.now() / 1000;
+  left = BALLS; round = []; fresh = new Set(); held = null; ball = null;
+  if (cr) { cr.misses = 0; cr.breaks = 0; }
+  startAt = T;
+  setState("play", T);
+  count("game_start", { game: "catch", input: lastInput });
+}
+
+function setState(s, T) {
+  state = s;
+  stateAt = T;
+  showPanel();
+}
+
+function endRound(T) {
+  setState("over", T);
+  count("game_end", { game: "catch", caught: round.length, found: found() });
+}
+
+function press(T) {   // a tap or a swipe up on the puck, a click, the space bar
+  if (dexOpen) { closeDex(); return; }
+  if (state === "play") throwBall(T);
+  else if (state === "title" || (state === "over" && T - stateAt > 0.9)) start();
+}
+
+function update(dt, T) {
+  if (!ball || ball.mode !== "fly") ringPh = (ringPh + dt / RING_S) % 1;   // still while a ball is on its way
+  if (!cr && T > nextAt) spawn(T);
+  if (cr) live(cr, T, dt);
+  for (const cl of clumps) {
+    const want = cr && cr.clump === cl ? { rustle: 1, pop: 0.7, duck: 0.6 }[cr.mode] || 0 : 0;
+    cl.shake += (want - cl.shake) * (1 - Math.exp(-dt * 8));
+  }
+  if (ball) updateBall(T, dt);
+  for (const p of bits) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += S * p.g * dt; p.vx *= Math.exp(-dt * 1.5); }
+  bits = bits.filter((p) => p.t < p.life);
+  words = words.filter((w) => T - w.at < w.life);
+  if (state === "play" && left === 0 && !ball && T - goneAt > 0.7) endRound(T);
+}
+
+// ---------------------------------------------------------------- drawing it all
+
+function render(T) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.drawImage(bgCv, 0, 0, W, H);
+  drawStars(T);
+  const b = ball;
+  if (b && b.mode === "fly") {   // its shadow on the ground, fainter while it's high
+    const k = clamp((T - b.at) / b.dur, 0, 1), up = 4 * k * (1 - k);
+    shadow(b.gx, b.gy, b.r * (1 - 0.3 * up), 0.4 * (1 - 0.55 * up));
+  }
+  // the meadow, back to front
+  const items = clumps.map((cl) => [clumpAt(cl).y, () => drawClump(cl, T)]);
+  if (visible(cr)) {
+    const tuck = cr.mode === "pop" || cr.mode === "duck";   // behind its grass
+    items.push([tuck ? Math.min(cr.y, clumpAt(cr.clump).y) - 0.5 : cr.y + 0.5, () => drawCreature(cr, T)]);
+  }
+  if (b && b.mode !== "fly") items.push([b.gy + 0.6, () => drawResting(b, T)]);
+  items.sort((p, q) => p[0] - q[0]);
+  for (const [, draw] of items) draw();
+  if (b && b.mode === "absorb" && cr) drawLight(T);
+  if (b && b.mode === "fly") drawBall(ctx, b.x, b.y, b.r, b.rot);
+  if (state === "play" && catchable(cr)) drawRing();
+  drawBits();
+  drawWords(T);
+  if (visible(cr) && T - cr.introAt < 2.6) drawIntro(T);
+  if (b && b.mode === "caught") drawCaught(T);
+  // the aim, except while the ball is down in the grass with something in it
+  if (state === "play" && !dexOpen && (!b || b.mode === "fly" || b.mode === "miss" || b.mode === "free")) drawReticle();
+}
+
+function shadow(x, y, r, a) {
+  if (r <= 0 || a <= 0) return;
+  ctx.fillStyle = `rgba(0, 0, 0, ${a})`;
+  ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.3, 0, 0, TAU); ctx.fill();
+}
+
+function drawCreature(c, T) {
+  const R = radius(c), up = clamp(c.h / (R * 2.5), 0, 1);
+  const under = c.h < 0 ? clamp(1 + c.h / R, 0, 1) : 1;   // still in the grass: no shadow yet
+  shadow(c.x, c.y, R * (1.05 - 0.35 * up), 0.38 * c.alpha * under * (1 - 0.5 * up));
+  ctx.save();
+  if (c.mode === "pop" || c.mode === "duck") {   // what's still down in the grass doesn't show
+    ctx.beginPath(); ctx.rect(c.x - R * 5, c.y - R * 10, R * 10, R * 10 + 1); ctx.clip();
+  }
+  ctx.globalAlpha = c.alpha;
+  ctx.translate(c.x, c.y - c.h);   // its feet
+  if (!calm) { const br = Math.sin(T * 2.4 + c.phase) * 0.025; ctx.scale(1 + br, 1 - br); }   // breathing
+  ctx.translate(0, -R);
+  if (c.tilt) ctx.rotate(c.tilt);
+  if (c.mode === "breakout") {   // from light back to colour, growing out of the ball
+    const u = clamp((T - c.at) / 0.5, 0, 1), s = 0.25 + 0.75 * out3(u * 1.6);
+    ctx.scale(s, s);
+    drawKind(ctx, c.k, R, pose(c, T));
+    ctx.globalAlpha = c.alpha * (1 - u);
+    drawKind(ctx, c.k, R, pose(c, T), "light");
+  } else drawKind(ctx, c.k, R, pose(c, T));
+  ctx.restore();
+}
+
+// Turned to light, it's drawn into the ball
+function drawLight(T) {
+  const b = ball, c = cr, u = clamp((T - b.at) / 0.55, 0, 1), e = u * u, s = lerp(1, 0.1, e);
+  ctx.save();
+  ctx.globalAlpha = 1 - u * 0.6;
+  ctx.shadowColor = "rgba(255, 246, 220, 0.9)";
+  ctx.shadowBlur = 22 * DPR * (1 - u);
+  ctx.translate(lerp(c.lx, b.x, e), lerp(c.ly, b.y, e));
+  ctx.scale(s, s);
+  drawKind(ctx, c.k, c.lr, pose(c, T), "light");
+  ctx.restore();
+}
+
+// The ball looks like the puck's ball face: a black disc, the top half's rim in yellow, a white band, the button
+function drawBall(c, x, y, r, rot, alpha = 1, lit = 0) {
+  if (r <= 0 || alpha <= 0) return;
+  c.save();
+  c.globalAlpha = alpha;
+  c.translate(x, y);
+  c.rotate(rot);
+  c.fillStyle = "#0B0B0D"; c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+  c.fillStyle = "rgba(255, 214, 10, 0.14)"; c.beginPath(); c.arc(0, 0, r, Math.PI, TAU); c.closePath(); c.fill();
+  c.lineCap = "round";
+  c.strokeStyle = "#FFD60A"; c.lineWidth = r * 0.17;
+  c.beginPath(); c.arc(0, 0, r * 0.79, Math.PI * 1.06, Math.PI * 1.94); c.stroke();
+  c.strokeStyle = "#F5F5F7"; c.lineWidth = r * 0.11;
+  c.beginPath(); c.moveTo(-r * 0.9, 0); c.lineTo(-r * 0.38, 0); c.moveTo(r * 0.38, 0); c.lineTo(r * 0.9, 0); c.stroke();
+  c.lineWidth = r * 0.08;
+  c.beginPath(); c.arc(0, 0, r * 0.26, 0, TAU); c.stroke();
+  if (lit > 0) { c.shadowColor = `rgba(255, 214, 10, ${0.9 * lit})`; c.shadowBlur = r * 1.4 * DPR; }
+  c.fillStyle = lit > 0 ? "#FFD60A" : "#5A5A5E";
+  c.beginPath(); c.arc(0, 0, r * 0.13, 0, TAU); c.fill();
+  c.shadowBlur = 0;
+  c.strokeStyle = "rgba(245, 245, 247, 0.4)"; c.lineWidth = Math.max(1, r * 0.05);
+  c.beginPath(); c.arc(0, 0, r, 0, TAU); c.stroke();
+  c.restore();
+}
+
+// The ball once it's down: holding something, shut, broken open, or sinking into the grass
+function drawResting(b, T) {
+  if (b.mode !== "miss") shadow(b.x, b.gy, b.r * 0.95, 0.4 * b.alpha);
+  let r = b.r;
+  if (b.mode === "free") {   // a ring of light where it broke open
+    const k = clamp((T - b.at) / 0.45, 0, 1);
+    ctx.strokeStyle = `rgba(255, 249, 230, ${0.8 * (1 - k)})`;
+    ctx.lineWidth = Math.max(1, b.r * 0.15);
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r * (1 + 2.5 * out3(k)), 0, TAU); ctx.stroke();
+    r *= 1 + 0.3 * k;
+  }
+  drawBall(ctx, b.x, b.y, r, b.rot, b.alpha, b.lit);
+}
+
+// The catch ring: it shrinks and grows; small when the ball gets there is best. It holds still
+// while a ball is on its way, so you can see what you threw on.
+function drawRing() {
+  const c = cr, R = radius(c), q = ball && ball.mode === "fly" ? ball.ring : ringNow(), y = c.y - c.h - R;
+  ctx.lineWidth = Math.max(1.5, R * 0.075);
+  ctx.strokeStyle = `rgba(245, 245, 247, ${0.14 * c.alpha})`;
+  ctx.beginPath(); ctx.arc(c.x, y, R * 2.35, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = q < 0.33 ? `rgba(255, 214, 10, ${0.9 * c.alpha})` : `rgba(245, 245, 247, ${0.7 * c.alpha})`;
+  ctx.beginPath(); ctx.arc(c.x, y, R * (1.1 + 1.25 * q), 0, TAU); ctx.stroke();
+}
+
+function drawReticle() {
+  const r = S * 0.026 * near(Math.max(aim.y, HOR)), ready = !ball && left > 0;
+  ctx.save();
+  ctx.translate(aim.x, aim.y);
+  ctx.strokeStyle = ctx.fillStyle = `rgba(245, 245, 247, ${ready ? 0.9 : 0.3})`;
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, TAU);
+  for (let i = 0; i < 4; i++) {
+    const a = (i * Math.PI) / 2;
+    ctx.moveTo(Math.cos(a) * r * 1.4, Math.sin(a) * r * 1.4);
+    ctx.lineTo(Math.cos(a) * r * 1.85, Math.sin(a) * r * 1.85);
+  }
+  ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+function drawBits() {
+  for (const p of bits) {
+    const a = 1 - p.t / p.life;
+    if (p.star) { twinkle(ctx, p.x, p.y, p.s, `rgba(${p.col}, ${a})`); continue; }
+    const dx = Math.cos(p.a + p.t * 8) * p.s * 0.5, dy = Math.sin(p.a + p.t * 8) * p.s * 0.5;
+    ctx.strokeStyle = `rgba(110, 140, 112, ${0.8 * a})`;
+    ctx.lineWidth = Math.max(1, p.s * 0.18);
+    ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(p.x - dx, p.y - dy); ctx.lineTo(p.x + dx, p.y + dy); ctx.stroke();
+  }
+}
+
+function text(s, x, y, weight, size, col) {
+  ctx.font = `${weight} ${Math.round(size)}px Nunito, ui-rounded, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = col;
+  ctx.fillText(s, clamp(x, S * 0.12, Math.max(S * 0.12, W - S * 0.12)), y);
+}
+
+function drawWords(T) {   // Nice, Great, Excellent; Broke free; Ran off
+  for (const w of words) {
+    const u = (T - w.at) / w.life, a = Math.min(1, u * 8) * (u > 0.65 ? 1 - (u - 0.65) / 0.35 : 1);
+    text(w.text, w.x, w.y - out3(u) * S * 0.035, 800, S * w.size,
+      w.col === "y" ? `rgba(255, 214, 10, ${a})` : `rgba(245, 245, 247, ${(w.col === "faint" ? 0.6 : 1) * a})`);
+  }
+}
+
+// Its name, the first time it comes out (and how rare it is, if it is)
+function drawIntro(T) {
+  const c = cr, R = radius(c), u = (T - c.introAt) / 2.6, a = Math.min(1, u * 6) * (u > 0.7 ? 1 - (u - 0.7) / 0.3 : 1);
+  if (a <= 0) return;
+  const y = c.y - c.h - R * 3.35 - S * 0.03;
+  text(c.k.name, c.x, y, 800, S * 0.022, `rgba(245, 245, 247, ${0.9 * a})`);
+  if (c.k.rarity !== "common") {
+    const rare = c.k.rarity === "rare" || c.k.rarity === "very rare";
+    text(cap(c.k.rarity), c.x, y + S * 0.024, 700, S * 0.016, rare ? `rgba(255, 214, 10, ${0.85 * a})` : `rgba(245, 245, 247, ${0.5 * a})`);
+  }
+}
+
+function drawCaught(T) {   // shut: its name over the ball
+  const b = ball, u = (T - b.at) / 2.1, a = Math.min(1, u * 6) * (u > 0.8 ? 1 - (u - 0.8) / 0.2 : 1);
+  const y = b.gy - b.r * 2 - S * 0.085 - out3(u) * S * 0.015;
+  text(b.name, b.x, y, 800, S * 0.034, `rgba(245, 245, 247, ${a})`);
+  text(b.fresh ? "New" : "Caught", b.x, y + S * 0.034, 700, S * 0.018, b.fresh ? `rgba(255, 214, 10, ${a})` : `rgba(245, 245, 247, ${0.55 * a})`);
+}
+
+// ---------------------------------------------------------------- what's around the meadow
+
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+const found = () => KINDS.filter((k) => book[k.id] > 0).length;
+
+// The collection lasts between visits, where the browser keeps things; without that, for this visit
+function loadBook() {
+  try {
+    const o = JSON.parse(localStorage.getItem(SAVE) || "{}");
+    for (const k of KINDS) { const n = Math.floor(Number(o && o[k.id]) || 0); if (n > 0) book[k.id] = n; }
+  } catch { /* nothing kept */ }
+}
+function saveBook() { try { localStorage.setItem(SAVE, JSON.stringify(book)); } catch { /* nothing kept */ } }
+
+const dots = [];
+let shown = "", hintShown = null;
+function hud(T) {
+  const n = state === "title" ? BALLS : left, f = found(), key = `${n}|${f}`;
+  if (key !== shown) {
+    shown = key;
+    dots.forEach((d, i) => d.classList.toggle("on", i < n));
+    $("balls").setAttribute("aria-label", `${n} ball${n === 1 ? "" : "s"} left`);
+    $("dexN").textContent = `${f}/${KINDS.length}`;
+    $("dexBtn").setAttribute("aria-label", `Collection, ${f} of ${KINDS.length} found`);
+  }
+  const h = hintText(T);
+  if (h !== hintShown) { hintShown = h; $("hint").textContent = h; }
+  document.body.classList.toggle("aiming", state === "play" && !dexOpen);
+}
+
+function hintText(T) {
+  if (state !== "play" || dexOpen) return "";
+  if (T - startAt < 4.5) return lastInput === "puck" ? "Point the puck to aim, swipe up to throw" : lastInput === "touch" ? "Drag to aim, lift to throw" : "Click or press space to throw";
+  if (ball) return "";
+  if (!cr || cr.mode === "hidden" || cr.mode === "rustle") return "Watch the grass";
+  return left === 1 ? "Last ball" : "";
+}
+
+const PANELS = {
+  title: () => `<h1>Catch</h1>
+    <p>Small creatures live in the long grass. <b>Ten balls, to catch what you can.</b></p>
+    <p class="how">${bridge.up ? "Point the puck to aim, and swipe up on its glass to throw. Throw while the ring is small, and lead the ones that move. Hold the glass to bring the aim back to the middle."
+      : "Move the mouse to aim, and click or press space to throw. Throw while the ring is small, and lead the ones that move. On a phone, drag to aim and lift to throw."}</p>
+    <div class="go"><button class="btn" type="button" data-go>Start</button><button class="btn quiet" type="button" data-dex>Collection</button><span class="or">${bridge.up ? "or tap the puck" : "or press space"}</span></div>`,
+  over: () => {
+    const n = round.length;
+    const mons = round.map((id, i) => {
+      const k = KINDS.find((x) => x.id === id), isNew = fresh.has(id) && round.indexOf(id) === i;
+      return `<div class="mon"><canvas data-kind="${id}"></canvas>${k.name}${isNew ? `<span class="new">New</span>` : ""}</div>`;
+    }).join("");
+    return `<h1>Out of balls</h1>
+    <p>${n ? `You caught ${n === 1 ? "one" : n} this round.` : "Nothing caught this round. The quick ones take a few tries."}</p>
+    ${n ? `<div class="mons">${mons}</div>` : ""}
+    <div class="go"><button class="btn" type="button" data-go>Play again</button><button class="btn quiet" type="button" data-dex>Collection</button><a class="btn quiet" href="../">More games</a></div>`;
+  },
+};
+
+function showPanel() {
+  const make = !dexOpen && PANELS[state];
+  $("panel").classList.toggle("show", !!make);
+  $("panel").inert = !make;  // hidden, its buttons can't be pressed: space would start the round again
+  if (!make) { document.activeElement?.blur?.(); return; }
+  $("card").innerHTML = make();
+  $("card").querySelector("[data-go]")?.addEventListener("click", (e) => { e.stopPropagation(); unlockSound(); start(); });
+  $("card").querySelector("[data-dex]")?.addEventListener("click", (e) => { e.stopPropagation(); unlockSound(); openDex(); });
+  portraits($("card"), 60);
+}
+
+// The collection: all eight, the ones not caught yet as shadows
+let dexOpen = false;
+function openDex() {
+  dexOpen = true;
+  const n = found(), all = KINDS.reduce((a, k) => a + (book[k.id] || 0), 0);
+  const cells = KINDS.map((k) => {
+    const c = book[k.id] || 0;
+    return `<div class="cell${c ? "" : " unknown"}"><canvas data-kind="${k.id}" data-look="${c ? "live" : "sil"}"></canvas>
+      <b>${c ? k.name : "Not found yet"}</b><span>${cap(k.rarity)}${c ? `, ${c} caught` : ""}</span></div>`;
+  }).join("");
+  $("dexCard").innerHTML = `<h1>Collection</h1>
+    <p>${n ? `${n} of ${KINDS.length} found, ${all} caught in all.` : "Nothing caught yet. What you catch is kept here, in this browser."}</p>
+    <div class="grid">${cells}</div>
+    <div class="go"><button class="btn quiet" type="button" data-close>Close</button></div>`;
+  portraits($("dexCard"), 72);
+  const close = $("dexCard").querySelector("[data-close]");
+  close.addEventListener("click", (e) => { e.stopPropagation(); closeDex(); });
+  $("dex").classList.add("show");
+  $("panel").classList.remove("show");
+  close.focus({ preventScroll: true });
+}
+function closeDex() {
+  if (!dexOpen) return;
+  dexOpen = false;
+  $("dex").classList.remove("show");
+  showPanel();
+  ($("panel").classList.contains("show") && $("card").querySelector("[data-dex]") || $("dexBtn")).focus({ preventScroll: true });
+}
+
+// Still pictures of them, for the panels
+function portraits(root, size) {
+  const d = Math.min(2, devicePixelRatio || 1);
+  root.querySelectorAll("canvas[data-kind]").forEach((p) => {
+    const k = KINDS.find((x) => x.id === p.dataset.kind);
+    if (!k) return;
+    p.width = p.height = Math.round(size * d);
+    const c = p.getContext("2d"), R = size * (k.id === "lumi" ? 0.2 : 0.23);
+    c.setTransform(d, 0, 0, d, 0, 0);
+    c.translate(size / 2 + ({ volta: 0.4, embry: 0.3 }[k.id] || 0) * R, size * 0.55);
+    drawKind(c, k, R, { t: 0.6, dir: 1, flap: 0.85 }, p.dataset.look || "live");
+  });
+}
+
+// ---------------------------------------------------------------- the puck, through Watt
+
+const bridge = { ws: null, up: false, lastAim: -9e9, heard: -9e9, sent: "", sentAt: 0, retry: 3000 };
+
+function connect() {
+  let ws;
+  try { ws = new WebSocket(BRIDGE); } catch { setTimeout(connect, bridge.retry); return; }
+  ws.onopen = () => {
+    bridge.ws = ws;
+    bridge.up = true;
+    bridge.retry = 3000;
+    bridge.sent = "";
+    send({ type: "hello", kind: "game", name: "Catch" });
+    presence();
+    if (state === "title") showPanel();
+  };
+  ws.onmessage = (e) => {
+    let m;
+    try { m = JSON.parse(e.data); } catch { return; }
+    if (m.type === "aim") aimBy(m.dx, m.dy);
+    else if (m.type === "input") {
+      lastInput = "puck";
+      bridge.heard = performance.now();
+      if (m.input === "tap" || (m.input === "swipe" && m.value === "u")) press(performance.now() / 1000);
+      else if (m.input === "hold") recentre();
+    }
+  };
+  ws.onclose = () => {
+    const was = bridge.up;
+    bridge.ws = null;
+    bridge.up = false;
+    if (was && state === "title") showPanel();
+    setTimeout(connect, bridge.retry);
+    bridge.retry = Math.min(bridge.retry * 1.5, 15000);  // Watt isn't open: ask less often
+  };
+}
+
+function send(o) { if (bridge.ws && bridge.ws.readyState === 1) bridge.ws.send(JSON.stringify(o)); }
+
+// Watt gives the puck to the page you're looking at
+function presence() { send({ type: "presence", visible: !document.hidden, focused: document.hasFocus(), title: document.title }); }
+addEventListener("focus", presence);
+addEventListener("blur", presence);
+document.addEventListener("visibilitychange", presence);
+setInterval(presence, 2000);
+
+// The puck held and pointed: its motion, in 1/100 degree, moves the aim
+function aimBy(dx, dy) {
+  if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+  const now = performance.now();
+  if (now - bridge.lastAim > 1500 && state !== "play") recentre();  // picked up again: from the middle
+  bridge.lastAim = now;
+  lastInput = "puck";
+  const k = W / (SWEEP_DEG * 100);  // px per 1/100 degree
+  aim.x += dx * k;
+  aim.y += dy * k;
+  keepAim();
+}
+
+let snd = "", sn = 0;
+function puckSound(s) { snd = s; sn++; }   // the puck plays s each time sn changes
+
+// The puck's face: the ball, ready, flying, rocking (clicking with each rock), shut, broken open,
+// or out of balls; the balls left as dots along its rim
+function puckParams(T) {
+  let st = "aim", sub = "", msg = "";
+  if (state === "title") sub = "Tap to start";
+  else if (state === "over") { st = "empty"; sub = "Tap to play again"; }
+  else if (ball && (ball.mode === "fly" || ball.mode === "absorb" || ball.mode === "drop")) st = "fly";
+  else if (ball && ball.mode === "rock") st = "wob";
+  else if (held && T < held.until) { st = held.state; msg = held.msg || ""; }
+  else if (!left) st = "empty";
+  else sub = catchable(cr) ? "Swipe up to throw" : "Watch the grass";
+  const p = { state: st, n: state === "title" ? BALLS : left, sub, aim: 1 };
+  if (msg) p.msg = msg;
+  if (sn) { p.s = snd; p.sn = sn; }
+  return p;
+}
+
+function face(p) {
+  if (!bridge.up) return;
+  const f = { face: "ball", label: "Catch", params: p }, s = JSON.stringify(f), now = performance.now();
+  if (s === bridge.sent || now - bridge.sentAt < 100) return;
+  bridge.sent = s;
+  bridge.sentAt = now;
+  send(f);
+}
+
+function connState() {
+  const now = performance.now(), puck = bridge.up && (now - bridge.lastAim < 3000 || now - bridge.heard < 4000);
+  const t = puck ? "Puck" : bridge.up ? "Watt is on: pick up the puck" : lastInput === "touch" ? "Touch" : "Mouse";
+  $("conn").classList.toggle("puck", puck);
+  if ($("connText").textContent !== t) $("connText").textContent = t;
+}
+
+// ---------------------------------------------------------------- the puck on the page
+
+// The ball face as the puck draws it (466 units across, from its firmware), from the same params
+const G1 = "#8E8E93", G2 = "#5A5A5E", G3 = "#2C2C2E";
+function drawMirror(T, p) {
+  const c = mctx, w = mirror.width, half = w / 2;
+  if (!w) return;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, w, w);
+  c.translate(half, half);
+  c.fillStyle = "#000"; c.beginPath(); c.arc(0, 0, half - 1, 0, TAU); c.fill();
+  const edge = Math.max(1, w / 120);
+  c.strokeStyle = "rgba(245, 245, 247, 0.5)"; c.lineWidth = edge; c.beginPath(); c.arc(0, 0, half - edge, 0, TAU); c.stroke();
+  const k = (half * 0.92) / 233;
+  c.scale(k, k);
+  c.lineCap = "round";
+  const st = p.state, wob = st === "wob", got = st === "caught";
+  const spin = calm ? 0 : st === "fly" ? (T * 540) % 360 : wob ? 15 * Math.sin(T * TAU * 1.2) : 0;
+  ringOn(c, 206, 3, G2);
+  c.save();
+  c.rotate((spin * Math.PI) / 180);
+  c.strokeStyle = "#FFD60A"; c.lineWidth = 18; c.beginPath(); c.arc(0, 0, 190, Math.PI, TAU); c.stroke();
+  c.strokeStyle = "rgba(255, 214, 10, 0.38)"; c.lineWidth = 8; c.beginPath(); c.arc(0, 0, 158, Math.PI, TAU); c.stroke();
+  c.strokeStyle = "#F5F5F7"; c.lineWidth = 14; c.beginPath(); c.moveTo(-200, 0); c.lineTo(-70, 0); c.moveTo(70, 0); c.lineTo(200, 0); c.stroke();
+  c.restore();
+  ringOn(c, 58, 9, "#F5F5F7");
+  const lit = got || (wob && Math.sin(T * TAU * 2.4) > 0);   // rocking, the button blinks; shut, it stays lit
+  c.save();
+  if (lit) { c.shadowColor = "rgba(255, 214, 10, 0.75)"; c.shadowBlur = 14 * k; }
+  c.fillStyle = lit ? "#FFD60A" : G2; c.beginPath(); c.arc(0, 0, 30, 0, TAU); c.fill();
+  c.restore();
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  const head = got ? "Caught" : st === "free" ? "Broke free" : st === "empty" ? "No balls" : "";
+  if (head) { c.font = "800 42px Nunito, sans-serif"; c.fillStyle = "#F5F5F7"; c.fillText(head, 0, -112); }
+  if (got && p.msg) { c.font = "700 21px Nunito, sans-serif"; c.fillStyle = G1; c.fillText(p.msg, 0, 116); }
+  if (got) {   // stars going round the rim
+    c.save();
+    c.shadowColor = "rgba(255, 214, 10, 0.7)"; c.shadowBlur = 6 * k; c.fillStyle = "#FFD60A";
+    for (let i = 0; i < 5; i++) { const a = ((i * 72 + T * 40) * Math.PI) / 180; c.beginPath(); c.arc(222 * Math.sin(a), -222 * Math.cos(a), 4, 0, TAU); c.fill(); }
+    c.restore();
+  }
+  if (!got && !wob) {
+    if (p.sub) { c.font = "700 18px Nunito, sans-serif"; c.fillStyle = G2; c.fillText(p.sub, 0, 150); }
+    for (let i = 0; i < 10; i++) {   // balls left, along the bottom of the rim
+      const a = ((180 + (i - 4.5) * 8) * Math.PI) / 180;
+      c.fillStyle = i < p.n ? "#FFD60A" : G3;
+      c.beginPath(); c.arc(222 * Math.sin(a), -222 * Math.cos(a), 4, 0, TAU); c.fill();
+    }
+  }
+}
+function ringOn(c, r, w, col) { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.arc(0, 0, r, 0, TAU); c.stroke(); }
+
+// ---------------------------------------------------------------- mouse, touch, keys
+
+function recentre() { aim.x = W / 2; aim.y = bandY(0.45); }
+function keepAim() { aim.x = clamp(aim.x, W * 0.02, W * 0.98); aim.y = clamp(aim.y, HOR - S * 0.1, H - S * 0.04); }
+const puckHasIt = () => performance.now() - bridge.lastAim < 1500;
+
+let touch = null;   // the finger aiming, until it lifts and throws
+cv.addEventListener("pointermove", (e) => {
+  if (e.pointerType === "touch") {
+    if (touch === e.pointerId) { aim.x = e.clientX; aim.y = e.clientY - S * 0.09; keepAim(); }  // above the finger, where it shows
+    return;
+  }
+  if (puckHasIt()) return;
+  aim.x = e.clientX;
+  aim.y = e.clientY;
+  keepAim();
+  lastInput = "mouse";
+});
+cv.addEventListener("pointerdown", (e) => {
+  unlockSound();
+  if (e.pointerType === "touch") {
+    lastInput = "touch";
+    touch = e.pointerId;
+    aim.x = e.clientX; aim.y = e.clientY - S * 0.09; keepAim();
+    return;
+  }
+  if (e.button !== 0) return;
+  lastInput = "mouse";
+  if (!puckHasIt()) { aim.x = e.clientX; aim.y = e.clientY; keepAim(); }
+  press(performance.now() / 1000);
+});
+cv.addEventListener("pointerup", (e) => {
+  if (touch === null || touch !== e.pointerId) return;
+  touch = null;
+  press(performance.now() / 1000);
+});
+cv.addEventListener("pointercancel", () => { touch = null; });
+addEventListener("keydown", (e) => {
+  if (e.code === "Escape" && dexOpen) { e.preventDefault(); closeDex(); return; }
+  if (e.code !== "Space" && e.code !== "Enter") return;
+  if (e.target.closest && e.target.closest("a, button")) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  unlockSound();
+  if (!puckHasIt()) lastInput = "mouse";
+  press(performance.now() / 1000);
+});
+$("dexBtn").addEventListener("click", (e) => { e.stopPropagation(); unlockSound(); if (dexOpen) closeDex(); else openDex(); });
+$("dex").addEventListener("click", (e) => { if (e.target === $("dex")) closeDex(); });
+
+// ---------------------------------------------------------------- sound (once the page has been clicked or a key pressed)
+
+let audio = null, noise = null;
+function unlockSound() {
+  if (!audio) { try { audio = new AudioContext(); } catch { audio = null; } }
+  audio?.resume?.();
+}
+function sound(kind) {
+  if (!audio || audio.state !== "running") return;
+  const t = audio.currentTime;
+  const tone = (f, at, len, gain, type = "sine", to) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t + at);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + at + len);
+    g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(gain, t + at + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + at + len);
+    o.connect(g); g.connect(audio.destination); o.start(t + at); o.stop(t + at + len + 0.02);
+  };
+  const hiss = (at, len, gain, f0, f1, q = 1) => {   // air: noise through a band sliding from f0 to f1
+    if (!noise) {
+      noise = audio.createBuffer(1, Math.round(audio.sampleRate * 0.6), audio.sampleRate);
+      const d = noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const s = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain();
+    s.buffer = noise; f.type = "bandpass"; f.Q.value = q;
+    f.frequency.setValueAtTime(f0, t + at); f.frequency.exponentialRampToValueAtTime(f1, t + at + len);
+    g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(gain, t + at + len * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + at + len);
+    s.connect(f); f.connect(g); g.connect(audio.destination); s.start(t + at); s.stop(t + at + len + 0.02);
+  };
+  if (kind === "throw") hiss(0, 0.34, 0.16, 450, 2400, 0.8);
+  else if (kind === "thud") { tone(140, 0, 0.18, 0.12, "sine", 60); hiss(0, 0.07, 0.04, 900, 400, 0.7); }
+  else if (kind === "rock") { tone(1900, 0, 0.025, 0.045, "square"); tone(720, 0.006, 0.07, 0.05, "triangle"); }
+  else if (kind === "catch") { tone(1320, 0, 0.16, 0.06); tone(1760, 0.1, 0.22, 0.055); tone(2640, 0.2, 0.45, 0.045); }
+  else if (kind === "pop") { tone(300, 0, 0.13, 0.08, "triangle", 950); hiss(0, 0.09, 0.06, 2200, 3200, 0.9); }
+  else if (kind === "hit") tone(990, 0, 0.3, 0.035, "sine", 1980);
+  else if (kind === "miss") hiss(0, 0.2, 0.05, 1400, 600, 0.6);
+}
+
+function count(name, params) { gtag("event", name, params); }
+
+// ---------------------------------------------------------------- the frame
+
+function resize() {
+  const was = { W, H, HOR };
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth;
+  H = innerHeight;
+  S = Math.min(W * 1.25, H);   // tall phones: a little bigger than their width alone would make things
+  HOR = Math.round(H * 0.47);
+  cv.width = Math.round(W * DPR);
+  cv.height = Math.round(H * DPR);
+  mirror.width = mirror.height = Math.round((mirror.clientWidth || 140) * DPR);
+  if (was.W && was.H > was.HOR) {   // keep things where they were in the meadow
+    const mx = (x) => (x / was.W) * W, my = (y) => HOR + ((y - was.HOR) / (was.H - was.HOR)) * (H - HOR);
+    aim.x = mx(aim.x); aim.y = my(aim.y);
+    if (cr) for (const [a, b] of [["x", "y"], ["tx", "ty"], ["lx", "ly"]]) if (a in cr) { cr[a] = mx(cr[a]); cr[b] = my(cr[b]); }
+    if (ball) for (const [a, b] of [["x", "y"], ["tx", "ty"], ["gx", "gy"], ["x0", "y0"]]) { ball[a] = mx(ball[a]); ball[b] = my(ball[b]); }
+    if (ball && "hy" in ball) ball.hy = my(ball.hy);
+  } else recentre();
+  keepAim();
+  drawBg();
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)), T = now / 1000;
+  last = now;
+  update(dt, T);
+  render(T);
+  hud(T);
+  const p = puckParams(T);
+  face(p);
+  drawMirror(T, p);
+  connState();
+  requestAnimationFrame(frame);
+}
+
+for (let i = 0; i < BALLS; i++) { const d = document.createElement("i"); dots.push(d); $("balls").append(d); }
+addEventListener("resize", resize);
+loadBook();
+makeMeadow();
+resize();
+nextAt = performance.now() / 1000 + 0.4;
+showPanel();
+connect();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

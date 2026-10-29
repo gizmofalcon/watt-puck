@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Games · Watt, the puck</title>
+<meta name="description" content="Games played with Watt, the puck: open one on your Mac and the puck is the controller. Each one plays with a mouse too.">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../assets/icon.png">
+<link rel="canonical" href="https://watt.sourabhdaroji.com/games/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Watt, the puck">
+<meta property="og:title" content="Games for the puck">
+<meta property="og:description" content="Open one on your Mac and the puck is the controller.">
+<meta property="og:url" content="https://watt.sourabhdaroji.com/games/">
+<meta property="og:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  // Google Analytics, as on the home page: only on the real site, and loaded once the page is idle
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0A0A0B; --card: #141416; --lift: #1A1A1D; --w: #F5F5F7; --mute: rgba(245, 245, 247, 0.56); --faint: rgba(245, 245, 247, 0.48);
+    --y: #FFD60A; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color-scheme: dark; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; color: var(--w); -webkit-font-smoothing: antialiased;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--w); }
+
+  /* one column, the width of a paragraph, as on the home page */
+  header, section, footer { max-width: 760px; margin: 0 auto; padding: 0 40px; }
+  header { display: flex; align-items: center; justify-content: space-between; padding-top: 28px; }
+  .name { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; }
+  .name img { display: block; width: 26px; height: 26px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: rgba(255, 255, 255, 0.08); color: var(--w); font-weight: 700; }
+  .btn.quiet:hover { filter: none; background: rgba(255, 255, 255, 0.13); }
+  .btn.small { height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; }
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
+
+  .say { margin: 0; font-size: 20px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; color: var(--mute); text-wrap: pretty; }
+  .intro { margin-top: 117px; }
+
+  /* the games */
+  .list { margin-top: 64px; }
+  .game { display: block; border-radius: 18px; background: var(--card); overflow: hidden; transition: background-color 0.16s var(--ease); }
+  .game:hover { background: var(--lift); }
+  .shot { position: relative; aspect-ratio: 16 / 7; background: #070605; overflow: hidden; }
+  .shot::before { content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at var(--lx, 62%) var(--ly, 46%), rgba(255, 204, 140, 0.34), rgba(255, 196, 120, 0.12) 13%, rgba(0, 0, 0, 0) 24%);
+    transition: background-position 0.6s var(--ease); }
+  .shot svg { position: absolute; left: 65%; top: 53%; width: 34px; height: 34px; transform: translate(-50%, -50%) rotate(-24deg); color: #e0b54a;
+    opacity: var(--seen, 0.9); transition: opacity 0.2s; }
+  .game + .game { margin-top: 12px; }
+  .shot.pants { background: #0b0b0c; }
+  .shot.pants::before { display: none; }
+  .shot.pants svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: none; opacity: 1; }
+  .about { display: flex; align-items: center; gap: 20px; padding: 22px 24px; }
+  .about p { flex: 1; margin: 0; color: var(--mute); text-wrap: pretty; }
+  .note { margin: 20px 0 0; font-size: 14px; line-height: 22px; color: var(--faint); text-wrap: pretty; }
+  .note a { color: var(--mute); transition: color 0.16s; }
+  .note a:hover { color: var(--w); }
+
+  footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 99px; padding-bottom: 40px; font-size: 14px; line-height: 20px; color: var(--faint); }
+  footer nav { display: flex; gap: 20px; }
+  footer a { color: var(--mute); transition: color 0.16s; }
+  footer a:hover { color: var(--w); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rise { opacity: 0; transform: translateY(10px); animation: rise 0.7s var(--ease) forwards; animation-delay: calc(var(--i, 0) * 70ms); }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+  }
+
+  @media (max-width: 640px) {
+    header, section, footer { padding: 0 20px; }
+    header { padding-top: 28px; }
+    footer { padding-bottom: 40px; margin-top: 88px; }
+    .intro { margin-top: 96px; }
+    .list { margin-top: 48px; }
+    .shot { aspect-ratio: 16 / 9; }
+    .about { flex-wrap: wrap; padding: 20px; }
+    .about p { flex-basis: 100%; }
+  }
+</style>
+</head>
+<body>
+<header class="rise">
+  <a class="name" href="../"><img src="../assets/icon.png" alt="" width="26" height="26">Watt</a>
+  <a class="btn quiet small" href="https://github.com/gizmofalcon/watt-puck/releases/latest/download/Watt.dmg">Download</a>
+</header>
+
+<main>
+  <section class="intro rise" style="--i: 1">
+    <h1 class="say"><b>Games for the puck.</b> Open one on your Mac with Watt running, and the puck is the controller. Each one plays with a mouse too.</h1>
+  </section>
+
+  <section class="list rise" style="--i: 2">
+    <a class="game" href="torch/" id="torch">
+      <div class="shot" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="7.5" cy="12" r="4"/><path d="M11.5 12H21M17.5 12v3.5M20.5 12v2.5"/></svg>
+      </div>
+      <div class="about">
+        <p><b>Torch.</b> A dark room, 36 seconds of light, and something in here with you. Point the puck to search for the key, then the door, and keep an eye on its radar.</p>
+        <span class="btn">Play</span>
+      </div>
+    </a>
+    <a class="game" href="pants/" id="pants">
+      <div class="shot pants" aria-hidden="true">
+        <svg viewBox="0 0 640 280" preserveAspectRatio="xMidYMid slice" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M0 150 C 140 120, 260 170, 380 140 S 560 110, 640 130 V 280 H 0 Z" fill="#111113"/>
+          <path d="M0 205 C 110 175, 190 238, 300 222 S 470 150, 560 168 S 620 190, 640 185 V 280 H 0 Z" fill="#151517"/>
+          <path d="M0 205 C 110 175, 190 238, 300 222 S 470 150, 560 168 S 620 190, 640 185" stroke="#F5F5F7" stroke-opacity="0.9" stroke-width="2.4"/>
+          <g stroke="#FFD60A" stroke-width="3"><path d="M418 132c3-7 6-7 6 0s4 7 7 0 5-7 7 0"/><path d="M466 118c3-7 6-7 6 0s4 7 7 0 5-7 7 0"/><path d="M514 112c3-7 6-7 6 0s4 7 7 0 5-7 7 0"/></g>
+          <g transform="translate(352 190) rotate(-14)">
+            <path d="M0 -27 L9 -14 L18 -2 M0 -27 L-8 -15 L-20 -9" stroke="#FFD60A" stroke-width="8"/>
+            <path d="M14 1 L24 -6 L20 4 Z M-24 -14 L-17 -3 L-26 -5 Z" fill="#FFD60A" stroke="#FFD60A" stroke-width="2"/>
+            <path d="M0 -27 L2 -46 M1 -43 L13 -36 L22 -42 M1 -43 L-10 -35 L-18 -40" stroke="#F5F5F7" stroke-width="2.6"/>
+            <circle cx="4" cy="-56" r="9.5" fill="#0b0b0c" stroke="#F5F5F7" stroke-width="2.6"/>
+            <path d="M-3 -63 L-12 -70 M2 -65 L-4 -76 M7 -64 L5 -74" stroke="#F5F5F7" stroke-width="2.4"/>
+            <path d="M-26 -48 H-44 M-26 -38 H-52 M-26 -28 H-40" stroke="#F5F5F7" stroke-opacity="0.25" stroke-width="1.6"/>
+          </g>
+        </svg>
+      </div>
+      <div class="about">
+        <p><b>Pants.</b> Hills, ramps and springs, with momentum. Hold the puck like a wheel and tilt it to run, tap to jump.</p>
+        <span class="btn">Play</span>
+      </div>
+    </a>
+    <a class="game" href="catch/" id="catch">
+      <div class="shot pants" aria-hidden="true">
+        <svg viewBox="0 0 640 280" preserveAspectRatio="xMidYMid slice" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <defs><radialGradient id="dusk" cx="0.7" cy="0.62" r="0.7"><stop offset="0" stop-color="#2a1f24"/><stop offset="1" stop-color="#0b0b0c"/></radialGradient></defs>
+          <rect width="640" height="280" fill="url(#dusk)"/>
+          <path d="M0 170 C 160 140, 300 175, 460 150 S 600 150, 640 160 V 280 H 0 Z" fill="#121214"/>
+          <path d="M0 200 H 640 V 280 H 0 Z" fill="#141416"/>
+          <g stroke="#F5F5F7" stroke-opacity="0.35" stroke-width="1.6"><path d="M96 232 l-6 -26 M102 232 l2 -30 M108 232 l8 -24"/><path d="M520 240 l-7 -24 M526 240 l1 -32 M532 240 l9 -22"/><path d="M300 250 l-5 -20 M305 250 l2 -26 M311 250 l7 -18"/></g>
+          <g transform="translate(408 176)">
+            <circle r="17" fill="#3d5a3a" stroke="#F5F5F7" stroke-opacity="0.85" stroke-width="2"/>
+            <path d="M-2 -17 c-6 -10 -14 -9 -16 -6 M2 -17 c5 -11 13 -10 15 -7" stroke="#8fb36b" stroke-width="2.4"/>
+            <circle cx="-5" cy="-2" r="2" fill="#F5F5F7"/><circle cx="5" cy="-2" r="2" fill="#F5F5F7"/>
+            <circle r="34" stroke="#FFD60A" stroke-opacity="0.7" stroke-width="1.6"/>
+          </g>
+          <g transform="translate(250 118) rotate(-18)">
+            <path d="M-22 0 A22 22 0 0 1 22 0" stroke="#FFD60A" stroke-width="7"/>
+            <circle r="22" stroke="#F5F5F7" stroke-opacity="0.6" stroke-width="1.6"/>
+            <path d="M-22 0 H-7 M7 0 H22" stroke="#F5F5F7" stroke-width="3"/>
+            <circle r="5.5" fill="#0b0b0c" stroke="#F5F5F7" stroke-width="2"/>
+          </g>
+          <path d="M120 272 C 170 190, 220 140, 246 122" stroke="#F5F5F7" stroke-opacity="0.18" stroke-width="1.6" stroke-dasharray="3 7"/>
+        </svg>
+      </div>
+      <div class="about">
+        <p><b>Catch.</b> The puck is the ball. Point it to aim, swipe up to throw, and feel it rock in your hand while it holds what it caught.</p>
+        <span class="btn">Play</span>
+      </div>
+    </a>
+    <a class="game" href="tasks/" id="tasks">
+      <div class="shot pants" aria-hidden="true">
+        <svg viewBox="0 0 640 280" preserveAspectRatio="xMidYMid slice" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <g transform="translate(320 140)" stroke="#F5F5F7" stroke-opacity="0.75" stroke-width="1.6">
+            <circle r="118"/><circle r="80"/><circle r="44"/><circle r="16"/>
+            <path d="M0 -80 V -118 M76 25 L112 37 M-76 25 L-112 37 M47 -65 L69 -95 M-47 -65 L-69 -95 M47 65 L69 95 M-47 65 L-69 95"/>
+            <path d="M0 -44 V -80 M38 22 L69 40 M-38 22 L-69 40" stroke-opacity="0.4"/>
+          </g>
+          <g transform="translate(320 140)" stroke="#F5F5F7" stroke-opacity="0.25" stroke-width="1.2">
+            <path d="M0 -130 V -124 M65 -113 L62 -108 M113 -65 L108 -62 M130 0 H124 M113 65 L108 62 M65 113 L62 108 M0 130 V124 M-65 113 L-62 108 M-113 65 L-108 62 M-130 0 H-124 M-113 -65 L-108 -62 M-65 -113 L-62 -108"/>
+          </g>
+          <g transform="translate(386 92)">
+            <circle r="13" fill="#0b0b0c" stroke="#F5F5F7" stroke-width="2"/>
+            <rect x="-6" y="-4" width="3.4" height="8" rx="1.7" fill="#F5F5F7"/><rect x="2.6" y="-4" width="3.4" height="8" rx="1.7" fill="#F5F5F7"/>
+            <circle r="22" stroke="#FFD60A" stroke-opacity="0.35" stroke-width="1.2"/>
+          </g>
+          <g fill="#FFD60A"><circle cx="356" cy="114" r="2.4"/><circle cx="342" cy="126" r="2.4" fill-opacity="0.6"/><circle cx="330" cy="136" r="2.4" fill-opacity="0.3"/></g>
+        </svg>
+      </div>
+      <div class="about">
+        <p><b>Tasks.</b> A small station, six jobs, two and a half minutes. At each one the puck is the panel: turn it, spin it, tap in time, swipe, hold it still, flip it over.</p>
+        <span class="btn">Play</span>
+      </div>
+    </a>
+    <a class="game" href="hamlet/" id="hamlet">
+      <div class="shot pants" aria-hidden="true">
+        <svg viewBox="0 0 640 280" preserveAspectRatio="xMidYMid slice" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="640" height="280" fill="#0d0f0e"/>
+          <path d="M60 210 C 200 190, 300 230, 460 200 S 600 210, 640 205" stroke="#F5F5F7" stroke-opacity="0.08" stroke-width="18"/>
+          <g fill="#17211b" stroke="#F5F5F7" stroke-opacity="0.45" stroke-width="1.4"><circle cx="110" cy="96" r="18"/><circle cx="140" cy="118" r="15"/><circle cx="92" cy="130" r="14"/><circle cx="520" cy="84" r="16"/><circle cx="548" cy="104" r="13"/></g>
+          <g transform="translate(320 130)" stroke="#F5F5F7" stroke-width="2">
+            <path d="M-40 6 L0 -26 L40 6" fill="#18181b"/>
+            <rect x="-32" y="6" width="64" height="38" fill="#18181b"/>
+            <rect x="-8" y="22" width="16" height="22" rx="2"/>
+            <path d="M0 -26 V -46 L14 -40 L0 -34" stroke-opacity="0.8"/>
+          </g>
+          <g transform="translate(410 176)">
+            <circle r="16" stroke="#FFD60A" stroke-width="2"/>
+            <circle cy="-6" r="4.5" stroke="#F5F5F7" stroke-width="2"/>
+            <path d="M0 -1.5 V 8 M-6 3 H6 M0 8 L-4 14 M0 8 L4 14" stroke="#F5F5F7" stroke-width="2"/>
+          </g>
+          <g transform="translate(250 186)"><circle cy="-6" r="4.5" stroke="#F5F5F7" stroke-opacity="0.7" stroke-width="2"/><path d="M0 -1.5 V 8 M-6 3 H6 M0 8 L-4 14 M0 8 L4 14" stroke="#F5F5F7" stroke-opacity="0.7" stroke-width="2"/></g>
+          <g fill="#FFD60A"><circle cx="470" cy="214" r="3"/><circle cx="480" cy="210" r="2.4"/><circle cx="476" cy="220" r="2.2"/></g>
+          <g fill="#9e4a55"><circle cx="190" cy="214" r="3"/><circle cx="198" cy="220" r="3"/><circle cx="186" cy="224" r="3"/></g>
+        </svg>
+      </div>
+      <div class="about">
+        <p><b>Hamlet.</b> A small village to grow. Swipe on the puck to pick a villager or a building and the map pans to it, turn to choose what it does, tap to do it.</p>
+        <span class="btn">Play</span>
+      </div>
+    </a>
+    <p class="note">With the puck, the games need Watt open on the same Mac, and a browser that lets this page reach it, such as Chrome.</p>
+  </section>
+</main>
+
+<footer class="rise" style="--i: 3">
+  <span>Made by <a href="https://sourabhdaroji.com">Sourabh Daroji</a></span>
+  <nav><a href="../changelog/">Changelog</a><a href="https://github.com/gizmofalcon/watt-puck">GitHub</a></nav>
+</footer>
+
+<script>
+  // The light in the picture follows the pointer, a little
+  const shot = document.querySelector("#torch .shot");
+  const card = document.getElementById("torch");
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    card.addEventListener("pointermove", (e) => {
+      const r = shot.getBoundingClientRect();
+      const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+      const lx = 50 + (x - 0.5) * 50, ly = 46 + (y - 0.5) * 40;
+      shot.style.setProperty("--lx", lx + "%");
+      shot.style.setProperty("--ly", ly + "%");
+      // the key shows only in the light
+      const d = Math.hypot(((lx - 65) / 100) * r.width, ((ly - 53) / 100) * r.height) / (r.width * 0.2);
+      shot.style.setProperty("--seen", Math.max(0, Math.min(0.9, 1.2 - d)).toFixed(2));
+    });
+    card.addEventListener("pointerleave", () => { for (const k of ["--lx", "--ly", "--seen"]) shot.style.removeProperty(k); });
+  }
+  document.querySelectorAll('a[href$="/Watt.dmg"]').forEach((a) => a.addEventListener("click", () => gtag("event", "app_download", { source: "games" })));
+</script>
+</body>
+</html>

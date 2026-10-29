@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pants · Puck games</title>
+<meta name="description" content="A run over hills, ramps and springs in a pair of yellow pants. Steer it by tilting Watt, the puck, like a wheel, or play with the keys.">
+<meta name="theme-color" content="#0A0A0B">
+<link rel="icon" href="../../assets/icon.png">
+<link rel="canonical" href="https://watt.sourabhdaroji.com/games/pants/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Watt, the puck">
+<meta property="og:title" content="Pants">
+<meta property="og:description" content="A run over hills, ramps and springs. Steer it by tilting the puck like a wheel.">
+<meta property="og:url" content="https://watt.sourabhdaroji.com/games/pants/">
+<meta property="og:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  // Google Analytics, as on the home page: only on the real site, and loaded once the page is idle
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0A0A0B; --w: #F5F5F7; --mute: rgba(245, 245, 247, 0.56); --faint: rgba(245, 245, 247, 0.4); --y: #FFD60A; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color-scheme: dark; overflow: hidden; }
+  body { color: var(--w); -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; touch-action: none;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--w); }
+  canvas { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: rgba(255, 255, 255, 0.08); color: var(--w); font-weight: 700; }
+  .btn.quiet:hover { filter: none; background: rgba(255, 255, 255, 0.13); }
+  .btn.small { height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; }
+  .btn svg { width: 8px; height: 12px; margin-right: 8px; opacity: 0.6; }
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
+
+  .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; pointer-events: none; }
+  .hud > * { pointer-events: auto; }
+  .score { display: flex; align-items: center; gap: 18px; font: 500 14px/1 "Roboto Mono", ui-monospace, Menlo, monospace; color: var(--mute); }
+  .score span { display: flex; align-items: center; gap: 8px; }
+  .score svg { width: 20px; height: 14px; color: var(--y); }
+  .score b { color: var(--w); }
+  .score .bump { animation: bump 0.35s var(--ease); }
+  @keyframes bump { 40% { transform: scale(1.25); } }
+
+  .panel { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; pointer-events: none; opacity: 0; transition: opacity 0.5s var(--ease);
+    background: radial-gradient(ellipse at center, rgba(10, 10, 11, 0.86), rgba(10, 10, 11, 0.55) 60%, rgba(10, 10, 11, 0.2)); }
+  .panel.show { opacity: 1; }
+  .panel.show .card { pointer-events: auto; }
+  .card { max-width: 470px; text-align: center; transform: translateY(8px); transition: transform 0.6s var(--ease); }
+  .panel.show .card { transform: none; }
+  .card h1 { margin: 0; font-size: 44px; line-height: 52px; font-weight: 800; letter-spacing: -0.02em; }
+  .card p { margin: 14px 0 0; font-size: 18px; line-height: 28px; color: var(--mute); text-wrap: pretty; }
+  .card .how { margin-top: 18px; font-size: 15px; line-height: 23px; color: var(--faint); }
+  .card .go { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; margin-top: 28px; }
+  .card .or { font-size: 14px; color: var(--faint); }
+
+  .hint { position: fixed; left: 0; right: 0; bottom: 22px; margin: 0; text-align: center; font-size: 14px; line-height: 20px; color: var(--faint); pointer-events: none; }
+  .conn { position: fixed; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13px; line-height: 24px; color: var(--faint); }
+  .conn i { width: 7px; height: 7px; border-radius: 50%; background: rgba(245, 245, 247, 0.25); transition: background-color 0.3s, box-shadow 0.3s; }
+  .conn.puck i { background: var(--y); box-shadow: 0 0 10px rgba(255, 214, 10, 0.6); }
+  .wheel { width: 26px; height: 26px; opacity: 0; transition: opacity 0.3s; }
+  .conn.puck .wheel { opacity: 1; }
+
+  @media (max-width: 640px) {
+    .hud { padding: 16px; }
+    .card h1 { font-size: 36px; line-height: 44px; }
+    .card p { font-size: 17px; line-height: 26px; }
+    .conn { right: 16px; bottom: 14px; }
+    .hint { bottom: 44px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="world" aria-label="A runner in yellow pants, on hills drawn in white lines"></canvas>
+
+<div class="hud">
+  <a class="btn quiet small" href="../"><svg viewBox="0 0 8 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 1 1.5 6l5 5"/></svg>Games</a>
+  <div class="score" aria-live="polite">
+    <span id="squigs"><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M2 9c2-6 5-6 5 0s3 6 5 0 4-6 6 0"/></svg><b id="got">0</b>/<span id="total">0</span></span>
+    <span id="clock">0:00.0</span>
+  </div>
+</div>
+
+<div class="panel" id="panel"><div class="card" id="card"></div></div>
+<p class="hint" id="hint"></p>
+<div class="conn" id="conn">
+  <svg class="wheel" viewBox="-13 -13 26 26" aria-hidden="true"><circle r="11" fill="none" stroke="rgba(245,245,247,0.3)" stroke-width="1.5"/><line id="needle" x1="0" y1="0" x2="0" y2="-11" stroke="#FFD60A" stroke-width="2" stroke-linecap="round"/></svg>
+  <i></i><span id="connText">Keys</span>
+</div>
+
+<script>
+// Pants: a run over hills, ramps and springs, with momentum. Down a slope you gather speed, off a
+// crest you fly, landing on a downhill keeps it.
+//
+// The puck plays it through Watt on this Mac: the page joins Watt's local bridge as a game, asks for
+// the "meter" face (the squiggles you have, and how far along you are on the ring) and for "tilt":
+// held upright like a wheel, how far the puck is turned, which steers. Taps jump, a swipe down slides,
+// a hold makes the way you're holding it level. Flat on the desk, turning the puck steers like a dial.
+// Keys and touch play it too.
+
+const VIEW_H = 820;        // world units the screen is tall
+const GRAV = 2400, RUN_ACCEL = 1700, AIR_ACCEL = 1150, MAX_RUN = 580, MAX_SPEED = 1550;
+const FRICTION = 1500, SKID = 3200, SLOPE = 0.9, JUMP_V = 1000, SPRING_V = 1680, STEP = 1 / 120;
+const STAND_H = 62, SLIDE_H = 30, HALF_W = 12, STEP_UP = 26, DEATH_Y = 1350;
+const WHEEL_DEG = 28;      // turned this far from level, the runner runs flat out
+const BRIDGE = "ws://127.0.0.1:47824";
+
+const cv = document.getElementById("world");
+const ctx = cv.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const wrap180 = (a) => ((a + 540) % 360) - 180;
+const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---------------------------------------------------------------- the level
+
+// Ground comes in strips (the gaps between them are pits), each a smooth curve through its points
+const STRIPS = [
+  [[-700, 600], [0, 600], [400, 600], [700, 560], [1000, 600], [1300, 640], [1600, 590], [1900, 520], [2100, 500],
+   [2400, 560], [2800, 700], [3200, 760], [3450, 700], [3600, 620]],
+  [[3900, 650], [4100, 630], [4300, 600], [4900, 600], [5300, 600], [5450, 600], [5700, 520], [6000, 620], [6300, 500],
+   [6600, 600], [6800, 600]],
+  [[7600, 600], [8000, 600], [8200, 570], [9300, 570]],
+].map(makeStrip);
+const BLOCKS = [
+  { x: -760, y: -400, w: 80, h: 1400 },      // the start: nothing that way
+  { x: 4450, y: 470, w: 200, h: 82 },        // a beam: slide under it, or jump over
+  { x: 5050, y: 170, w: 110, h: 430 },       // a wall: the spring gets you over
+  { x: 9150, y: -400, w: 80, h: 1400 },      // the end of the world
+];
+const PLATFORMS = [{ x0: 6900, x1: 7060, y: 560 }, { x0: 7160, x1: 7300, y: 500 }, { x0: 7400, x1: 7520, y: 540 }];
+const SPRINGS = [{ x: 4820, w: 46 }];
+const CHECKPOINTS = [0, 2050, 3960, 5460, 6720, 7660];
+const DOOR = { x: 8560 };
+
+function makeStrip(pts) {
+  // Monotone cubic (Fritsch-Carlson): smooth, and no bumps the points don't have
+  const n = pts.length, d = [], m = [];
+  for (let i = 0; i < n - 1; i++) d.push((pts[i + 1][1] - pts[i][1]) / (pts[i + 1][0] - pts[i][0]));
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], s = a * a + b * b;
+    if (s > 9) { const t = 3 / Math.sqrt(s); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+  }
+  return { pts, m, x0: pts[0][0], x1: pts[n - 1][0] };
+}
+
+function groundAt(s, x) {  // the strip's height at x, and its slope
+  const p = s.pts;
+  let i = 0, j = p.length - 2;
+  while (i < j) { const k = (i + j + 1) >> 1; if (p[k][0] <= x) i = k; else j = k - 1; }
+  const [x0, y0] = p[i], [x1, y1] = p[i + 1], h = x1 - x0, t = clamp((x - x0) / h, 0, 1);
+  const t2 = t * t, t3 = t2 * t;
+  const y = (2 * t3 - 3 * t2 + 1) * y0 + (t3 - 2 * t2 + t) * h * s.m[i] + (-2 * t3 + 3 * t2) * y1 + (t3 - t2) * h * s.m[i + 1];
+  const dy = ((6 * t2 - 6 * t) * y0 + (3 * t2 - 4 * t + 1) * h * s.m[i] + (-6 * t2 + 6 * t) * y1 + (3 * t2 - 2 * t) * h * s.m[i + 1]) / h;
+  return { y, dy };
+}
+const groundY = (x) => { for (const s of STRIPS) if (x >= s.x0 && x <= s.x1) return groundAt(s, x).y; return null; };
+
+// Squiggles: along the ground, and in the air where a good run takes you
+const SQUIGGLES = [];
+const along = (x0, x1, n, above) => { for (let i = 0; i < n; i++) { const x = x0 + ((x1 - x0) * i) / Math.max(1, n - 1); SQUIGGLES.push({ x, y: groundY(x) - above }); } };
+const arc = (x0, y0, x1, y1, n, lift) => { for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; SQUIGGLES.push({ x: x0 + (x1 - x0) * t, y: y0 + (y1 - y0) * t - lift * 4 * t * (1 - t) }); } };
+along(250, 600, 5, 70);
+arc(620, 480, 860, 470, 3, 70);
+along(1180, 1420, 3, 70);
+along(1620, 1980, 4, 74);
+along(2250, 3100, 7, 64);
+arc(3600, 560, 3900, 590, 4, 70);
+along(4475, 4625, 3, 26);              // under the beam, for whoever slides
+arc(4840, 400, 5010, 130, 3, 0);       // up with the spring
+along(5070, 5140, 2, 0); SQUIGGLES.slice(-2).forEach((s) => (s.y = 120));
+along(5640, 5760, 3, 110);
+along(5960, 6040, 2, 60);
+along(6240, 6360, 3, 110);
+SQUIGGLES.push({ x: 6980, y: 500 }, { x: 7110, y: 430 }, { x: 7230, y: 440 }, { x: 7350, y: 430 }, { x: 7460, y: 480 });
+along(7800, 8300, 5, 70);
+
+// ---------------------------------------------------------------- the runner
+
+const P = { x: 0, y: 600, vx: 0, vy: 0, gs: 0, ground: null, angle: 0, h: STAND_H, face: 1, slide: 0, coyote: 0, buffer: 0,
+  wallSide: 0, wallAt: -9, lock: 0, phase: 0, land: 0, held: false, spring: -9 };
+let state = "title", startAt = 0, endAt = 0, stateAt = 0, now = 0, checkpoint = 0, got = 0, falls = 0, best = 0, fade = 0;
+const taken = new Set();
+const particles = [];
+
+function reset(toStart) {
+  if (toStart) { checkpoint = 0; got = 0; falls = 0; taken.clear(); best = 0; }
+  const x = CHECKPOINTS[checkpoint];
+  Object.assign(P, { x, y: groundY(x), vx: 0, vy: 0, gs: 0, ground: "ground", angle: 0, h: STAND_H, slide: 0, coyote: 0, buffer: 0, lock: 0, land: 0 });
+  cam.x = x; cam.y = P.y - 120;
+}
+
+// The highest thing to stand on at x, no higher than a step above y
+function floorAt(x, y, up, falling) {
+  let best = null;
+  const take = (fy, angle, kind, ref) => { if (fy >= y - up && (!best || fy < best.y)) best = { y: fy, angle, kind, ref }; };
+  for (const s of STRIPS) if (x >= s.x0 && x <= s.x1) { const g = groundAt(s, x); take(g.y, Math.atan(g.dy), "ground", s); }
+  for (const b of BLOCKS) if (x >= b.x && x <= b.x + b.w) take(b.y, 0, "block", b);
+  for (const p of PLATFORMS) if (x >= p.x0 && x <= p.x1 && (falling || y <= p.y + 2)) take(p.y, 0, "plat", p);
+  for (const s of SPRINGS) if (Math.abs(x - s.x) <= s.w / 2) take(groundY(s.x) - 18, 0, "spring", s);
+  return best;
+}
+
+// Walls: blocks, and the faces of the ground where a strip begins or ends above you
+function hitsWall(x, y, h) {
+  for (const b of BLOCKS) if (x + HALF_W > b.x && x - HALF_W < b.x + b.w && y > b.y + 2 && y - h < b.y + b.h) return b;
+  for (const s of STRIPS) {
+    for (const ex of [s.x0, s.x1]) {
+      if (Math.abs(x - ex) < HALF_W && y > groundAt(s, ex).y + STEP_UP) return { x: ex - (ex === s.x0 ? 0 : 0.01), w: 0.01, edge: true };
+    }
+  }
+  return null;
+}
+
+function step(dt, input) {
+  P.lock = Math.max(0, P.lock - dt);
+  P.coyote = Math.max(0, P.coyote - dt);
+  P.buffer = Math.max(0, P.buffer - dt);
+  P.slide = Math.max(0, P.slide - dt);
+  const ax = input.axis;
+  if (Math.abs(ax) > 0.15) P.face = Math.sign(ax);
+
+  if (P.ground) {
+    const a = P.angle, sin = Math.sin(a);
+    // Running: push towards top speed; nothing pushing, or pushing back, slows you down
+    const sliding = P.slide > 0 && Math.abs(P.gs) > 90;
+    if (!sliding && ax * P.gs < 0) P.gs += Math.sign(ax) * SKID * Math.abs(ax) * dt;
+    else if (!sliding && Math.abs(ax) > 0.05 && Math.abs(P.gs) < MAX_RUN * Math.abs(ax)) P.gs += ax * RUN_ACCEL * dt;
+    else if (Math.abs(ax) <= 0.05 || sliding) P.gs -= Math.sign(P.gs) * Math.min(Math.abs(P.gs), (sliding ? 260 : FRICTION) * dt);
+    P.gs += GRAV * SLOPE * sin * dt * (sliding ? 1.25 : 1);  // downhill is faster
+    P.gs = clamp(P.gs, -MAX_SPEED, MAX_SPEED);
+    P.h = sliding || hitsWall(P.x, P.y, STAND_H) ? SLIDE_H : STAND_H;  // under something: stay down
+    const vx = P.gs * Math.cos(a), vy = P.gs * sin;
+    const nx = P.x + vx * dt, ny = P.y + vy * dt;
+    if (hitsWall(nx, P.y, P.h)) { P.gs = 0; P.vx = P.vy = 0; }
+    else {
+      const f = floorAt(nx, P.y, STEP_UP + Math.abs(vy) * dt, false);
+      const stick = 3 + Math.abs(P.gs) * 0.002;
+      if (f && f.y - ny <= stick) { P.x = nx; P.y = f.y; P.angle = f.angle; P.ground = f.kind; P.vx = vx; P.vy = vy; if (f.kind === "spring") bounce(f.ref); }
+      else { P.x = nx; P.y = ny; P.vx = vx; P.vy = vy; P.ground = null; P.coyote = 0.1; }  // over the top: you fly
+    }
+    if (P.ground && P.buffer > 0) jump();
+  } else {
+    // In the air: steer a little, fall, catch walls
+    if (P.lock <= 0 && Math.abs(ax) > 0.05) {
+      const want = ax * MAX_RUN;
+      if (Math.sign(want) !== Math.sign(P.vx) || Math.abs(P.vx) < Math.abs(want)) P.vx += ax * AIR_ACCEL * dt;
+    }
+    P.vy += GRAV * dt;
+    const onWall = P.now - P.wallAt < 0.12;
+    if (onWall && P.vy > 0 && Math.sign(ax) === P.wallSide) P.vy = Math.min(P.vy, 260);  // sliding down a wall
+    P.vy = Math.min(P.vy, 1800);
+    let nx = P.x + P.vx * dt;
+    const w = hitsWall(nx, P.y, P.h);
+    if (w) {
+      P.wallSide = P.vx > 0 ? 1 : -1;
+      P.wallAt = P.now;
+      nx = P.vx > 0 ? (w.edge ? w.x : w.x) - HALF_W - 0.01 : (w.edge ? w.x : w.x + w.w) + HALF_W + 0.01;
+      P.vx = 0;
+    }
+    const ny = P.y + P.vy * dt;
+    // Ceilings
+    if (P.vy < 0) for (const b of BLOCKS) {
+      if (nx + HALF_W > b.x && nx - HALF_W < b.x + b.w && ny - P.h < b.y + b.h && P.y - P.h >= b.y + b.h - 1) { P.vy = 0; }
+    }
+    const f = P.vy >= 0 ? floorAt(nx, P.y, 2, true) : null;
+    if (f && P.y + P.vy * dt >= f.y) {
+      // Landing: what you had along the slope you keep
+      const a = f.angle;
+      P.gs = P.vx * Math.cos(a) + P.vy * Math.sin(a);
+      if (P.vy > 700) { P.land = 1; dust(nx, f.y, 8); }
+      P.x = nx; P.y = f.y; P.angle = a; P.ground = f.kind; P.vy = 0;
+      if (f.kind === "spring") bounce(f.ref);
+      else if (P.buffer > 0) jump();
+    } else { P.x = nx; P.y = P.y + P.vy * dt; }
+    if (P.buffer > 0) {
+      if (P.coyote > 0) jump();
+      else if (P.now - P.wallAt < 0.12) wallJump();
+    }
+    if (!input.jumpHeld && P.vy < -420 && P.held) { P.vy = -420; P.held = false; }  // let go early: a lower jump
+  }
+  P.phase += (Math.abs(P.ground ? P.gs : P.vx) / 46) * dt;
+  P.land = Math.max(0, P.land - dt * 6);
+}
+
+function jump() {
+  const a = P.ground ? P.angle : 0;
+  P.vx = (P.ground ? P.gs * Math.cos(a) : P.vx);
+  P.vy = -JUMP_V + Math.min(0, (P.ground ? P.gs * Math.sin(a) : 0)) * 0.5;  // up a slope, you leave it a little faster
+  P.ground = null; P.buffer = 0; P.coyote = 0; P.held = P.byKey; P.slide = 0; P.h = STAND_H;
+  sound("jump");
+}
+function wallJump() {
+  P.vx = -P.wallSide * 560; P.vy = -JUMP_V * 0.95; P.face = -P.wallSide;
+  P.buffer = 0; P.lock = 0.18; P.wallAt = -9; P.held = P.byKey;
+  dust(P.x + P.wallSide * HALF_W, P.y - 20, 5);
+  sound("jump");
+}
+function bounce(s) {
+  P.vy = -SPRING_V; P.vx = P.ground ? P.gs : P.vx; P.ground = null; P.buffer = 0; P.held = false; P.spring = P.now;
+  s.at = P.now;
+  sound("spring");
+}
+function dust(x, y, n) {
+  if (calm) return;
+  for (let i = 0; i < n; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 240, vy: -Math.random() * 160, t: 0, life: 0.5 + Math.random() * 0.3 });
+}
+
+// ---------------------------------------------------------------- input: the puck, keys, touch
+
+const input = { axis: 0, jumpHeld: false };
+const keys = new Set();
+let tilt = null, tiltAt = -9, tiltZero = 0, dial = 0, dialAt = -9, lastInput = "keys", touchAxis = 0;
+
+function readAxis() {
+  let a = 0;
+  if (keys.has("ArrowLeft") || keys.has("KeyA")) a -= 1;
+  if (keys.has("ArrowRight") || keys.has("KeyD")) a += 1;
+  if (a) return a;
+  if (touchAxis) return touchAxis;
+  const t = performance.now();
+  if (tilt !== null && t - tiltAt < 600) return dead(wrap180(tilt - tiltZero) / WHEEL_DEG);
+  if (t - dialAt < 60000 && dial) return dead(dial / 30);
+  return 0;
+}
+const dead = (v) => { const s = Math.sign(v), m = Math.abs(v); return m < 0.12 ? 0 : s * Math.min(1, (m - 0.12) / 0.88); };
+
+function pressJump(key) {
+  if (state !== "play") { if (state === "title" || (state === "won" && performance.now() - stateAt > 700)) start(); return; }
+  P.buffer = 0.13;
+  P.byKey = !!key;
+}
+function pressSlide() { if (state === "play" && P.ground && Math.abs(P.gs) > 120) { P.slide = 0.9; dust(P.x, P.y, 4); sound("slide"); } }
+function level() { tiltZero = tilt ?? 0; dial = 0; }
+
+addEventListener("keydown", (e) => {
+  if (e.target.closest && e.target.closest("a, button") && (e.code === "Space" || e.code === "Enter")) return;
+  if (["Space", "ArrowUp", "KeyW", "ArrowDown", "KeyS", "ArrowLeft", "ArrowRight", "KeyA", "KeyD", "Enter"].includes(e.code)) e.preventDefault();
+  unlockSound();
+  lastInput = "keys";
+  if (!e.repeat && (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Enter")) { input.jumpHeld = true; pressJump(true); }
+  if (!e.repeat && (e.code === "ArrowDown" || e.code === "KeyS")) pressSlide();
+  keys.add(e.code);
+});
+addEventListener("keyup", (e) => {
+  keys.delete(e.code);
+  if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Enter") input.jumpHeld = false;
+});
+addEventListener("blur", () => { keys.clear(); input.jumpHeld = false; });
+
+// Touch: hold the left or right of the screen to run, tap to jump, swipe down to slide
+const touches = new Map();
+cv.addEventListener("pointerdown", (e) => {
+  unlockSound();
+  if (e.pointerType === "mouse") { lastInput = "keys"; pressJump(); return; }
+  lastInput = "touch";
+  touches.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now() });
+  touchAxis = e.clientX < innerWidth / 2 ? -1 : 1;
+});
+cv.addEventListener("pointerup", (e) => {
+  const s = touches.get(e.pointerId);
+  touches.delete(e.pointerId);
+  if (!touches.size) touchAxis = 0;
+  if (!s) return;
+  if (e.clientY - s.y > 50) pressSlide();
+  else if (performance.now() - s.t < 220 && Math.hypot(e.clientX - s.x, e.clientY - s.y) < 14) pressJump();
+});
+cv.addEventListener("pointercancel", (e) => { touches.delete(e.pointerId); if (!touches.size) touchAxis = 0; });
+
+// ---------------------------------------------------------------- the puck, through Watt
+
+const bridge = { ws: null, up: false, sent: "", sentAt: 0, retry: 3000, heard: -1e9 };
+
+function connect() {
+  let ws;
+  try { ws = new WebSocket(BRIDGE); } catch { setTimeout(connect, bridge.retry); return; }
+  ws.onopen = () => {
+    bridge.ws = ws; bridge.up = true; bridge.retry = 3000; bridge.sent = "";
+    send({ type: "hello", kind: "game", name: "Pants" });
+    presence();
+    if (state === "title") showPanel();
+  };
+  ws.onmessage = (e) => {
+    let m;
+    try { m = JSON.parse(e.data); } catch { return; }
+    const t = performance.now();
+    if (m.type === "tilt") {
+      bridge.heard = t;
+      const was = tilt;
+      tilt = typeof m.deg === "number" ? m.deg : null;
+      tiltAt = t;
+      if (tilt === null && was !== null) dial = 0;
+      if (tilt !== null) { lastInput = "puck"; if (was === null && state !== "play") tiltZero = tilt; }
+    } else if (m.type === "input") {
+      bridge.heard = t;
+      lastInput = "puck";
+      if (m.input === "tap") pressJump();
+      else if (m.input === "swipe") { if (m.value === "d") pressSlide(); else if (m.value === "u") pressJump(); }
+      else if (m.input === "hold") level();
+      else if (m.input === "turn" && typeof m.value === "number") { dial = clamp(dial + m.value, -45, 45); dialAt = t; }
+    }
+  };
+  ws.onclose = () => {
+    const was = bridge.up;
+    bridge.ws = null; bridge.up = false; tilt = null;
+    if (was && state === "title") showPanel();
+    setTimeout(connect, bridge.retry);
+    bridge.retry = Math.min(bridge.retry * 1.5, 15000);
+  };
+}
+function send(o) { if (bridge.ws && bridge.ws.readyState === 1) bridge.ws.send(JSON.stringify(o)); }
+function presence() { send({ type: "presence", visible: !document.hidden, focused: document.hasFocus(), title: document.title }); }
+addEventListener("focus", presence);
+addEventListener("blur", presence);
+document.addEventListener("visibilitychange", presence);
+setInterval(presence, 2000);
+
+function statusText() {
+  if (state === "title") return "Tap to start";
+  if (state === "won") return "Made it";
+  if (now - startAt < 3500) return tilt !== null ? "Tilt to run, tap to jump" : "Turn to run, tap to jump";
+  if (now - cpAt < 1400) return "Checkpoint";
+  return P.x > DOOR.x - 900 ? "Nearly there" : "Squiggles";
+}
+let cpAt = -9;
+
+// The puck's face: the squiggles you have, and how far along you are on its ring
+function face() {
+  if (!bridge.up) return;
+  const f = { face: "meter", label: "Pants", params: { v: got, f: +clamp(best / (DOOR.x - CHECKPOINTS[0]), 0, 1).toFixed(3),
+    on: state === "play" ? 1 : 0, sub: statusText(), tilt: 1 } };
+  const s = JSON.stringify(f);
+  const t = performance.now();
+  if (s === bridge.sent || t - bridge.sentAt < 120) return;
+  bridge.sent = s; bridge.sentAt = t;
+  send(f);
+}
+
+// ---------------------------------------------------------------- playing
+
+function start() {
+  reset(true);
+  if (tilt !== null) tiltZero = tilt;
+  dial = 0;
+  state = "play";
+  stateAt = startAt = performance.now();
+  showPanel();
+  count("game_start", { game: "pants", input: lastInput });
+}
+
+function update(dt) {
+  for (const p of particles) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 900 * dt; }
+  for (let i = particles.length - 1; i >= 0; i--) if (particles[i].t > particles[i].life) particles.splice(i, 1);
+  fade = Math.max(0, fade - dt * 3);
+  if (state !== "play") return;
+
+  input.axis = readAxis();
+  acc += dt;
+  while (acc >= STEP) { P.now = (performance.now() - startAt) / 1000; step(STEP, input); acc -= STEP; }
+
+  best = Math.max(best, P.x - CHECKPOINTS[0]);
+  // Squiggles
+  for (let i = 0; i < SQUIGGLES.length; i++) {
+    if (taken.has(i)) continue;
+    const s = SQUIGGLES[i];
+    if (Math.abs(s.x - P.x) < 30 && Math.abs(s.y - (P.y - P.h / 2)) < P.h / 2 + 22) {
+      taken.add(i); got++; s.at = performance.now();
+      $("got").textContent = got;
+      $("squigs").classList.remove("bump"); void $("squigs").offsetWidth; $("squigs").classList.add("bump");
+      sound("squiggle");
+    }
+  }
+  // Checkpoints
+  for (let i = checkpoint + 1; i < CHECKPOINTS.length; i++) if (P.x > CHECKPOINTS[i] && P.ground) { checkpoint = i; cpAt = now; sound("checkpoint"); }
+  // Off the bottom: back to the last flag
+  if (P.y > DEATH_Y) { falls++; fade = 1; reset(false); sound("fall"); }
+  // The door
+  if (Math.abs(P.x - DOOR.x) < 26 && P.ground) {
+    endAt = performance.now();
+    state = "won"; stateAt = endAt;
+    sound("door");
+    showPanel();
+    count("game_end", { game: "pants", result: "won", squiggles: got });
+  }
+}
+let acc = 0;
+
+// ---------------------------------------------------------------- drawing
+
+const cam = { x: 0, y: 480, zoom: 1 };
+let W = 0, H = 0, DPR = 1, scale = 1;
+
+function render(dt) {
+  // The camera leads where you're going, and pulls back a little at speed
+  const speed = Math.hypot(P.vx, P.vy);
+  const lead = clamp(P.vx * 0.32, -280, 280);
+  cam.x += (P.x + lead - cam.x) * (1 - Math.exp(-dt * 4.5));
+  cam.y += (P.y - 110 - cam.y) * (1 - Math.exp(-dt * 3.2));
+  cam.zoom += ((1 - 0.12 * clamp((speed - 500) / 900, 0, 1)) - cam.zoom) * (1 - Math.exp(-dt * 2));
+  scale = (H / VIEW_H) * cam.zoom;
+  const X = (x) => (x - cam.x) * scale + W / 2, Y = (y) => (y - cam.y) * scale + H * 0.56;
+  const left = cam.x - W / 2 / scale - 40, right = cam.x + W / 2 / scale + 40;
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = "#0A0A0B";
+  ctx.fillRect(0, 0, W, H);
+  backdrop(X, Y);
+
+  // Ground: filled below, an ink line along the top, hatching and tufts for texture
+  for (const s of STRIPS) {
+    if (s.x1 < left || s.x0 > right) continue;
+    const a = Math.max(s.x0, left), b = Math.min(s.x1, right);
+    const pts = [];
+    for (let x = a; x <= b; x += 10) pts.push([x, groundAt(s, x).y]);
+    pts.push([b, groundAt(s, b).y]);
+    ctx.beginPath();
+    ctx.moveTo(X(pts[0][0]), Y(pts[0][1]));
+    for (const [x, y] of pts) ctx.lineTo(X(x), Y(y));
+    ctx.lineTo(X(b), H + 10); ctx.lineTo(X(a), H + 10); ctx.closePath();
+    ctx.fillStyle = "#151517";
+    ctx.fill();
+    ctx.save(); ctx.clip();
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.05)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = Math.floor(a / 26) * 26; x < b + 400; x += 26) { ctx.moveTo(X(x), Y(400)); ctx.lineTo(X(x - 400), Y(1400)); }
+    ctx.stroke();
+    ctx.restore();
+    ink(pts.map(([x, y]) => [X(x), Y(y)]), 2.4);
+    if (s.x0 >= left) ink([[X(s.x0), Y(groundAt(s, s.x0).y)], [X(s.x0), H + 10]], 2);
+    if (s.x1 <= right) ink([[X(s.x1), Y(groundAt(s, s.x1).y)], [X(s.x1), H + 10]], 2);
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.3)"; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (let x = Math.ceil(a / 47) * 47; x < b; x += 47) {
+      const y = groundAt(s, x).y, k = Math.sin(x * 12.9898) * 0.5 + 0.5;
+      if (k < 0.45) continue;
+      ctx.moveTo(X(x - 5), Y(y)); ctx.lineTo(X(x - 7), Y(y - 9 - k * 5));
+      ctx.moveTo(X(x), Y(y)); ctx.lineTo(X(x + 1), Y(y - 12 - k * 6));
+      ctx.moveTo(X(x + 5), Y(y)); ctx.lineTo(X(x + 8), Y(y - 8 - k * 4));
+    }
+    ctx.stroke();
+  }
+  // Blocks: hatched, inked
+  for (const b of BLOCKS) {
+    if (b.x + b.w < left || b.x > right) continue;
+    ctx.fillStyle = "#18181b";
+    ctx.fillRect(X(b.x), Y(b.y), b.w * scale, b.h * scale);
+    ctx.save(); ctx.beginPath(); ctx.rect(X(b.x), Y(b.y), b.w * scale, b.h * scale); ctx.clip();
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.07)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = b.x - b.h; x < b.x + b.w; x += 16) { ctx.moveTo(X(x), Y(b.y + b.h)); ctx.lineTo(X(x + b.h), Y(b.y)); }
+    ctx.stroke(); ctx.restore();
+    ink([[X(b.x), Y(b.y + b.h)], [X(b.x), Y(b.y)], [X(b.x + b.w), Y(b.y)], [X(b.x + b.w), Y(b.y + b.h)]], 2);
+  }
+  // Platforms: planks with a line under
+  for (const p of PLATFORMS) {
+    if (p.x1 < left || p.x0 > right) continue;
+    ink([[X(p.x0), Y(p.y)], [X(p.x1), Y(p.y)]], 3);
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.3)"; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (let x = p.x0 + 12; x < p.x1; x += 22) { ctx.moveTo(X(x), Y(p.y + 2)); ctx.lineTo(X(x - 4), Y(p.y + 14)); }
+    ctx.stroke();
+  }
+  // Springs
+  for (const s of SPRINGS) {
+    const gy = groundY(s.x), k = clamp((P.now - (s.at ?? -9)) / 0.25, 0, 1), squash = k < 1 ? 0.5 + 0.5 * k : 1;
+    const top = gy - 18 * squash;
+    ctx.strokeStyle = "#FFD60A"; ctx.lineWidth = 2.4; ctx.lineJoin = "round";
+    ctx.beginPath();
+    for (let i = 0; i <= 6; i++) { const y = gy - (i / 6) * (gy - top); ctx[i ? "lineTo" : "moveTo"](X(s.x + (i % 2 ? 1 : -1) * 13), Y(y)); }
+    ctx.stroke();
+    ink([[X(s.x - s.w / 2), Y(top)], [X(s.x + s.w / 2), Y(top)]], 3);
+  }
+  // Flags
+  CHECKPOINTS.forEach((cx, i) => {
+    if (!i || cx < left || cx > right) return;
+    const gy = groundY(cx), on = i <= checkpoint;
+    ink([[X(cx), Y(gy)], [X(cx), Y(gy - 86)]], 2);
+    ctx.fillStyle = on ? "#FFD60A" : "rgba(245, 245, 247, 0.25)";
+    ctx.beginPath(); ctx.moveTo(X(cx), Y(gy - 86)); ctx.lineTo(X(cx + 34), Y(gy - 74)); ctx.lineTo(X(cx), Y(gy - 62)); ctx.fill();
+  });
+  // The door, lit from the other side
+  if (DOOR.x > left && DOOR.x < right) {
+    const gy = groundY(DOOR.x), w = 64, h = 112;
+    const g = ctx.createRadialGradient(X(DOOR.x), Y(gy - h / 2), 0, X(DOOR.x), Y(gy - h / 2), 160 * scale);
+    g.addColorStop(0, "rgba(255, 214, 10, 0.18)"); g.addColorStop(1, "rgba(255, 214, 10, 0)");
+    ctx.fillStyle = g; ctx.fillRect(X(DOOR.x - 170), Y(gy - h - 120), 340 * scale, (h + 160) * scale);
+    ctx.fillStyle = state === "won" ? "#fff1b3" : "#f2d87a";
+    ctx.fillRect(X(DOOR.x - w / 2), Y(gy - h), w * scale, h * scale);
+    ink([[X(DOOR.x - w / 2), Y(gy)], [X(DOOR.x - w / 2), Y(gy - h)], [X(DOOR.x + w / 2), Y(gy - h)], [X(DOOR.x + w / 2), Y(gy)]], 2.4);
+  }
+  // Squiggles
+  const tt = performance.now() / 1000;
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  SQUIGGLES.forEach((s, i) => {
+    if (s.x < left || s.x > right) return;
+    let a = 1, lift = 0;
+    if (taken.has(i)) { const k = (performance.now() - (s.at ?? 0)) / 400; if (k > 1) return; a = 1 - k; lift = k * 40; }
+    squiggle(X(s.x), Y(s.y - lift + Math.sin(tt * 2.4 + i) * 4), scale, a);
+  });
+  // Dust
+  for (const p of particles) {
+    ctx.fillStyle = `rgba(245, 245, 247, ${0.35 * (1 - p.t / p.life)})`;
+    ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 2.2 * scale, 0, 7); ctx.fill();
+  }
+  runner(X, Y);
+  if (fade > 0) { ctx.fillStyle = `rgba(10, 10, 11, ${fade})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// Hills far away, and nearer, drifting slower than the ground
+function backdrop(X, Y) {
+  const layers = [[0.18, 330, 90, "#101012", 0.0013], [0.42, 420, 70, "#131315", 0.0021]];
+  for (const [par, base, amp, col, f] of layers) {
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let sx = 0; sx <= W + 20; sx += 20) {
+      const wx = (sx - W / 2) / scale + cam.x * par;
+      const wy = base + amp * (Math.sin(wx * f) * 0.6 + Math.sin(wx * f * 2.3 + 1.7) * 0.4);
+      ctx.lineTo(sx, (wy - (cam.y * par + 480 * (1 - par))) * scale + H * 0.56);
+    }
+    ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+  }
+}
+
+// A drawn line: steady, with a fainter second stroke beside it, as if by hand
+function ink(pts, w) {
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.92)"; ctx.lineWidth = w;
+  ctx.beginPath(); pts.forEach(([x, y], i) => ctx[i ? "lineTo" : "moveTo"](x, y)); ctx.stroke();
+  ctx.strokeStyle = "rgba(245, 245, 247, 0.22)"; ctx.lineWidth = Math.max(1, w * 0.45);
+  ctx.beginPath(); pts.forEach(([x, y], i) => ctx[i ? "lineTo" : "moveTo"](x + 1.2, y + 1.6)); ctx.stroke();
+}
+
+function squiggle(x, y, s, a) {
+  ctx.strokeStyle = `rgba(255, 214, 10, ${a})`;
+  ctx.lineWidth = 3 * s;
+  ctx.beginPath();
+  for (let i = 0; i <= 24; i++) {
+    const t = i / 24, px = x + (t - 0.5) * 26 * s, py = y + Math.sin(t * Math.PI * 3) * 6 * s;
+    ctx[i ? "lineTo" : "moveTo"](px, py);
+  }
+  ctx.stroke();
+}
+
+// The runner: a stick figure in yellow pants, posed from what it's doing
+function runner(X, Y) {
+  const s = scale, fx = X(P.x), fy = Y(P.y), dir = P.face;
+  const speed = P.ground ? Math.abs(P.gs) : Math.abs(P.vx);
+  const run = clamp(speed / MAX_RUN, 0, 1.4);
+  const ph = P.phase;
+  const air = !P.ground, slide = P.ground && P.slide > 0 && Math.abs(P.gs) > 90;
+  const wall = air && P.now - P.wallAt < 0.12 && P.vy > 0;
+  const lean = (air ? clamp(P.vx / 1400, -0.3, 0.3) : clamp(P.gs / 1500, -0.35, 0.35) * Math.cos(P.angle)) + (P.ground ? P.angle * 0.5 : 0);
+  const squash = 1 - P.land * 0.18;
+  ctx.save();
+  ctx.translate(fx, fy);
+  ctx.rotate(slide ? P.angle : lean);
+  ctx.scale(dir * s, s * squash);
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  const W_ = "rgba(245, 245, 247, 0.96)", Yl = "#FFD60A";
+  const seg = (x0, y0, a, len) => [x0 + Math.sin(a) * len, y0 + Math.cos(a) * len];
+  let hip = [0, -27], neck = [0, -46], head = [3, -56];
+  let legs, arms;
+  if (slide) {
+    hip = [-6, -10]; neck = [-22, -18]; head = [-28, -26];
+    legs = [[1.35, 0.15], [1.2, 0.5]];
+    arms = [[-2.2, -0.4], [-1.9, -0.2]];
+  } else if (wall) {
+    legs = [[0.5, -0.3], [-0.2, -0.6]];
+    arms = [[2.6, 0.4], [-2.2, -0.3]];
+  } else if (air) {
+    const up = P.vy < 0;
+    legs = up ? [[0.9, -1.2], [-0.4, -0.2]] : [[0.5, -0.5], [-0.3, 0.1]];
+    arms = up ? [[2.8, 0.3], [-2.6, -0.3]] : [[2.2, 0.6], [-1.6, 0.5]];
+  } else if (speed < 30) {
+    const b = Math.sin(performance.now() / 600) * 0.03;
+    legs = [[0.12, 0], [-0.12, 0]];
+    arms = [[0.16 + b, 0.22], [-0.1 - b, 0.28]];  // hanging, elbows soft
+  } else {
+    // A run: thighs swing about 35 degrees each way, the knee folding back as the leg comes
+    // through and straightening to land; arms against the legs, elbows bent forward, the
+    // forearm rising in front as its arm comes forward; a small dip on each landing.
+    // Index 0 is the near side, 1 the far.
+    const r = Math.min(run, 1), A = 0.35 + 0.3 * r;
+    legs = [0, Math.PI].map((o) => { const p = ph + o; return [0.08 + A * Math.sin(p), -(0.15 + (0.6 + r) * Math.max(0, Math.cos(p + 0.3)))]; });
+    arms = [Math.PI, 0].map((o) => { const p = ph + o; return [0.1 + (0.3 + 0.35 * r) * Math.sin(p), 1.25 + 0.25 * r + 0.25 * Math.sin(p)]; });
+    const dip = 1.6 * r * (1 - Math.abs(Math.sin(ph)));
+    hip = [hip[0], hip[1] + dip]; neck = [neck[0], neck[1] + dip]; head = [head[0], head[1] + dip];
+  }
+  const sh = [neck[0] + (hip[0] - neck[0]) * 0.18, neck[1] + (hip[1] - neck[1]) * 0.18];
+  const limb = (x0, y0, a1, l1, a2, l2) => { const m = seg(x0, y0, a1, l1); return [m, seg(m[0], m[1], a2, l2)]; };
+  const arm = ([up, el], col) => {
+    const [e, h] = limb(sh[0], sh[1], up, 12, up + el, 11);
+    ctx.strokeStyle = col; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.moveTo(sh[0], sh[1]); ctx.lineTo(e[0], e[1]); ctx.lineTo(h[0], h[1]); ctx.stroke();
+  };
+  const leg = ([thigh, knee], col) => {  // the pants, flared at the bottom: they are fancy
+    const [k, f] = limb(hip[0], hip[1], thigh, 15, thigh + knee, 14), a = thigh + knee;
+    ctx.strokeStyle = col; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.moveTo(hip[0], hip[1]); ctx.lineTo(k[0], k[1]); ctx.lineTo(f[0], f[1]); ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(f[0] + Math.cos(a) * 7, f[1] - Math.sin(a) * 7);
+    ctx.lineTo(f[0] - Math.cos(a) * 7, f[1] + Math.sin(a) * 7);
+    ctx.lineTo(k[0] + (f[0] - k[0]) * 0.55, k[1] + (f[1] - k[1]) * 0.55);
+    ctx.fill();
+  };
+  // Far side first, a shade darker, then the near side over the body
+  arm(arms[1], "rgba(245, 245, 247, 0.5)");
+  leg(legs[1], "#B89A10");
+  leg(legs[0], Yl);
+  ctx.strokeStyle = W_; ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.moveTo(hip[0], hip[1]); ctx.lineTo(neck[0], neck[1]); ctx.stroke();
+  arm(arms[0], W_);
+  ctx.strokeStyle = W_; ctx.lineWidth = 2.6;
+  ctx.fillStyle = "#0A0A0B";
+  ctx.beginPath(); ctx.arc(head[0], head[1], 9.5, 0, 7); ctx.fill(); ctx.stroke();
+  // Hair, swept back by the speed
+  const sweep = air || slide ? 0.5 : 0.2 + run * 0.35;
+  ctx.beginPath();
+  for (let i = 0; i < 3; i++) {
+    const a = -1.9 + i * 0.55, r0 = 9, r1 = 16 + (i === 1 ? 3 : 0);
+    ctx.moveTo(head[0] + Math.cos(a) * r0, head[1] + Math.sin(a) * r0);
+    ctx.lineTo(head[0] + Math.cos(a - sweep) * r1, head[1] + Math.sin(a - sweep) * r1);
+  }
+  ctx.stroke();
+  ctx.fillStyle = W_;
+  ctx.beginPath(); ctx.arc(head[0] + 4, head[1] - 1, 1.6, 0, 7); ctx.fill();  // an eye, looking ahead
+  // Going fast: lines behind
+  if (speed > 950 && !calm) {
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.22)"; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) { const y = -48 + i * 16, l = 20 + ((ph * 7 + i * 13) % 18); ctx.moveTo(-22, y); ctx.lineTo(-22 - l, y); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- what's around it
+
+const PANELS = {
+  title: () => `<h1>Pants</h1>
+    <p>Hills, ramps and springs, in a pair of yellow pants. <b>Get to the door</b>, and pick up the squiggles on the way.</p>
+    <p class="how">${bridge.up ? "Hold the puck upright, like a wheel, and tilt it to run. Tap it to jump (off a wall, too), swipe down to slide, hold to make the way you're holding it level. Flat on the desk, turn it."
+      : "Arrows or A and D to run, space to jump (hold it for higher, and off walls), down to slide."}</p>
+    <div class="go"><button class="btn" type="button" data-go>Start</button><span class="or">${bridge.up ? "or tap the puck" : "or press space"}</span></div>`,
+  won: () => `<h1>You made it</h1>
+    <p>In ${fmt((endAt - startAt) / 1000)}, with ${got} of ${SQUIGGLES.length} squiggles${falls ? `, after ${falls} fall${falls > 1 ? "s" : ""}` : ""}.</p>
+    <div class="go"><button class="btn" type="button" data-go>Run it again</button><a class="btn quiet" href="../">More games</a></div>`,
+};
+function showPanel() {
+  const make = PANELS[state];
+  $("panel").classList.toggle("show", !!make);
+  $("panel").inert = !make;  // hidden, its buttons can't be pressed: space would start the round again
+  if (!make) { document.activeElement?.blur?.(); return; }
+  $("card").innerHTML = make();
+  $("card").querySelector("[data-go]")?.addEventListener("click", (e) => { e.stopPropagation(); unlockSound(); start(); });
+}
+const fmt = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, "0")}`;
+
+function hud() {
+  $("clock").textContent = fmt(state === "play" ? (performance.now() - startAt) / 1000 : state === "won" ? (endAt - startAt) / 1000 : 0);
+  let hint = "";
+  if (state === "play" && now - startAt < 5000) {
+    hint = lastInput === "puck" ? (tilt !== null ? "Tilt the puck to run, tap to jump" : "Turn the puck to run, tap to jump")
+      : lastInput === "touch" ? "Hold left or right to run, tap to jump" : "Arrows to run, space to jump";
+  }
+  $("hint").textContent = hint;
+  const puck = bridge.up && performance.now() - bridge.heard < 4000;
+  $("conn").classList.toggle("puck", puck);
+  $("connText").textContent = puck ? (tilt !== null ? "Puck, as a wheel" : "Puck, as a dial") : bridge.up ? "Watt is on: pick up the puck" : "Keys";
+  $("needle").setAttribute("transform", `rotate(${(input.axis || 0) * 60})`);
+}
+
+// ---------------------------------------------------------------- sound (once the page has been clicked or a key pressed)
+
+let audio = null;
+function unlockSound() {
+  if (!audio) { try { audio = new AudioContext(); } catch { audio = null; } }
+  audio?.resume?.();
+}
+function sound(kind) {
+  if (!audio || audio.state !== "running") return;
+  const t = audio.currentTime;
+  const tone = (f, at, len, gain, type = "sine", to) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t + at);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + at + len);
+    g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(gain, t + at + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + at + len);
+    o.connect(g); g.connect(audio.destination); o.start(t + at); o.stop(t + at + len + 0.02);
+  };
+  if (kind === "jump") tone(420, 0, 0.14, 0.05, "triangle", 760);
+  else if (kind === "spring") tone(300, 0, 0.32, 0.06, "triangle", 1200);
+  else if (kind === "squiggle") { tone(1320, 0, 0.09, 0.045); tone(1980, 0.05, 0.12, 0.035); }
+  else if (kind === "slide") tone(260, 0, 0.18, 0.03, "sawtooth", 140);
+  else if (kind === "checkpoint") { tone(880, 0, 0.14, 0.05); tone(1320, 0.08, 0.2, 0.05); }
+  else if (kind === "fall") tone(520, 0, 0.5, 0.05, "triangle", 90);
+  else if (kind === "door") { tone(660, 0, 0.3, 0.05); tone(990, 0.12, 0.4, 0.05); tone(1320, 0.24, 0.6, 0.05); }
+}
+function count(name, params) { gtag("event", name, params); }
+
+// ---------------------------------------------------------------- the frame
+
+function resize() {
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth; H = innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+}
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000);
+  last = t; now = t;
+  update(dt);
+  render(dt);
+  hud();
+  face();
+  requestAnimationFrame(frame);
+}
+addEventListener("resize", resize);
+resize();
+$("total").textContent = SQUIGGLES.length;
+reset(true);
+showPanel();
+connect();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

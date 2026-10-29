@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Torch · Puck games</title>
+<meta name="description" content="A dark room, a torch with 36 seconds of light, and something in here with you. Find the key, then the door. Played with Watt, the puck, or a mouse.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="../../assets/icon.png">
+<link rel="canonical" href="https://watt.sourabhdaroji.com/games/torch/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Watt, the puck">
+<meta property="og:title" content="Torch">
+<meta property="og:description" content="A dark room, a torch with 36 seconds of light, and something in here with you. Find the key, then the door.">
+<meta property="og:url" content="https://watt.sourabhdaroji.com/games/torch/">
+<meta property="og:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  // Google Analytics, as on the home page: only on the real site, and loaded once the page is idle
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --w: #F5F5F7; --mute: rgba(245, 245, 247, 0.56); --faint: rgba(245, 245, 247, 0.4); --y: #FFD60A; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; color-scheme: dark; overflow: hidden; }
+  body { color: var(--w); -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; touch-action: none;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--w); }
+  canvas { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+  body.aiming canvas { cursor: none; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: rgba(255, 255, 255, 0.08); color: var(--w); font-weight: 700; }
+  .btn.quiet:hover { filter: none; background: rgba(255, 255, 255, 0.13); }
+  .btn.small { height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; }
+  .btn svg { width: 8px; height: 12px; margin-right: 8px; opacity: 0.6; }
+  :focus-visible { outline: 2px solid var(--y); outline-offset: 3px; }
+
+  /* what stays on screen: the way back, the key once it's yours, the battery */
+  .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px;
+    pointer-events: none; transition: opacity 0.4s; }
+  .hud > * { pointer-events: auto; }
+  .meter { display: flex; align-items: center; gap: 12px; }
+  .key { width: 22px; height: 22px; color: var(--y); opacity: 0; transform: scale(0.6); transition: opacity 0.3s, transform 0.5s var(--ease); }
+  .key.got { opacity: 1; transform: none; }
+  .battery { position: relative; width: 40px; height: 20px; border-radius: 6px; box-shadow: inset 0 0 0 1.5px rgba(245, 245, 247, 0.32); }
+  .battery::after { content: ""; position: absolute; right: -4px; top: 6px; width: 2.5px; height: 8px; border-radius: 0 2px 2px 0; background: rgba(245, 245, 247, 0.32); }
+  .battery i { position: absolute; left: 3.5px; top: 3.5px; bottom: 3.5px; width: calc((100% - 7px) * var(--b, 1)); border-radius: 2.5px;
+    background: rgba(245, 245, 247, 0.5); }
+  .battery.on i { background: var(--y); }
+  .pct { min-width: 4ch; font: 500 13px/1 "Roboto Mono", ui-monospace, Menlo, monospace; color: var(--mute); text-align: right; }
+
+  /* between rounds */
+  .panel { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; pointer-events: none; opacity: 0; transition: opacity 0.5s var(--ease); }
+  .panel.show { opacity: 1; }
+  .panel.show .card { pointer-events: auto; }
+  .card { max-width: 440px; text-align: center; transform: translateY(8px); transition: transform 0.6s var(--ease); }
+  .panel.show .card { transform: none; }
+  .card h1 { margin: 0; font-size: 44px; line-height: 52px; font-weight: 800; letter-spacing: -0.02em; }
+  .card p { margin: 14px 0 0; font-size: 18px; line-height: 28px; color: var(--mute); text-wrap: pretty; }
+  .card .how { margin-top: 18px; font-size: 15px; line-height: 23px; color: var(--faint); }
+  .card .go { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; margin-top: 28px; }
+  .card .or { font-size: 14px; color: var(--faint); }
+
+  .hint { position: fixed; left: 0; right: 0; bottom: 22px; margin: 0; text-align: center; font-size: 14px; line-height: 20px; color: var(--faint);
+    pointer-events: none; transition: opacity 0.4s; }
+  .radar { position: fixed; inset: auto auto 20px 24px; width: 132px; height: 132px; border-radius: 50%; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(245, 245, 247, 0.12), 0 8px 30px rgba(0, 0, 0, 0.6); }
+  .conn { position: fixed; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 24px; color: var(--faint); }
+  .conn i { width: 7px; height: 7px; border-radius: 50%; background: rgba(245, 245, 247, 0.25); transition: background-color 0.3s, box-shadow 0.3s; }
+  .conn.puck i { background: var(--y); box-shadow: 0 0 10px rgba(255, 214, 10, 0.6); }
+
+  @media (max-width: 640px) {
+    .hud { padding: 16px; }
+    .card h1 { font-size: 36px; line-height: 44px; }
+    .card p { font-size: 17px; line-height: 26px; }
+    .conn { right: 16px; bottom: 14px; }
+    .hint { bottom: 44px; }
+    .radar { inset: auto auto 14px 16px; width: 96px; height: 96px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="room" aria-label="A dark room, lit only where the torch points"></canvas>
+
+<div class="hud" id="hud">
+  <a class="btn quiet small" href="../"><svg viewBox="0 0 8 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 1 1.5 6l5 5"/></svg>Games</a>
+  <div class="meter" aria-live="polite">
+    <svg class="key" id="key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-label="Key found"><circle cx="7.5" cy="12" r="4"/><path d="M11.5 12H21M17.5 12v3.5M20.5 12v2.5"/></svg>
+    <div class="battery" id="battery" role="img" aria-label="Battery"><i></i></div>
+    <span class="pct" id="pct">100%</span>
+  </div>
+</div>
+
+<div class="panel" id="panel">
+  <div class="card" id="card"></div>
+</div>
+
+<p class="hint" id="hint"></p>
+<canvas class="radar" id="radar" aria-label="Radar: where the ghost is"></canvas>
+<div class="conn" id="conn"><i></i><span id="connText">Mouse</span></div>
+
+<script>
+// Torch: a dark room, a torch, and a ghost. Find the key, then the door.
+//
+// The puck plays it through Watt on this Mac: the page joins Watt's local bridge as a game, asks
+// for the "radar" face (a motion tracker with the ghost on it, the battery round the rim), and gets the puck's pointing ("aim", the
+// air mouse's motion in 1/100 degree) and its taps. A mouse plays it too.
+
+const BATTERY_S = 36;      // seconds of light in a full battery
+const DWELL_S = 0.8;       // the light held on the key (or the door) this long takes it
+const SWEEP_DEG = 42;      // turning the puck this far moves the light across the width of the room
+const BRIDGE = "ws://127.0.0.1:47824";
+
+const cv = document.getElementById("room");
+const ctx = cv.getContext("2d");
+const roomCv = document.createElement("canvas");
+const rctx = roomCv.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let W = 0, H = 0, S = 0, DPR = 1;
+let level = null;            // the room: positions as fractions of the screen, sizes as fractions of its short side
+let state = "title";         // title, play, dying, escaping, won, lost
+let lit = false;             // the torch is on
+let used = 0;                // seconds of light spent
+let hasKey = false, keyHold = 0, doorHold = 0, lockedAt = -9, keyAt = -9;
+let startAt = 0, endAt = 0, stateAt = 0;
+let lastInput = "mouse";     // what moved the light last: "puck" or "mouse"
+const beam = { x: 0, y: 0 }, aimAt = { x: 0, y: 0 };
+const motes = Array.from({ length: 48 }, () => ({ x: Math.random(), y: Math.random(), s: rand(0.4, 1.3), v: rand(0.004, 0.012), p: Math.random() * 6.3 }));
+
+const battery = () => clamp(1 - used / BATTERY_S, 0, 1);
+const radius = () => S * 0.165 * (0.86 + 0.14 * battery());  // the beam narrows a little as it empties
+const px = (p) => ({ x: p.x * W, y: p.y * H });
+
+// The ghost comes for you (you are where your light is) through anything, quicker in the dark. Held
+// in the light it shrieks and is gone for a while; if it reaches you, it has you. The radar (on the
+// puck, and in the corner) shows it: its rim is half the room's diagonal away.
+const G_DARK = 0.11, G_LIT = 0.065;  // its speed, in short sides of the room a second
+const G_BANISH = 0.7;                // seconds in the light to drive it off
+const G_RANGE = 0.5;                 // the radar's rim, as a share of the room's diagonal
+const ghost = { x: 0, y: 0, here: false, lit: 0, back: 0, goneAt: -9, gx: 0, gy: 0, ph: 0 };
+let lostBy = "light", caughtAt = -9;
+// Where it is from you: clock degrees (0 is up the screen) and distance (1 at the radar's rim)
+function ghostRel() {
+  const dx = ghost.x - beam.x, dy = ghost.y - beam.y;
+  return { a: (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360, d: Math.hypot(dx, dy) / (G_RANGE * Math.hypot(W, H)) };
+}
+function spawnGhost() {  // in from the edge of the room, as far from you as it can find
+  let best = null;
+  for (let i = 0; i < 12; i++) {
+    const side = Math.floor(Math.random() * 4), t = Math.random(), m = S * 0.05;
+    const p = [{ x: t * W, y: -m }, { x: W + m, y: t * H }, { x: t * W, y: H + m }, { x: -m, y: t * H }][side];
+    const d = Math.hypot(p.x - beam.x, p.y - beam.y);
+    if (!best || d > best.d) best = { ...p, d };
+  }
+  Object.assign(ghost, { x: best.x, y: best.y, here: true, lit: 0, ph: Math.random() * 6 });
+}
+
+// ---------------------------------------------------------------- the room
+
+// One room per round: walls, a door in one of them, a key somewhere on the floor, and enough
+// furniture that the light has things to find besides the two that matter
+function makeLevel() {
+  const placed = [];
+  const free = (x, y, r) => placed.every((o) => Math.hypot((o.x - x) * W, (o.y - y) * H) > (o.r + r) * S);
+  const spot = (r, pad = 0.09, test = () => true) => {
+    for (let i = 0; i < 400; i++) {
+      const x = rand(pad, 1 - pad), y = rand(pad, 1 - pad);
+      if (free(x, y, r) && test(x, y)) { placed.push({ x, y, r }); return { x, y }; }
+    }
+    return null;
+  };
+  const wall = 0.045;  // the wall's thickness, of the short side
+  const side = ["top", "bottom", "left", "right"][Math.floor(Math.random() * 4)];
+  const along = rand(0.22, 0.78);
+  const dw = 0.12, dd = wall;  // door width and depth, of the short side
+  const door = { side, along, w: dw, d: dd };
+  const dc = doorCentre(door);
+  placed.push({ x: dc.x, y: dc.y, r: 0.13 });  // keep its swing clear
+  placed.push({ x: 0.5, y: 0.5, r: 0.08 });     // and where the light starts
+
+  const props = [];
+  // Along the walls: shelves and a bookcase
+  const wallSides = ["top", "bottom", "left", "right"].filter((s) => s !== side);
+  for (let i = 0; i < 2; i++) {
+    const s = wallSides[Math.floor(Math.random() * wallSides.length)];
+    const t = rand(0.2, 0.8), len = rand(0.16, 0.24);
+    const c = alongWall(s, t, wall + 0.035);
+    if (free(c.x, c.y, len / 2)) { placed.push({ x: c.x, y: c.y, r: len / 2 }); props.push({ kind: "shelf", side: s, x: c.x, y: c.y, len, books: Math.random() < 0.6 }); }
+  }
+  // A rug, then things on and around it
+  const rug = spot(0.17, 0.25);
+  if (rug) props.push({ kind: "rug", ...rug, w: rand(0.3, 0.4), h: rand(0.2, 0.26) });
+  placed.pop();  // the rug lies flat: things may stand on it
+  const table = spot(0.09, 0.2);
+  if (table) {
+    props.push({ kind: "table", ...table, w: 0.15, h: 0.1 });
+    for (const [ox, oy] of [[-0.11, 0], [0.11, 0]]) props.push({ kind: "chair", x: table.x + ox * S / W, y: table.y + oy, a: ox < 0 ? 0 : Math.PI });
+  }
+  for (let i = 0; i < 4; i++) { const c = spot(0.05, 0.12); if (c) props.push({ kind: "crate", ...c, a: rand(-0.4, 0.4), s: rand(0.07, 0.095) }); }
+  for (let i = 0; i < 3; i++) { const c = spot(0.04, 0.1); if (c) props.push({ kind: "barrel", ...c, s: rand(0.045, 0.055) }); }
+  for (let i = 0; i < 2; i++) { const c = spot(0.05, 0.1); if (c) props.push({ kind: "plant", ...c, s: rand(0.04, 0.055) }); }
+  for (let i = 0; i < 6; i++) { const c = spot(0.02, 0.1); if (c) props.push({ kind: "paper", ...c, a: rand(0, Math.PI), s: rand(0.025, 0.035) }); }
+  for (let i = 0; i < 3; i++) { const c = spot(0.012, 0.1); if (c) props.push({ kind: "coin", ...c }); }  // they glint too
+
+  // The key: on the floor, well away from the door and from where the light starts
+  const far = (x, y) => Math.hypot((x - dc.x) * W, (y - dc.y) * H) > 0.42 * Math.hypot(W, H) && Math.hypot((x - 0.5) * W, (y - 0.5) * H) > 0.2 * S;
+  const key = spot(0.03, 0.1, far) || spot(0.03, 0.1) || { x: 0.2, y: 0.8 };
+  return { wall, door, key: { ...key, a: rand(0, Math.PI * 2) }, props };
+}
+
+function alongWall(side, t, inset) {
+  const ix = inset * S / W, iy = inset * S / H;
+  if (side === "top") return { x: t, y: iy };
+  if (side === "bottom") return { x: t, y: 1 - iy };
+  if (side === "left") return { x: ix, y: t };
+  return { x: 1 - ix, y: t };
+}
+function doorCentre(door) { return alongWall(door.side, door.along, (door ? door.d : 0.045) / 2); }
+function doorSpot(door) { return alongWall(door.side, door.along, door.d + 0.04); }  // in front of it, where the light opens it
+
+function drawRoom() {
+  roomCv.width = Math.round(W * DPR);
+  roomCv.height = Math.round(H * DPR);
+  const c = rctx;
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // The floor: dark boards
+  c.fillStyle = "#3b2f23";
+  c.fillRect(0, 0, W, H);
+  const board = S * 0.07;
+  for (let y = 0, row = 0; y < H; y += board, row++) {
+    for (let x = -((row * 97) % 5) * board, k = 0; x < W; k++) {
+      const len = board * (3 + ((row * 7 + k * 13) % 4));
+      const tone = 54 + ((row * 31 + k * 17) % 11) - 5;
+      c.fillStyle = `rgb(${tone + 12}, ${tone}, ${tone - 12})`;
+      c.fillRect(x + 1, y + 1, len - 2, board - 2);
+      x += len;
+    }
+  }
+  const P = (p) => ({ x: p.x * W, y: p.y * H });
+  // Things, from the floor up
+  for (const o of level.props) if (o.kind === "rug") drawProp(c, o, P(o));
+  for (const o of level.props) if (o.kind === "paper" || o.kind === "coin") drawProp(c, o, P(o));
+  if (!hasKey) drawKey(c, P(level.key), level.key.a, 1);
+  for (const o of level.props) if (!["rug", "paper", "coin"].includes(o.kind)) drawProp(c, o, P(o));
+  // The walls, and the door in one of them
+  const t = level.wall * S;
+  c.fillStyle = "#1c1611";
+  c.fillRect(0, 0, W, t); c.fillRect(0, H - t, W, t); c.fillRect(0, 0, t, H); c.fillRect(W - t, 0, t, H);
+  c.strokeStyle = "rgba(120, 96, 72, 0.35)";
+  c.lineWidth = 1.5;
+  c.strokeRect(t, t, W - 2 * t, H - 2 * t);
+  cobweb(c, t, t, 1, 1); cobweb(c, W - t, t, -1, 1); cobweb(c, t, H - t, 1, -1); cobweb(c, W - t, H - t, -1, -1);
+  drawDoor(c, level.door, false);
+}
+
+function cobweb(c, x, y, sx, sy) {
+  if (Math.random() < 0.35) return;
+  const r = S * rand(0.05, 0.08);
+  c.strokeStyle = "rgba(225, 225, 225, 0.16)";
+  c.lineWidth = 0.8;
+  for (let i = 0; i <= 4; i++) {
+    const a = (i / 4) * Math.PI / 2;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x + sx * Math.cos(a) * r, y + sy * Math.sin(a) * r); c.stroke();
+  }
+  for (let k = 1; k <= 3; k++) {
+    c.beginPath();
+    for (let i = 0; i <= 4; i++) {
+      const a = (i / 4) * Math.PI / 2, rr = (k / 3.3) * r;
+      const X = x + sx * Math.cos(a) * rr, Y = y + sy * Math.sin(a) * rr;
+      i ? c.quadraticCurveTo(x + sx * Math.cos(a - Math.PI / 8) * rr * 0.86, y + sy * Math.sin(a - Math.PI / 8) * rr * 0.86, X, Y) : c.moveTo(X, Y);
+    }
+    c.stroke();
+  }
+}
+
+function drawProp(c, o, p) {
+  c.save();
+  c.translate(p.x, p.y);
+  if (o.kind === "rug") {
+    const w = o.w * S, h = o.h * S;
+    round(c, -w / 2, -h / 2, w, h, S * 0.012); c.fillStyle = "#43211d"; c.fill();
+    round(c, -w / 2 + 8, -h / 2 + 8, w - 16, h - 16, S * 0.008); c.strokeStyle = "#6a3a2c"; c.lineWidth = 3; c.stroke();
+    c.fillStyle = "#5a2f25";
+    for (let i = -3; i <= 3; i++) { c.beginPath(); c.arc((i * w) / 9, 0, S * 0.008, 0, 7); c.fill(); }
+  } else if (o.kind === "table") {
+    const w = o.w * S, h = o.h * S;
+    round(c, -w / 2, -h / 2, w, h, 6); c.fillStyle = "#5a4130"; c.fill();
+    c.strokeStyle = "#3e2c1f"; c.lineWidth = 2; c.stroke();
+    c.fillStyle = "#cfc4a8"; c.globalAlpha = 0.5; c.fillRect(-w * 0.2, -h * 0.18, w * 0.18, h * 0.3); c.globalAlpha = 1;  // a note on it
+    c.beginPath(); c.arc(w * 0.22, h * 0.05, S * 0.012, 0, 7); c.fillStyle = "#8a7356"; c.fill();  // a cup
+  } else if (o.kind === "chair") {
+    c.rotate(o.a);
+    const s = S * 0.045;
+    round(c, -s / 2, -s / 2, s, s, 4); c.fillStyle = "#47342a"; c.fill();
+    c.fillStyle = "#33251d"; c.fillRect(-s / 2, -s / 2, s * 0.18, s);
+  } else if (o.kind === "crate") {
+    c.rotate(o.a);
+    const s = o.s * S;
+    c.fillStyle = "#4f3925"; c.fillRect(-s / 2, -s / 2, s, s);
+    c.strokeStyle = "#2e2116"; c.lineWidth = 2.5; c.strokeRect(-s / 2 + 1, -s / 2 + 1, s - 2, s - 2);
+    c.beginPath(); c.moveTo(-s / 2, -s / 2); c.lineTo(s / 2, s / 2); c.moveTo(s / 2, -s / 2); c.lineTo(-s / 2, s / 2); c.stroke();
+  } else if (o.kind === "barrel") {
+    const r = o.s * S;
+    c.beginPath(); c.arc(0, 0, r, 0, 7); c.fillStyle = "#4a3522"; c.fill();
+    c.strokeStyle = "#2a1f16"; c.lineWidth = 2.5;
+    c.beginPath(); c.arc(0, 0, r * 0.98, 0, 7); c.stroke();
+    c.beginPath(); c.arc(0, 0, r * 0.66, 0, 7); c.stroke();
+    c.beginPath(); c.arc(-r * 0.25, -r * 0.25, r * 0.12, 0, 7); c.fillStyle = "#2a1f16"; c.fill();
+  } else if (o.kind === "plant") {
+    const r = o.s * S;
+    c.beginPath(); c.arc(0, 0, r * 0.7, 0, 7); c.fillStyle = "#5d4130"; c.fill();
+    c.fillStyle = "#2c4227";
+    for (let i = 0; i < 7; i++) {
+      c.save(); c.rotate((i / 7) * Math.PI * 2 + o.x * 9);
+      c.beginPath(); c.ellipse(r * 0.55, 0, r * 0.6, r * 0.22, 0, 0, 7); c.fill(); c.restore();
+    }
+  } else if (o.kind === "paper") {
+    c.rotate(o.a);
+    const s = o.s * S;
+    c.fillStyle = "rgba(205, 196, 172, 0.5)"; c.fillRect(-s / 2, -s * 0.65, s, s * 1.3);
+    c.strokeStyle = "rgba(90, 80, 64, 0.5)"; c.lineWidth = 1;
+    for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(-s * 0.35, -s * 0.4 + i * s * 0.22); c.lineTo(s * 0.3, -s * 0.4 + i * s * 0.22); c.stroke(); }
+  } else if (o.kind === "coin") {
+    const r = S * 0.009;
+    c.beginPath(); c.arc(0, 0, r, 0, 7); c.fillStyle = "#a8873a"; c.fill();
+    c.beginPath(); c.arc(-r * 0.3, -r * 0.3, r * 0.35, 0, 7); c.fillStyle = "rgba(255, 240, 190, 0.6)"; c.fill();
+  } else if (o.kind === "shelf") {
+    const vertical = o.side === "left" || o.side === "right";
+    const len = o.len * S, dep = S * 0.05;
+    const w = vertical ? dep : len, h = vertical ? len : dep;
+    c.fillStyle = "#3a2a1c"; c.fillRect(-w / 2, -h / 2, w, h);
+    c.strokeStyle = "#241a12"; c.lineWidth = 2; c.strokeRect(-w / 2, -h / 2, w, h);
+    if (o.books) {
+      const cols = ["#6b2f2a", "#2f4a5c", "#4c5c2f", "#7a6a3a", "#5a3a5a", "#8a5a2a"];
+      const n = Math.floor(len / (S * 0.016));
+      for (let i = 1; i < n - 1; i++) {
+        c.fillStyle = cols[(i * 5 + Math.floor(o.x * 100)) % cols.length];
+        const a = -len / 2 + (i * len) / n, b = (len / n) * 0.8;
+        vertical ? c.fillRect(-w / 2 + 3, a, w - 6, b) : c.fillRect(a, -h / 2 + 3, b, h - 6);
+      }
+    }
+  }
+  c.restore();
+}
+
+function drawKey(c, p, a, alpha) {
+  const s = S * 0.022;
+  c.save();
+  c.translate(p.x, p.y);
+  c.rotate(a);
+  c.globalAlpha = alpha;
+  c.strokeStyle = "#e0b54a"; c.lineCap = "round"; c.lineWidth = s * 0.34;
+  c.beginPath(); c.arc(-s * 0.9, 0, s * 0.55, 0, 7); c.stroke();
+  c.beginPath(); c.moveTo(-s * 0.35, 0); c.lineTo(s * 1.5, 0); c.moveTo(s * 1.0, 0); c.lineTo(s * 1.0, s * 0.55); c.moveTo(s * 1.42, 0); c.lineTo(s * 1.42, s * 0.42); c.stroke();
+  c.strokeStyle = "rgba(255, 246, 214, 0.75)"; c.lineWidth = s * 0.12;
+  c.beginPath(); c.arc(-s * 0.9, 0, s * 0.55, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
+  c.restore();
+}
+
+// The door sits in its wall; swinging open, it lets the light from outside in
+function drawDoor(c, door, open) {
+  const t = level.wall * S, w = door.w * S;
+  const p = px(alongWall(door.side, door.along, door.d / 2));
+  c.save();
+  c.translate(p.x, p.y);
+  c.rotate({ top: 0, bottom: Math.PI, left: -Math.PI / 2, right: Math.PI / 2 }[door.side]);
+  // now the wall runs left to right, the room is below
+  c.fillStyle = open ? "#f3dfb4" : "#0b0907"; c.fillRect(-w / 2 - 4, -t / 2, w + 8, t);
+  if (!open) {
+    c.fillStyle = "#6a4a2e"; c.fillRect(-w / 2, -t * 0.3, w, t * 0.6);
+    c.strokeStyle = "#4a321e"; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(-w / 2 + w * 0.33, -t * 0.3); c.lineTo(-w / 2 + w * 0.33, t * 0.3); c.moveTo(-w / 2 + w * 0.66, -t * 0.3); c.lineTo(-w / 2 + w * 0.66, t * 0.3); c.stroke();
+    c.beginPath(); c.arc(w * 0.36, t * 0.12, S * 0.007, 0, 7); c.fillStyle = "#e2c05a"; c.fill();
+    c.setLineDash([4, 5]); c.strokeStyle = "rgba(255, 255, 255, 0.14)"; c.lineWidth = 1.2;
+    c.beginPath(); c.arc(-w / 2, t / 2, w, 0, Math.PI / 2); c.stroke();
+    c.setLineDash([]);
+  } else {
+    c.fillStyle = "#6a4a2e";
+    c.save(); c.translate(-w / 2, t / 2); c.rotate(Math.PI / 2 * 0.9); c.fillRect(0, -t * 0.3, w, t * 0.6); c.restore();
+  }
+  c.restore();
+}
+
+function round(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+
+// ---------------------------------------------------------------- playing
+
+function start() {
+  level = makeLevel();
+  used = 0;
+  hasKey = false;
+  drawRoom();
+  keyHold = doorHold = 0;
+  lockedAt = keyAt = -9;
+  lit = true;
+  Object.assign(ghost, { here: false, lit: 0, back: performance.now() + 4500, goneAt: -9 });
+  lostBy = "light";
+  recentre();
+  beam.x = aimAt.x; beam.y = aimAt.y;
+  setState("play");
+  startAt = performance.now();
+  sound("on");
+  count("game_start", { game: "torch", input: lastInput });
+}
+
+function setState(s) {
+  state = s;
+  stateAt = performance.now();
+  showPanel();
+}
+
+function recentre() { aimAt.x = W / 2; aimAt.y = H / 2; }
+
+function press() {  // a tap on the puck, a click, the space bar
+  if (state === "play") { lit = !lit; sound(lit ? "on" : "off"); return; }
+  if (state === "title" || ((state === "won" || state === "lost") && performance.now() - stateAt > 700)) start();
+}
+
+function update(dt, now) {
+  const a = 1 - Math.exp(-dt * 26);  // the light follows the aim, smoothly
+  beam.x += (aimAt.x - beam.x) * a;
+  beam.y += (aimAt.y - beam.y) * a;
+  for (const m of motes) { m.p += dt * m.v * 60; m.x = (m.x + Math.cos(m.p) * m.v * dt) % 1; m.y = (m.y + m.v * dt * 0.6 + 1) % 1; }
+
+  if (state === "dying" && now - stateAt > 1100) { setState("lost"); count("game_end", { game: "torch", result: "lost" }); }
+  if (state === "caught" && now - stateAt > 1500) { setState("lost"); count("game_end", { game: "torch", result: "caught" }); }
+  if (state === "escaping" && now - stateAt > 1300) { setState("won"); count("game_end", { game: "torch", result: "won" }); }
+  if (state !== "play") return;
+
+  if (lit) {
+    used += dt;
+    if (battery() <= 0) { lit = false; endAt = now; setState("dying"); sound("die"); return; }
+  }
+  const R = radius();
+  // The ghost: in from the edge after a moment, then drifting at you; the light holds it, then drives it off
+  if (!ghost.here && now > ghost.back) spawnGhost();
+  if (ghost.here) {
+    const dx = beam.x - ghost.x, dy = beam.y - ghost.y, d = Math.hypot(dx, dy) || 1;
+    const held = lit && d < R * 0.78;
+    ghost.lit = held ? ghost.lit + dt : Math.max(0, ghost.lit - dt * 2);
+    if (ghost.lit >= G_BANISH) {
+      Object.assign(ghost, { here: false, goneAt: now, gx: ghost.x, gy: ghost.y, back: now + rand(5000, 8500), lit: 0 });
+      sound("shriek");
+    } else {
+      const v = (held ? 0.08 : 1) * (lit ? G_LIT : G_DARK) * S, wob = Math.sin((ghost.ph += dt) * 1.7) * 0.35;
+      const ux = dx / d, uy = dy / d;
+      ghost.x += (ux * Math.cos(wob) - uy * Math.sin(wob)) * v * dt;
+      ghost.y += (uy * Math.cos(wob) + ux * Math.sin(wob)) * v * dt;
+      if (d < S * 0.035 && !held) { lit = false; endAt = caughtAt = now; lostBy = "ghost"; setState("caught"); sound("caught"); return; }  // only in the dark
+    }
+  }
+  const near = (p, f) => lit && Math.hypot(beam.x - p.x, beam.y - p.y) < R * f;
+  if (!hasKey) {
+    if (near(px(level.key), 0.42)) {
+      keyHold += dt / DWELL_S;
+      if (keyHold >= 1) { hasKey = true; keyAt = now; drawRoom(); sound("key"); }
+    } else keyHold = Math.max(0, keyHold - dt * 3);
+  }
+  const onDoor = near(px(doorSpot(level.door)), 0.5);
+  if (onDoor && hasKey) {
+    doorHold += dt / DWELL_S;
+    if (doorHold >= 1) { endAt = now; lit = false; setState("escaping"); sound("door"); return; }
+  } else {
+    doorHold = Math.max(0, doorHold - dt * 3);
+    if (onDoor && now - lockedAt > 2500) lockedAt = now;
+  }
+}
+
+// How bright the torch is: steady, until the battery is nearly gone
+function brightness(now) {
+  if (state === "dying") {
+    const k = (now - stateAt) / 1100;
+    return k > 0.9 ? 0 : (1 - k) * (Math.random() < 0.35 ? 0.15 : 0.8);
+  }
+  if (!lit || state !== "play") return 0;
+  const b = battery();
+  if (b > 0.2 || calm) return 1;
+  const k = 1 - b / 0.2;
+  let v = 1 - k * 0.3 * (0.5 + 0.5 * Math.sin(now * 0.031) * Math.sin(now * 0.0171));
+  if (Math.random() < k * 0.05) v *= 0.3;
+  return v;
+}
+
+function render(now) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, W, H);
+  if (!level) return;
+  const R = radius();
+
+  // Escaped: the open door lets a little light into the room
+  if (state === "escaping" || state === "won") {
+    const k = clamp((now - stateAt) / 1300, 0, 1) * (state === "won" ? 1 : 1);
+    ctx.globalAlpha = 0.28 * (state === "won" ? 1 : k);
+    ctx.drawImage(roomCv, 0, 0, W, H);
+    ctx.globalAlpha = 1;
+    const d = px(doorCentre(level.door));
+    const g = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, S * 0.7);
+    g.addColorStop(0, `rgba(255, 236, 190, ${0.55 * k})`);
+    g.addColorStop(1, "rgba(255, 236, 190, 0)");
+    ctx.globalCompositeOperation = "screen";
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over";
+    drawDoor(ctx, level.door, true);
+    return;
+  }
+
+  // It has you: its face, coming at you
+  if (state === "caught") {
+    const k = clamp((now - stateAt) / 900, 0, 1), x = ghost.x + (W / 2 - ghost.x) * k, y = ghost.y + (H / 2 - ghost.y) * k;
+    drawGhost(x, y, S * (0.06 + 0.3 * k * k), 1 - Math.max(0, (now - stateAt - 1100) / 400), now);
+    return;
+  }
+
+  // Out of light: the room stays dark, and shows where they were
+  if (state === "lost") {
+    const k = clamp((now - stateAt) / 900, 0, 1);
+    marker(px(level.key), "Key", k);
+    marker(px(doorSpot(level.door)), "Door", k);
+    return;
+  }
+
+  const b = brightness(now);
+  if (b > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(beam.x, beam.y, R, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(roomCv, 0, 0, W, H);
+    // Falloff: bright in the middle, gone at the edge
+    const g = ctx.createRadialGradient(beam.x, beam.y, 0, beam.x, beam.y, R);
+    g.addColorStop(0, `rgba(0, 0, 0, ${1 - b})`);
+    g.addColorStop(0.5, `rgba(0, 0, 0, ${1 - 0.94 * b})`);
+    g.addColorStop(0.82, `rgba(0, 0, 0, ${1 - 0.55 * b})`);
+    g.addColorStop(1, "rgba(0, 0, 0, 1)");
+    ctx.fillStyle = g;
+    ctx.fillRect(beam.x - R, beam.y - R, 2 * R, 2 * R);
+    // Warmth, and dust in the beam
+    ctx.globalCompositeOperation = "screen";
+    const w = ctx.createRadialGradient(beam.x, beam.y, 0, beam.x, beam.y, R * 0.8);
+    w.addColorStop(0, `rgba(255, 200, 130, ${0.22 * b})`);
+    w.addColorStop(1, "rgba(255, 196, 120, 0)");
+    ctx.fillStyle = w;
+    ctx.fillRect(beam.x - R, beam.y - R, 2 * R, 2 * R);
+    if (!calm) {
+      for (const m of motes) {
+        const x = m.x * W, y = m.y * H, d = Math.hypot(x - beam.x, y - beam.y) / R;
+        if (d > 0.9) continue;
+        ctx.fillStyle = `rgba(255, 240, 210, ${0.22 * b * (1 - d) * (0.6 + 0.4 * Math.sin(m.p))})`;
+        ctx.beginPath(); ctx.arc(x, y, m.s, 0, 7); ctx.fill();
+      }
+    }
+    ctx.globalCompositeOperation = "source-over";
+    // The key glints when the light crosses it
+    if (!hasKey) {
+      const k = px(level.key), d = Math.hypot(k.x - beam.x, k.y - beam.y) / R;
+      if (d < 0.75) {
+        const s = S * 0.012 * (1 - d) * (0.7 + 0.3 * Math.sin(now * 0.012));
+        ctx.strokeStyle = `rgba(255, 248, 220, ${0.7 * b * (1 - d)})`;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(k.x - s * 2, k.y - S * 0.02); ctx.lineTo(k.x + s * 2, k.y - S * 0.02);
+        ctx.moveTo(k.x, k.y - S * 0.02 - s * 2); ctx.lineTo(k.x, k.y - S * 0.02 + s * 2); ctx.stroke();
+      }
+    }
+    // The ghost, in the light: held, it shakes and thins
+    if (ghost.here) {
+      const d = Math.hypot(ghost.x - beam.x, ghost.y - beam.y) / R;
+      if (d < 1.1) drawGhost(ghost.x + (ghost.lit > 0 ? (Math.random() - 0.5) * S * 0.01 : 0), ghost.y, S * 0.06,
+        b * clamp(1.15 - d, 0, 1) * (1 - 0.7 * ghost.lit / G_BANISH), now);
+    }
+    ctx.restore();
+  } else if (state === "play") {
+    // Off: only where it would shine
+    ctx.strokeStyle = "rgba(245, 245, 247, 0.08)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(beam.x, beam.y, R * 0.42, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  if (state === "play") {
+    // Close in the dark: its eyes, and a chill at the edges of the room
+    if (ghost.here) {
+      const d = Math.hypot(ghost.x - beam.x, ghost.y - beam.y), k = clamp(1 - d / (S * 0.3), 0, 1);
+      if (k > 0 && !(b > 0 && d < R)) {
+        ctx.fillStyle = `rgba(200, 220, 255, ${0.5 * k * (0.75 + 0.25 * Math.sin(now * 0.01))})`;
+        for (const e of [-1, 1]) { ctx.beginPath(); ctx.ellipse(ghost.x + e * S * 0.014, ghost.y - S * 0.012, S * 0.005, S * 0.009, 0, 0, 7); ctx.fill(); }
+      }
+      const c = clamp(1 - d / (S * 0.45), 0, 1);
+      if (c > 0) {
+        const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.hypot(W, H) * 0.6);
+        v.addColorStop(0, "rgba(120, 150, 220, 0)");
+        v.addColorStop(1, `rgba(120, 150, 220, ${0.12 * c * (0.8 + 0.2 * Math.sin(now * 0.006))})`);
+        ctx.fillStyle = v;
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+    // Driven off: a ring where it was
+    const g = (now - ghost.goneAt) / 700;
+    if (g < 1) {
+      ctx.strokeStyle = `rgba(230, 240, 255, ${0.6 * (1 - g)})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(ghost.gx, ghost.gy, S * (0.04 + 0.14 * g), 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+
+  // Holding the light on something: a ring fills around it
+  if (state === "play") {
+    if (keyHold > 0.02 && !hasKey) progress(px(level.key), keyHold);
+    if (doorHold > 0.02) progress(px(doorSpot(level.door)), doorHold);
+    if (now - lockedAt < 1600 && !hasKey && lit) {
+      const d = px(doorSpot(level.door)), k = 1 - (now - lockedAt) / 1600;
+      label(d, "Locked", Math.min(1, k * 2.5));
+    }
+    if (hasKey && now - keyAt < 1400) {
+      const k = (now - keyAt) / 1400, p = px(level.key);
+      drawKey(ctx, { x: p.x, y: p.y - k * S * 0.08 }, level.key.a * (1 - k), 1 - k);
+    }
+  }
+}
+
+// The ghost: a pale shape with a ragged hem and two dark eyes
+function drawGhost(x, y, r, a, now) {
+  if (a <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.translate(x, y + Math.sin(now * 0.004) * r * 0.08);
+  const g = ctx.createRadialGradient(0, -r * 0.2, 0, 0, 0, r * 1.6);
+  g.addColorStop(0, "rgba(235, 242, 255, 0.95)");
+  g.addColorStop(1, "rgba(200, 215, 245, 0.55)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(0, -r * 0.15, r, Math.PI, 0);
+  const hem = 4, w = (2 * r) / hem;
+  ctx.lineTo(r, r * 0.85);
+  for (let i = 0; i < hem; i++) {
+    const x0 = r - i * w, wave = Math.sin(now * 0.008 + i) * r * 0.08;
+    ctx.quadraticCurveTo(x0 - w * 0.25, r * 1.15 + wave, x0 - w * 0.5, r * 0.85);
+    ctx.quadraticCurveTo(x0 - w * 0.75, r * 0.55 - wave, x0 - w, r * 0.85);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(10, 12, 20, 0.9)";
+  for (const e of [-1, 1]) { ctx.beginPath(); ctx.ellipse(e * r * 0.34, -r * 0.22, r * 0.13, r * 0.21, 0, 0, 7); ctx.fill(); }
+  ctx.beginPath(); ctx.ellipse(0, r * 0.28, r * 0.12, r * 0.16, 0, 0, 7); ctx.fill();
+  ctx.restore();
+}
+
+function progress(p, f) {
+  ctx.strokeStyle = "#FFD60A";
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, S * 0.05, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(f, 1));
+  ctx.stroke();
+}
+
+function label(p, text, alpha) {
+  const below = p.y < H / 2;
+  ctx.font = `700 ${Math.round(S * 0.022)}px Nunito, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.fillStyle = `rgba(245, 245, 247, ${0.85 * alpha})`;
+  ctx.fillText(text, clamp(p.x, S * 0.1, W - S * 0.1), p.y + (below ? 1 : -1) * S * 0.085 + S * 0.008);
+}
+
+function marker(p, text, k) {
+  ctx.strokeStyle = `rgba(255, 214, 10, ${0.55 * k})`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(p.x, p.y, S * 0.045, 0, Math.PI * 2); ctx.stroke();
+  label(p, text, k);
+}
+
+// ---------------------------------------------------------------- what's around the room
+
+function statusText(now) {
+  if (state === "title") return "Tap to start";
+  if (state === "won" || state === "escaping") return "Escaped";
+  if (state === "lost" || state === "dying" || state === "caught") return lostBy === "ghost" ? "It got you" : "Out of light";
+  if (ghost.here && !lit && ghostRel().d < 0.3) return "It's close";
+  if (!lit) return "Light off";
+  if (hasKey && now - keyAt < 1500) return "Key found";
+  if (!hasKey && now - lockedAt < 1600) return "Locked";
+  return hasKey ? "Find the door" : "Find the key";
+}
+
+function hud(now) {
+  const b = battery(), pct = Math.ceil(b * 100);
+  $("battery").style.setProperty("--b", b.toFixed(3));
+  $("battery").classList.toggle("on", lit && state === "play");
+  $("pct").textContent = pct + "%";
+  $("key").classList.toggle("got", hasKey && state !== "title");
+  let hint = "";
+  if (state === "play") {
+    if (now - startAt < 4000) hint = lastInput === "puck" ? "Point the puck to move the light. Tap it to switch the light off." : "Move to aim. Click to switch the light off.";
+    else if (now - startAt < 9000) hint = lastInput === "puck" ? "The puck pings as the ghost comes. Light drives it off." : "The radar shows the ghost. Light drives it off.";
+    else if (keyHold > 0.05 || doorHold > 0.05) hint = "Hold it there";
+    else if (!lit) hint = lastInput === "puck" ? "Tap the puck for light" : "Click for light";
+  }
+  $("hint").textContent = hint;
+  $("hint").style.opacity = beam.y > H - S * 0.2 ? 0 : 1;
+  document.body.classList.toggle("aiming", state === "play");
+}
+
+const PANELS = {
+  title: () => `<h1>Torch</h1>
+    <p>A dark room, a torch with ${BATTERY_S} seconds of light, and something in here with you. <b>Find the key, then the door.</b></p>
+    <p class="how">${bridge.up ? "Point the puck to move the light, and tap it to switch the light on and off. The puck is your radar: it pings as the ghost comes, quicker as it gets close. Hold the light on the ghost to drive it off."
+      : "Move the mouse to aim, and click to switch the light on and off. The radar in the corner shows the ghost. Hold the light on it to drive it off."}</p>
+    <div class="go"><button class="btn" type="button" data-go>Start</button><span class="or">${bridge.up ? "or tap the puck" : "or press space"}</span></div>`,
+  won: () => `<h1>You got out</h1>
+    <p>In ${((endAt - startAt) / 1000).toFixed(1)} seconds, with ${Math.ceil(battery() * 100)}% of the battery left.</p>
+    <div class="go"><button class="btn" type="button" data-go>Play again</button><a class="btn quiet" href="../">More games</a></div>`,
+  lost: () => `<h1>${lostBy === "ghost" ? "It got you" : "The torch died"}</h1>
+    <p>${lostBy === "ghost" ? "The light holds it, then drives it off for a while. In the dark, keep an eye on the radar." : hasKey ? "You had the key. The door was close." : "The key and the door are marked now."} Try another room.</p>
+    <div class="go"><button class="btn" type="button" data-go>Try again</button><a class="btn quiet" href="../">More games</a></div>`,
+};
+
+function showPanel() {
+  const make = PANELS[state];
+  $("panel").classList.toggle("show", !!make);
+  $("panel").inert = !make;  // hidden, its buttons can't be pressed: space would start the round again
+  if (!make) { document.activeElement?.blur?.(); return; }
+  $("card").innerHTML = make();
+  $("card").querySelector("[data-go]")?.addEventListener("click", (e) => { e.stopPropagation(); unlockSound(); start(); });
+}
+
+// ---------------------------------------------------------------- the puck, through Watt
+
+const bridge = { ws: null, up: false, lastAim: -1e9, sent: "", sentAt: 0, retry: 3000 };
+
+function connect() {
+  let ws;
+  try { ws = new WebSocket(BRIDGE); } catch { setTimeout(connect, bridge.retry); return; }
+  ws.onopen = () => {
+    bridge.ws = ws;
+    bridge.up = true;
+    bridge.retry = 3000;
+    send({ type: "hello", kind: "game", name: "Torch" });
+    presence();
+    bridge.sent = "";
+    if (state === "title") showPanel();
+  };
+  ws.onmessage = (e) => {
+    let m;
+    try { m = JSON.parse(e.data); } catch { return; }
+    if (m.type === "aim") aim(m.dx, m.dy);
+    else if (m.type === "input") {
+      lastInput = "puck";
+      if (m.input === "tap") press();
+      else if (m.input === "hold" && state === "play") recentre();
+    }
+  };
+  ws.onclose = () => {
+    const was = bridge.up;
+    bridge.ws = null;
+    bridge.up = false;
+    if (was && state === "title") showPanel();
+    setTimeout(connect, bridge.retry);
+    bridge.retry = Math.min(bridge.retry * 1.5, 15000);  // Watt isn't open: ask less often
+  };
+}
+
+function send(o) { if (bridge.ws && bridge.ws.readyState === 1) bridge.ws.send(JSON.stringify(o)); }
+
+// Watt gives the puck to the page you're looking at
+function presence() { send({ type: "presence", visible: !document.hidden, focused: document.hasFocus(), title: document.title }); }
+addEventListener("focus", presence);
+addEventListener("blur", presence);
+document.addEventListener("visibilitychange", presence);
+setInterval(presence, 2000);
+
+// The puck's face: a radar with the ghost on it, the battery round the rim, what to do next
+function radarParams(now) {
+  const on = lit && state === "play", g = ghostRel();
+  const p = { p: +battery().toFixed(3), on: on ? 1 : 0, fl: on && battery() < 0.2 ? 1 : 0, sub: statusText(now), aim: 1,
+    gv: state === "play" && ghost.here ? 1 : 0, ga: Math.round(g.a), gd: +Math.min(g.d, 9).toFixed(2) };
+  if (state === "won" || state === "escaping") p.msg = "Out";
+  else if (state === "lost" || state === "dying" || state === "caught") p.msg = lostBy === "ghost" ? "Got you" : "Dark";
+  return p;
+}
+function face(now) {
+  if (!bridge.up) return;
+  const f = { face: "radar", label: "Torch", params: radarParams(now) };
+  const s = JSON.stringify(f);
+  if (s === bridge.sent || now - bridge.sentAt < 100) return;
+  bridge.sent = s;
+  bridge.sentAt = now;
+  send(f);
+}
+
+function aim(dx, dy) {
+  const now = performance.now();
+  if (now - bridge.lastAim > 1500 && state !== "play") recentre();  // picked up again: start from the middle
+  bridge.lastAim = now;
+  lastInput = "puck";
+  const k = W / (SWEEP_DEG * 100);  // px per 1/100 degree
+  aimAt.x = clamp(aimAt.x + dx * k, 0, W);
+  aimAt.y = clamp(aimAt.y + dy * k, 0, H);
+}
+
+function connState() {
+  const puck = bridge.up && performance.now() - bridge.lastAim < 3000;
+  $("conn").classList.toggle("puck", puck);
+  $("connText").textContent = puck ? "Puck" : bridge.up ? "Watt is on: pick up the puck" : "Mouse";
+}
+
+// ---------------------------------------------------------------- the radar in the corner
+
+const rcv = $("radar"), rcx = rcv.getContext("2d");
+const radar = { sweep: 0, lit: -9 };
+function drawRadar(now, dt) {
+  const px = Math.round(rcv.clientWidth * DPR);
+  if (rcv.width !== px) rcv.width = rcv.height = px;
+  const k = px / 466, p = radarParams(now), live = p.gv === 1 && p.gd <= 1, near = clamp(p.gd, 0, 1), per = 0.7 + 1.3 * near;
+  const was = radar.sweep;
+  radar.sweep = (radar.sweep + 360 * Math.min(dt, 0.1) / per) % 360;
+  if (live && (p.ga - was + 720) % 360 <= (radar.sweep - was + 720) % 360) {
+    radar.lit = now;
+    if (!(bridge.up && now - bridge.lastAim < 3000)) sound("ping", near);  // the puck pings for itself
+  }
+  const c = rcx;
+  c.setTransform(k, 0, 0, k, px / 2, px / 2);
+  c.fillStyle = "#000";
+  c.beginPath(); c.arc(0, 0, 233, 0, 7); c.fill();
+  const xy = (deg, r) => [r * Math.sin(deg * Math.PI / 180), -r * Math.cos(deg * Math.PI / 180)];
+  // the battery round the rim
+  for (let i = 0; i <= 60; i++) {
+    const deg = 210 + (300 * i) / 60, on = i / 60 <= p.p, major = i % 10 === 0;
+    c.strokeStyle = on ? (p.on ? "#FFD60A" : "rgba(245,245,247,0.58)") : major ? "rgba(245,245,247,0.37)" : "rgba(245,245,247,0.18)";
+    c.lineWidth = major ? 4 : 3;
+    const [x0, y0] = xy(deg, major ? 199 : 205), [x1, y1] = xy(deg, 216);
+    c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+  }
+  c.strokeStyle = "rgba(245,245,247,0.18)"; c.lineWidth = 2;
+  for (const r of [62, 124, 186]) { c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke(); }
+  c.strokeStyle = "rgba(245,245,247,0.11)";
+  c.beginPath(); c.moveTo(-186, 0); c.lineTo(186, 0); c.moveTo(0, -186); c.lineTo(0, 186); c.stroke();
+  for (let i = 4; i >= 0; i--) {
+    const [x, y] = xy(radar.sweep - i * 5, 184);
+    c.strokeStyle = i ? `rgba(245,245,247,${(70 - i * 12) / 255})` : "rgba(245,245,247,0.58)";
+    c.lineWidth = i ? 3 : 4;
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(x, y); c.stroke();
+  }
+  if (live) {
+    const fade = Math.max(0, 1 - (now - radar.lit) / (1000 * per));
+    if (fade > 0.02) {
+      const [x, y] = xy(p.ga, 6 + 178 * p.gd);
+      c.shadowColor = "rgba(255,214,10,0.8)"; c.shadowBlur = 20 * fade;
+      c.fillStyle = `rgba(255,214,10,${fade})`;
+      c.beginPath(); c.arc(x, y, 9 + 5 * (1 - near), 0, 7); c.fill();
+      c.shadowBlur = 0;
+    }
+  }
+  c.fillStyle = "#F5F5F7";
+  c.beginPath(); c.arc(0, 0, 7, 0, 7); c.fill();
+  if (p.msg) {
+    c.font = "800 44px Nunito, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+    c.fillText(p.msg, 0, -64);
+  }
+}
+
+// ---------------------------------------------------------------- mouse, touch, keys
+
+let touchStart = null;
+cv.addEventListener("pointermove", (e) => {
+  if (performance.now() - bridge.lastAim < 1500) return;  // the puck has it
+  const lift = e.pointerType === "touch" ? S * 0.12 : 0;    // a finger would hide the light
+  aimAt.x = e.clientX;
+  aimAt.y = e.clientY - lift;
+  if (e.pointerType !== "touch" || touchStart) lastInput = "mouse";
+});
+cv.addEventListener("pointerdown", (e) => { unlockSound(); touchStart = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+cv.addEventListener("pointerup", (e) => {
+  const s = touchStart;
+  touchStart = null;
+  if (!s || Math.hypot(e.clientX - s.x, e.clientY - s.y) > 12 || performance.now() - s.t > 400) return;
+  lastInput = "mouse";
+  press();
+});
+addEventListener("keydown", (e) => {
+  if (e.code === "Space" || e.code === "Enter") {
+    if (e.target.closest && e.target.closest("a, button")) return;
+    e.preventDefault();
+    unlockSound();
+    lastInput = "mouse";
+    press();
+  }
+});
+
+// ---------------------------------------------------------------- sound (once the page has been clicked)
+
+let audio = null;
+function unlockSound() {
+  if (!audio) { try { audio = new AudioContext(); } catch { audio = null; } }
+  audio?.resume?.();
+}
+function sound(kind, arg = 0) {
+  if (!audio || audio.state !== "running") return;
+  const t = audio.currentTime, out = audio.createGain();
+  out.connect(audio.destination);
+  const tone = (f, at, len, gain, type = "sine") => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t + at);
+    g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(gain, t + at + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + at + len);
+    o.connect(g); g.connect(out); o.start(t + at); o.stop(t + at + len + 0.02);
+    return o;
+  };
+  if (kind === "on" || kind === "off") { tone(kind === "on" ? 2400 : 1700, 0, 0.03, 0.05, "square"); tone(kind === "on" ? 900 : 700, 0.012, 0.05, 0.04, "triangle"); }
+  else if (kind === "key") { tone(1320, 0, 0.18, 0.08); tone(1760, 0.09, 0.28, 0.07); }
+  else if (kind === "door") { tone(110, 0, 0.5, 0.12, "triangle"); tone(660, 0.18, 0.5, 0.06); tone(990, 0.3, 0.7, 0.05); }
+  else if (kind === "die") { const o = tone(520, 0, 0.9, 0.06, "sawtooth"); o.frequency.exponentialRampToValueAtTime(80, t + 0.9); }
+  else if (kind === "shriek") {
+    const o = tone(620, 0, 0.55, 0.05, "sawtooth"); o.frequency.exponentialRampToValueAtTime(1500, t + 0.12); o.frequency.exponentialRampToValueAtTime(300, t + 0.55);
+    tone(1240, 0.03, 0.4, 0.025, "triangle");
+  } else if (kind === "caught") { const o = tone(160, 0, 1.3, 0.1, "sawtooth"); o.frequency.exponentialRampToValueAtTime(40, t + 1.3); tone(70, 0, 1.4, 0.12); }
+  else if (kind === "ping") tone(900 + 1300 * (1 - arg), 0, 0.14, 0.035 + 0.03 * (1 - arg));
+}
+
+function count(name, params) { gtag("event", name, params); }
+
+// ---------------------------------------------------------------- the frame
+
+function resize() {
+  const was = { x: W ? aimAt.x / W : 0.5, y: H ? aimAt.y / H : 0.5 };
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth;
+  H = innerHeight;
+  S = Math.min(W, H);
+  cv.width = Math.round(W * DPR);
+  cv.height = Math.round(H * DPR);
+  aimAt.x = beam.x = was.x * W;
+  aimAt.y = beam.y = was.y * H;
+  if (level) drawRoom();
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  update(dt, now);
+  render(now);
+  drawRadar(now, dt);
+  hud(now);
+  face(now);
+  connState();
+  requestAnimationFrame(frame);
+}
+
+addEventListener("resize", resize);
+resize();
+level = makeLevel();  // a room behind the title, unlit
+drawRoom();
+recentre();
+showPanel();
+connect();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
