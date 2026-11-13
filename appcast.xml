@@ -3,12 +3,12 @@
   <channel>
     <title>Watt</title>
     <item>
-      <title>Watt 0.2.0</title>
-      <pubDate>Fri, 16 Oct 2026 14:12:35 -0700</pubDate>
-      <sparkle:version>202610161411</sparkle:version>
-      <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+      <title>Watt 0.2.1</title>
+      <pubDate>Fri, 13 Nov 2026 13:50:37 -0800</pubDate>
+      <sparkle:version>202611131347</sparkle:version>
+      <sparkle:shortVersionString>0.2.1</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-      <enclosure url="https://github.com/gizmofalcon/watt-puck/releases/download/v0.2.0/Watt-0.2.0.dmg" sparkle:edSignature="9bz4njQ/X79EoJ3zwmkdMFVNJzadpVJrRgDInz4i5Hz2iMLKnF2hBeSzs7viGsaBIziEoux7++Q1Kq8QeEfvDQ==" length="4501802" type="application/octet-stream"/>
+      <enclosure url="https://github.com/gizmofalcon/watt-puck/releases/download/v0.2.1/Watt-0.2.1.dmg" sparkle:edSignature="DP0A2F1GyheOhfw4G2HlrsxmpmEcN5fxR5YLFcCHAuxv418nDQ9+9zfraBPuOuu4AmPiivY5BcaTjoQ0L60WCQ==" length="4515852" type="application/octet-stream"/>
     </item>
   </channel>
 </rss>

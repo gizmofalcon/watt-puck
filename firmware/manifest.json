@@ -1,6 +1,6 @@
 {
   "name": "Watt, the puck",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "updates_over_link": true,
   "new_install_prompt_erase": true,
   "builds": [

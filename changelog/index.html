@@ -126,7 +126,29 @@
     <h1 class="say"><b>What's new in Watt.</b> Each release of the Mac app and the puck's firmware, newest first.</h1>
   </section>
 
-  <article class="release rise" id="v0.2.0" style="--i: 2">
+  <article class="release rise" id="v0.2.1" style="--i: 2">
+    <p class="when"><span class="v">0.2.1</span><time datetime="2026-11-13">November 13, 2026</time></p>
+    <h2 class="say"><b>The puck plays games.</b> Five games on this site use it as the controller, and puck updates no longer stall while it charges from your Mac.</h2>
+    <ul class="changes">
+      <li><b>Games.</b> Torch, Pants, Catch, Tasks and Hamlet, on the <a href="../games/">Games</a> page. Open one in Chrome with Watt running. The first time, Chrome asks to reach apps on your Mac: allow it.</li>
+      <li><b>Updates don't stall on your Mac's USB.</b> With the puck plugged into your Mac, an update could take minutes or fail. Now it takes the usual half a minute, plugged in or not.</li>
+      <li><b>Listening stops by itself.</b> After 20 seconds without new words, or 5 minutes in all, so a stray tap doesn't leave the microphone on.</li>
+      <li><b>Updates wait while Watt listens.</b> As during a call, a puck update waits until you're done talking.</li>
+      <li><b>Dropped words aren't logged.</b> What you say and then swipe away is no longer written to Watt's log.</li>
+      <li><b>Firmware 0.2.1.</b> Faces for the games, and the fix for updates on USB.</li>
+    </ul>
+    <h3 class="label">Coming from 0.2.0</h3>
+    <ol class="steps">
+      <li>
+        <p><b>Let Watt update itself,</b> or choose Check for Updates... in its menu.</p>
+      </li>
+      <li>
+        <p><b>Choose Update Puck to 0.2.1 in Watt's menu,</b> with the puck off your Mac's USB. On battery or a wall charger is fine: the old firmware can stall on a Mac's USB, which this update fixes.</p>
+      </li>
+    </ol>
+  </article>
+
+  <article class="release rise" id="v0.2.0" style="--i: 3">
     <p class="when"><span class="v">0.2.0</span><time datetime="2026-10-16">October 16, 2026</time></p>
     <h2 class="say"><b>Watt keeps itself and the puck up to date.</b> The app checks for a new version once a day, and sends the puck its updates over Bluetooth.</h2>
     <ul class="changes">
@@ -149,7 +171,7 @@
     </ol>
   </article>
 
-  <article class="release rise" id="v0.1.0" style="--i: 3">
+  <article class="release rise" id="v0.1.0" style="--i: 4">
     <p class="when"><span class="v">0.1.0</span><time datetime="2026-10-02">October 2, 2026</time></p>
     <h2 class="say"><b>The first release.</b> The Mac app, and the firmware it installs on the puck.</h2>
     <ul class="changes">
@@ -163,7 +185,7 @@
   </article>
 </main>
 
-<footer class="rise" style="--i: 4">
+<footer class="rise" style="--i: 5">
   <span>Made by <a href="https://sourabhdaroji.com">Sourabh Daroji</a></span>
   <a href="https://github.com/gizmofalcon/watt-puck/releases">All releases on GitHub</a>
 </footer>
