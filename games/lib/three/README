@@ -1,0 +1,3 @@
+three.js r185 (0.185.1), MIT licence (LICENSE): the build and the few addons Hamlet uses, copied as they are,
+in the same folders, so their own imports between them still resolve. "three" is mapped to
+three.module.min.js by an import map in the page.

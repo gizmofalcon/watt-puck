@@ -204,23 +204,62 @@
     <a class="game" href="hamlet/" id="hamlet">
       <div class="shot pants" aria-hidden="true">
         <svg viewBox="0 0 640 280" preserveAspectRatio="xMidYMid slice" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <rect width="640" height="280" fill="#0d0f0e"/>
-          <path d="M60 210 C 200 190, 300 230, 460 200 S 600 210, 640 205" stroke="#F5F5F7" stroke-opacity="0.08" stroke-width="18"/>
-          <g fill="#17211b" stroke="#F5F5F7" stroke-opacity="0.45" stroke-width="1.4"><circle cx="110" cy="96" r="18"/><circle cx="140" cy="118" r="15"/><circle cx="92" cy="130" r="14"/><circle cx="520" cy="84" r="16"/><circle cx="548" cy="104" r="13"/></g>
-          <g transform="translate(320 130)" stroke="#F5F5F7" stroke-width="2">
-            <path d="M-40 6 L0 -26 L40 6" fill="#18181b"/>
-            <rect x="-32" y="6" width="64" height="38" fill="#18181b"/>
-            <rect x="-8" y="22" width="16" height="22" rx="2"/>
-            <path d="M0 -26 V -46 L14 -40 L0 -34" stroke-opacity="0.8"/>
+          <defs>
+            <filter id="hm-rough" x="-4%" y="-6%" width="108%" height="112%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="6"/></filter>
+            <clipPath id="hm-land"><path d="M150 44 H490 L562 246 H78 Z"/></clipPath>
+            <radialGradient id="hm-leaf" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#9BE06A"/><stop offset="0.55" stop-color="#58B83E"/><stop offset="1" stop-color="#3C8F2E"/></radialGradient>
+            <radialGradient id="hm-bloom" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#F9C6DD"/><stop offset="0.55" stop-color="#EE8AB6"/><stop offset="1" stop-color="#C9628F"/></radialGradient>
+            <radialGradient id="hm-shade"><stop offset="0" stop-color="#1C3812" stop-opacity="0.34"/><stop offset="1" stop-color="#1C3812" stop-opacity="0"/></radialGradient>
+            <linearGradient id="hm-roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EA9572"/><stop offset="1" stop-color="#D9724C"/></linearGradient>
+          </defs>
+          <rect width="640" height="280" fill="#EDE9E1"/>
+          <g filter="url(#hm-rough)">
+            <path d="M150 44 H490 L562 246 H78 Z" fill="#9BCE45"/>
+            <g clip-path="url(#hm-land)">
+              <path d="M300 40 L496 40 L506 96 C 400 104, 340 98, 290 108 C 304 90, 296 70, 300 44 Z" fill="#B1DA4C"/>
+              <path d="M420 100 L506 96 L540 188 L440 186 C 426 160, 430 130, 420 100 Z" fill="#DDBD52"/>
+              <path d="M70 250 L110 196 C 160 193, 200 191, 240 190 C 236 210, 244 230, 236 250 Z" fill="#87C236"/>
+              <path d="M240 190 C 300 200, 340 196, 380 188 C 440 178, 470 186, 470 186 C 476 210, 486 230, 492 250 L 236 250 C 244 230, 236 210, 240 190 Z" fill="#A4D23F"/>
+              <g stroke="#3E8A2E" stroke-width="3.6" stroke-opacity="0.85">
+                <path d="M140 120 C 190 112, 240 118, 290 108 C 340 98, 400 104, 506 96"/>
+                <path d="M100 196 C 200 190, 300 202, 380 188 C 440 178, 500 186, 560 192"/>
+                <path d="M300 44 C 296 70, 304 90, 290 108"/>
+                <path d="M420 100 C 430 130, 426 160, 440 186"/>
+                <path d="M240 190 C 236 210, 244 230, 236 250"/>
+                <path d="M470 186 C 476 210, 486 230, 492 250"/>
+              </g>
+              <path d="M206 36 C 196 90, 214 130, 190 170 S 160 230, 150 256" stroke="#E1CB93" stroke-width="22"/>
+              <path d="M206 36 C 196 90, 214 130, 190 170 S 160 230, 150 256" stroke="#4B82E3" stroke-width="13"/>
+              <path d="M203 62 C 199 80, 204 96, 203 108 M194 168 C 186 182, 178 196, 172 210" stroke="#DCEAFF" stroke-opacity="0.7" stroke-width="1.6"/>
+              <g stroke="#E4D2A2" stroke-width="7"><path d="M322 158 C 280 154, 240 152, 212 150"/><path d="M342 138 C 380 110, 420 80, 452 40"/><path d="M350 162 C 400 182, 450 214, 500 252"/></g>
+            </g>
           </g>
-          <g transform="translate(410 176)">
-            <circle r="16" stroke="#FFD60A" stroke-width="2"/>
-            <circle cy="-6" r="4.5" stroke="#F5F5F7" stroke-width="2"/>
-            <path d="M0 -1.5 V 8 M-6 3 H6 M0 8 L-4 14 M0 8 L4 14" stroke="#F5F5F7" stroke-width="2"/>
+          <g><rect x="180" y="143" width="36" height="13" rx="1.5" fill="#BF9062"/><path d="M186 144 V155 M192 144 V155 M198 144 V155 M204 144 V155 M210 144 V155" stroke="#A97A4C" stroke-width="1.2"/><path d="M179 143.5 H217 M179 155.5 H217" stroke="#8F643F" stroke-width="2.2"/></g>
+          <ellipse cx="342" cy="166" rx="44" ry="10" fill="url(#hm-shade)"/>
+          <g>
+            <rect x="301" y="138" width="58" height="25" fill="#F4EADA"/>
+            <rect x="301" y="160" width="58" height="3" fill="#DCCFB9"/>
+            <path d="M304 112 H356 L346 121 H314 Z" fill="#C46A48"/>
+            <path d="M297 140 L314 121 L304 112 Z" fill="#E48B64"/>
+            <path d="M363 140 L356 112 L346 121 Z" fill="#B85E3F"/>
+            <path d="M297 140 H363 L346 121 H314 Z" fill="url(#hm-roof)"/>
+            <path d="M306 133 H354 M310 127 H350" stroke="#C9643F" stroke-opacity="0.6" stroke-width="0.9"/>
+            <path d="M314 121 H346" stroke="#F2B094" stroke-width="1.4"/>
+            <g fill="#6B8FBF" stroke="#FFFFFF" stroke-width="1"><rect x="307" y="146" width="7" height="6"/><rect x="317" y="146" width="7" height="6"/><rect x="336" y="146" width="7" height="6"/><rect x="346" y="146" width="7" height="6"/></g>
+            <path d="M326 163 V154 A4 4 0 0 1 334 154 V163 Z" fill="#7A5236"/>
+            <path d="M330 121 V103" stroke="#7A5638" stroke-width="1.4"/><path d="M330 103 L343 106.5 L330 110 Z" fill="#FBF7EE"/>
           </g>
-          <g transform="translate(250 186)"><circle cy="-6" r="4.5" stroke="#F5F5F7" stroke-opacity="0.7" stroke-width="2"/><path d="M0 -1.5 V 8 M-6 3 H6 M0 8 L-4 14 M0 8 L4 14" stroke="#F5F5F7" stroke-opacity="0.7" stroke-width="2"/></g>
-          <g fill="#FFD60A"><circle cx="470" cy="214" r="3"/><circle cx="480" cy="210" r="2.4"/><circle cx="476" cy="220" r="2.2"/></g>
-          <g fill="#9e4a55"><circle cx="190" cy="214" r="3"/><circle cx="198" cy="220" r="3"/><circle cx="186" cy="224" r="3"/></g>
+          <g><ellipse cx="312" cy="178" rx="5" ry="1.6" fill="#1C3812" fill-opacity="0.25"/><rect x="308" y="166" width="7.5" height="10" rx="3" fill="#4A82DA"/><circle cx="311.8" cy="163" r="3.2" fill="#F2C9A0"/></g>
+          <g><ellipse cx="356" cy="182" rx="5" ry="1.6" fill="#1C3812" fill-opacity="0.25"/><rect x="352" y="170" width="7.5" height="10" rx="3" fill="#E08A4E"/><circle cx="355.8" cy="167" r="3.2" fill="#F2C9A0"/></g>
+          <g>
+            <ellipse cx="128" cy="218" rx="16" ry="5" fill="url(#hm-shade)"/><ellipse cx="108" cy="190" rx="14" ry="4.5" fill="url(#hm-shade)"/><ellipse cx="258" cy="88" rx="16" ry="5" fill="url(#hm-shade)"/><ellipse cx="530" cy="232" rx="16" ry="5" fill="url(#hm-shade)"/>
+            <path d="M120 216 V204 M101 188 V178 M250 86 V74 M273 72 V62 M522 230 V218" stroke="#8B5D3B" stroke-width="3"/>
+            <g fill="url(#hm-leaf)"><circle cx="114" cy="198" r="8"/><circle cx="125" cy="196" r="7.5"/><circle cx="119" cy="190" r="8"/><circle cx="95" cy="173" r="7"/><circle cx="105" cy="171" r="6.5"/><circle cx="100" cy="166" r="7"/><circle cx="244" cy="70" r="8"/><circle cx="255" cy="68" r="7.5"/><circle cx="249" cy="62" r="8"/><circle cx="516" cy="212" r="8"/><circle cx="527" cy="210" r="7.5"/><circle cx="521" cy="204" r="8"/></g>
+            <g fill="url(#hm-bloom)"><circle cx="268" cy="56" r="7"/><circle cx="278" cy="55" r="6.5"/><circle cx="273" cy="49" r="7"/></g>
+          </g>
+          <ellipse cx="312" cy="178.5" rx="9" ry="3.6" stroke="#FFD60A" stroke-width="1.6"/>
+          <path d="M307.5 152 H316.5 L312 157.5 Z" fill="#FFD60A"/>
+          <g fill="#FBFAF6"><circle cx="512" cy="30" r="8"/><circle cx="524" cy="25" r="10"/><circle cx="536" cy="30" r="7.5"/><circle cx="524" cy="32" r="8"/></g>
         </svg>
       </div>
       <div class="about">
