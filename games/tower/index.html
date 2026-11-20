@@ -1,0 +1,1867 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tower · Puck games</title>
+<meta name="description" content="A grass airstrip among flooded rice paddies, from morning to dusk. Bring each plane down gently, and keep them apart. Played with Watt, the puck, or a mouse and keys.">
+<meta name="theme-color" content="#F4F3EF">
+<link rel="icon" href="../../assets/icon.png">
+<link rel="canonical" href="https://watt.sourabhdaroji.com/games/tower/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Watt, the puck">
+<meta property="og:title" content="Tower">
+<meta property="og:description" content="A grass airstrip among flooded rice paddies, from morning to dusk. Bring each plane down gently, and keep them apart.">
+<meta property="og:url" content="https://watt.sourabhdaroji.com/games/tower/">
+<meta property="og:image" content="https://watt.sourabhdaroji.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  // Google Analytics, as on the home page: only on the real site, and loaded once the page is idle
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  if (location.hostname === "watt.sourabhdaroji.com") {
+    gtag("js", new Date());
+    gtag("config", "G-G7GHBEF7JM");
+    addEventListener("load", () => (window.requestIdleCallback || setTimeout)(() => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=G-G7GHBEF7JM";
+      document.head.append(s);
+    }));
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #F4F3EF; --ink: #1D1D1F; --mute: rgba(29, 29, 31, 0.62); --faint: rgba(29, 29, 31, 0.46); --y: #FFD60A; --sel: #2F7CF6;
+    --card: rgba(255, 255, 255, 0.94); --lift: 0 1px 2px rgba(40, 50, 70, 0.08), 0 10px 30px rgba(40, 50, 70, 0.12); --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color-scheme: light; overflow: hidden; }
+  body { color: var(--ink); -webkit-font-smoothing: antialiased; -webkit-user-select: none; user-select: none; touch-action: none;
+    font: 600 16px/24px "Nunito", ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  b { font-weight: inherit; color: var(--ink); }
+  /* the airfield: the ground and everything on it (WebGL), and over it the tags, rings and paths */
+  #ground, #map { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+  #ground { pointer-events: none; }
+  body.playing #map { cursor: crosshair; }
+  body.playing.over-plane #map { cursor: pointer; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 20px; border: 0; border-radius: 21px; cursor: pointer;
+    background: var(--y); color: #000; font: inherit; font-size: 15px; font-weight: 800; white-space: nowrap;
+    transition: filter 0.16s, transform 0.16s var(--ease), background-color 0.16s; }
+  .btn:hover { filter: brightness(1.04); }
+  .btn:active { transform: scale(0.97); }
+  .btn.quiet { background: var(--card); color: var(--ink); font-weight: 700; box-shadow: var(--lift); }
+  .btn.quiet:hover { filter: none; background: #FFFFFF; }
+  .btn.small { height: 34px; padding: 0 14px; border-radius: 17px; font-size: 14px; }
+  .btn svg { width: 8px; height: 12px; margin-right: 8px; opacity: 0.55; }
+  :focus-visible { outline: 2px solid var(--sel); outline-offset: 3px; }
+
+  /* along the top: the way back; the time of day, planes down, close calls, and which way they land */
+  .hud { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; pointer-events: none; z-index: 2; }
+  .hud > * { pointer-events: auto; }
+  .stock { display: flex; align-items: center; gap: 16px; height: 34px; padding: 0 16px; border-radius: 17px; background: var(--card); box-shadow: var(--lift);
+    font: 500 13.5px/1 "Roboto Mono", ui-monospace, Menlo, monospace; color: var(--mute); }
+  .stock span { display: flex; align-items: center; gap: 7px; transition: color 0.3s; }
+  .stock svg { width: 16px; height: 16px; flex: none; }
+  .stock b { font-weight: 500; color: var(--ink); transition: color 0.3s; }
+  .stock .bump { animation: bump 0.35s var(--ease); }
+  .stock .warn, .stock .warn b { color: #D9531E; }
+  #windArrow { transition: transform 1.2s var(--ease); }
+  @keyframes bump { 40% { transform: scale(1.18); } }
+  body.title .stock { visibility: hidden; }
+
+  /* what just happened */
+  .toasts { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px;
+    pointer-events: none; z-index: 3; }
+  .toast { display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 14px; border-radius: 18px; background: var(--card); box-shadow: var(--lift);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--ink);
+    font-size: 14px; line-height: 20px; white-space: nowrap; cursor: pointer; pointer-events: auto;
+    opacity: 0; transform: translateY(-6px); transition: opacity 0.4s var(--ease), transform 0.5s var(--ease); }
+  .toast.show { opacity: 1; transform: none; }
+  .toast i { width: 6px; height: 6px; border-radius: 50%; background: rgba(29, 29, 31, 0.3); flex: none; }
+  .toast.warn i { background: #F08A24; }
+  .toast.good i { background: #3FAE8C; }
+
+  /* the puck as it looks now; it plays the game too */
+  .who { position: fixed; left: 20px; bottom: 20px; display: flex; padding: 8px; border-radius: 50%; background: var(--card); box-shadow: var(--lift); z-index: 2; }
+  #mirror { display: block; width: 148px; height: 148px; border-radius: 50%; cursor: pointer; touch-action: none; flex: none; }
+
+  .panel { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; pointer-events: none; opacity: 0; transition: opacity 0.5s var(--ease); z-index: 4; }
+  .panel.show { opacity: 1; }
+  .panel.show .card { pointer-events: auto; }
+  .card { max-width: 500px; padding: 34px 36px 32px; border-radius: 24px; background: var(--card); box-shadow: var(--lift); text-align: center;
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transform: translateY(8px); transition: transform 0.6s var(--ease); }
+  .panel.show .card { transform: none; }
+  .card h1 { margin: 0; font-size: 44px; line-height: 52px; font-weight: 800; letter-spacing: -0.02em; }
+  .card p { margin: 14px 0 0; font-size: 18px; line-height: 28px; color: var(--mute); text-wrap: pretty; }
+  .card .how { margin-top: 18px; font-size: 15px; line-height: 23px; color: var(--faint); }
+  .card .go { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; margin-top: 28px; }
+  .card .or { font-size: 14px; color: var(--faint); }
+
+  .hint { position: fixed; left: 200px; right: 200px; bottom: 22px; width: fit-content; max-width: calc(100% - 400px); margin: 0 auto; padding: 6px 14px; border-radius: 16px;
+    background: var(--card); box-shadow: var(--lift); text-align: center; font-size: 14px; line-height: 20px; color: var(--mute); pointer-events: none; transition: opacity 0.4s; }
+  .hint:empty { display: none; }
+  .hint.no { color: #C2481A; }
+  .conn { position: fixed; right: 24px; bottom: 20px; display: flex; align-items: center; gap: 8px; padding: 2px 12px; border-radius: 14px; background: var(--card);
+    box-shadow: var(--lift); font-size: 13px; line-height: 24px; color: var(--mute); }
+  .conn i { width: 7px; height: 7px; border-radius: 50%; background: rgba(29, 29, 31, 0.25); transition: background-color 0.3s, box-shadow 0.3s; }
+  .conn.puck i { background: var(--sel); box-shadow: 0 0 8px rgba(47, 124, 246, 0.5); }
+
+  @media (max-width: 960px) {
+    .hint { left: 16px; right: 16px; max-width: calc(100% - 32px); bottom: 196px; }
+  }
+  @media (max-width: 640px) {
+    .hud { padding: 16px; }
+    .stock { gap: 12px; padding: 0 12px; font-size: 13px; }
+    .stock .wind { display: none; }
+    .toasts { top: 62px; }
+    .who { left: 10px; bottom: 10px; padding: 6px; }
+    #mirror { width: 112px; height: 112px; }
+    .hint { bottom: 136px; }
+    .conn { display: none; }
+    .card h1 { font-size: 36px; line-height: 44px; }
+    .card p { font-size: 17px; line-height: 26px; }
+  }
+</style>
+</head>
+<body class="title">
+<canvas id="ground" aria-hidden="true"></canvas>
+<canvas id="map" aria-label="A grass airstrip among flooded rice paddies, seen from above"></canvas>
+
+<div class="hud">
+  <a class="btn quiet small" href="../"><svg viewBox="0 0 8 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 1 1.5 6l5 5"/></svg>Games</a>
+  <div class="stock" aria-live="polite">
+    <span title="The time of day"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg><b id="clock">6:00</b></span>
+    <span id="s-landed" title="Planes down"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8v12.4M1.8 7.2 8 6l6.2 1.2M5.2 13.4 8 12.6l2.8.8"/></svg><b id="landed">0</b></span>
+    <span id="s-close" title="Close calls"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="5.6" cy="8" r="3.8"/><circle cx="10.4" cy="8" r="3.8"/></svg><b id="close">0</b></span>
+    <span class="wind" id="s-wind" title="Which way planes land on the strip"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g id="windArrow" style="transform-origin: 8px 8px"><path d="M8 13.5v-11M4 6.5l4-4 4 4"/></g></svg><b id="rwy">27</b></span>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="who" id="who"><canvas id="mirror" aria-label="The puck, as it looks now"></canvas></div>
+<div class="panel" id="panel"><div class="card" id="card"></div></div>
+<p class="hint" id="hint"></p>
+<div class="conn" id="conn"><i></i><span id="connText">Mouse</span></div>
+
+<script type="importmap">{ "imports": { "three": "../lib/three/three.module.min.js", "three/addons/": "../lib/three/addons/" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { MarchingCubes } from "three/addons/objects/MarchingCubes.js";
+
+// Tower: a grass airstrip among flooded rice paddies, over one day from morning to dusk. Planes call
+// in from the edges. Bring each one down on the strip, into the wind, the seaplanes on the river,
+// and keep them all apart. Some only pass over. Nothing crashes; close calls are counted.
+//
+// The puck plays it through Watt on this Mac: the page joins Watt's local bridge as a game and asks
+// for the "panel" face as a compass for the picked plane: the needle where it points, a yellow arc
+// where you've asked it to go, and around the rim the day going by. A swipe picks the next plane,
+// turning the puck steers it (with a click every 5 degrees), a tap clears it to land once it lines
+// up, and a hold makes it circle. A mouse and keys play it too, and so does the small puck on the
+// page.
+//
+// It's drawn in 3D with three.js, from straight above: the paddies painted once and laid flat, and
+// on them clay trees, the tower, the hangar and the planes, in a sun that crosses the sky.
+
+const MAP_W = 1280, MAP_H = 820, EDGE = 26;     // the airfield and its ragged edge, in world units
+const DAY = 390;                                 // seconds from morning to dusk
+const RWY = { x0: 440, x1: 860, y: 440, hw: 22 };  // the strip: its two ends, its middle line, half its width
+const FIELD = { x0: 402, x1: 898, y0: 398, y1: 482 };
+const APRON = { x0: 468, x1: 666, y0: 334, y1: 398 };
+const TOWER = { x: 504, y: 362 }, HANGAR = { x: 604, y: 361, w: 50, d: 54 }, SOCK = { x: 716, y: 401 };
+const TURNOFF = 652;                             // where planes leave the strip for the hangar
+const TAXI_PATH = [{ x: 652, y: 412 }, { x: 626, y: 396 }, { x: 604, y: 391 }, { x: 604, y: 352 }];
+const LANE = { y0: 112, y1: 716 };               // the stretch of river seaplanes land on
+const DOCK_Y = 622, BRIDGE_Y = 292;
+const MID = { x: 650, y: 420 };                  // planes are picked round this point
+const FUNNEL = 300;                              // how far out a plane can be cleared to land
+const TD = 28, GLIDE = 0.26;                     // touchdown past the strip's end, and the slope down to it
+const GLIDE_W = 170;                             // a seaplane's glide, from clearance to the water
+const CRUISE = 78;
+const SPEED = { air: 23, pass: 26, final: 18, taxi: 10, water: 7 };
+const RATE = { turn: 26, final: 42, circle: 34 };  // degrees a second
+const WARN = 90, NEAR = 52, STACK = 36;          // separation: rings inside WARN, a close call inside NEAR, unless STACK apart in height
+const GAIN = 1.5;                                // degrees of heading for a degree the puck turns
+const PLANE_S = 1.3;                             // planes are drawn this much larger than they're reckoned
+const STEP = 1 / 60;
+const D = Math.PI / 180, TAU = Math.PI * 2;
+const BRIDGE = "ws://127.0.0.1:47824";
+const Y = "#FFD60A";
+
+const cv = document.getElementById("map");
+const ctx = cv.getContext("2d");
+const gcv = document.getElementById("ground");
+const $ = (id) => document.getElementById(id);
+
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, f) => a + (b - a) * f;
+const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const norm = (a) => ((a % 360) + 360) % 360;
+const diff = (a, b) => ((((b - a) % 360) + 540) % 360) - 180;   // from heading a to heading b, the short way
+const dirOf = (h) => ({ x: Math.sin(h * D), y: -Math.cos(h * D) });  // headings are clock degrees: 0 up, 90 right
+const bearing = (x0, y0, x1, y1) => norm(Math.atan2(x1 - x0, -(y1 - y0)) / D);
+const round5 = (h) => norm(Math.round(h / 5) * 5);
+const hdgText = (h) => String(Math.round(norm(h)) % 360).padStart(3, "0");
+const endText = (e) => String(e).padStart(2, "0");
+function seeded(a) {
+  return () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rgbOf = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const lift = (c, f) => c.map((v) => (f >= 0 ? v + (255 - v) * f : v * (1 + f)));
+const css = (c) => `rgb(${c.map((v) => Math.round(v)).join(", ")})`;
+const tint = (h, f) => css(lift(rgbOf(h), f));
+
+// ---------------------------------------------------------------- the land
+
+// The river runs down the right, the road down the left, paths between the paddies
+const riverX = (y) => 1038 + 22 * Math.sin(y * 0.0042 + 0.9) + 7 * Math.sin(y * 0.012 + 2.3);
+const RIVER_HW = 45, BANK = 9, FRINGE = 5;
+const roadX = (y) => 140 + 9 * Math.sin(y * 0.0052 + 1.1);
+const ROAD_HW = 12;
+const VPATHS = [318, 584, 834], HPATHS = [116, 292, 598, 738], CANALS = [200, 520, 672];
+const PATH_HW = 4.5;
+const TREES = [[232, 236], [452, 182], [726, 258], [930, 604], [1172, 330], [372, 664], [1194, 706], [640, 694], [78, 420], [884, 150]];
+const WATER = ["#5DABD3", "#62AFDA", "#6BB5DB", "#72B8DA", "#7AC0E1", "#56A5D0", "#4D9DCB"];
+const RICE = ["#5BAD93", "#53A68C", "#64B49B", "#6BBBA2", "#5DB29A", "#57AA8E"];
+const SOIL = ["#A38C74", "#9D866D", "#A89279"];
+const BUND = "#97D658", PATH = "#DCCAB1", ROAD = "#C3BCB4", SAND = "#E0C9A0", FRINGE_C = "#97C95A";
+const DEEP = "#3E6994", SHALLOW = "#4A7DB0";
+const GRASS = "#93C86B", MOWN = ["#9ACD72", "#8DC266"], RUNWAY = "#A5D27E", GRAVEL = "#E4D8C2";
+const PETALS = ["#FFFFFF", "#F9EAF0", "#F6D6E1", "#EFE6F2"];
+const PX = 2;                                    // the painting's pixels to a world unit
+const PADDIES = [];
+
+function inRect(x, y, r, m = 0) { return x > r.x0 - m && x < r.x1 + m && y > r.y0 - m && y < r.y1 + m; }
+const onRiver = (x, y, pad = 0) => Math.abs(x - riverX(y)) < RIVER_HW + BANK + FRINGE + pad;
+const onRoad = (x, y, pad = 0) => Math.abs(x - roadX(y)) < ROAD_HW + pad;
+const onAirfield = (x, y, pad = 0) => inRect(x, y, FIELD, pad) || inRect(x, y, APRON, pad);
+
+function makeBase() {
+  const c = document.createElement("canvas");
+  c.width = Math.round((MAP_W + 2 * EDGE) * PX);
+  c.height = Math.round((MAP_H + 2 * EDGE) * PX);
+  const g = c.getContext("2d");
+  g.setTransform(PX, 0, 0, PX, EDGE * PX, EDGE * PX);   // world units, the map's corner at 0, 0
+  const R = seeded(23);
+  const X0 = -EDGE, Y0 = -EDGE, X1 = MAP_W + EDGE, Y1 = MAP_H + EDGE;
+  g.fillStyle = BUND;
+  g.fillRect(X0, Y0, X1 - X0, Y1 - Y0);
+
+  // the paddies, in strips between the paths: flooded, green with rice, or bare
+  const xs = [X0, ...VPATHS.flatMap((x) => [x - PATH_HW, x + PATH_HW]), X1];
+  const ys = [Y0, ...HPATHS.flatMap((y) => [y - PATH_HW, y + PATH_HW]), Y1];
+  for (let i = 0; i < xs.length; i += 2) for (let j = 0; j < ys.length; j += 2) block(g, R, xs[i], ys[j], xs[i + 1], ys[j + 1]);
+  for (const y of CANALS) {
+    g.fillStyle = "#4C8CB3"; g.fillRect(X0, y - 2, X1 - X0, 4);
+    g.fillStyle = "rgba(255, 255, 255, 0.4)"; g.fillRect(X0, y - 2.7, X1 - X0, 0.8);
+    g.fillStyle = "rgba(25, 60, 90, 0.22)"; g.fillRect(X0, y + 2, X1 - X0, 0.9);
+  }
+
+  // the paths: down between the blocks, and across, up to the river (over it on the bridge)
+  g.fillStyle = PATH;
+  for (const x of VPATHS) g.fillRect(x - PATH_HW, Y0, PATH_HW * 2, Y1 - Y0);
+  for (const y of HPATHS) g.fillRect(X0, y - PATH_HW, X1 - X0, PATH_HW * 2);
+  g.fillStyle = "rgba(255, 255, 255, 0.28)";
+  for (const x of VPATHS) { g.fillRect(x - PATH_HW, Y0, 0.8, Y1 - Y0); g.fillRect(x + PATH_HW - 0.8, Y0, 0.8, Y1 - Y0); }
+  for (const y of HPATHS) { g.fillRect(X0, y - PATH_HW, X1 - X0, 0.8); g.fillRect(X0, y + PATH_HW - 0.8, X1 - X0, 0.8); }
+  g.fillStyle = PATH;
+  g.fillRect(516, BRIDGE_Y, 9, APRON.y0 - BRIDGE_Y + 2);   // a lane up to the tower
+
+  // the road, with its dashes
+  const along = (fx, step = 5) => { const pts = []; for (let y = Y0 - 10; y <= Y1 + 10; y += step) pts.push([fx(y), y]); return pts; };
+  const line = (pts, col, w, dash) => {
+    g.strokeStyle = col; g.lineWidth = w; g.lineJoin = "round"; g.setLineDash(dash || []);
+    g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); g.setLineDash([]);
+  };
+  line(along(roadX), "#B5AEA6", ROAD_HW * 2 + 2.4);
+  line(along(roadX), ROAD, ROAD_HW * 2);
+  line(along((y) => roadX(y) - ROAD_HW + 2.2), "#D6D0C7", 1);
+  line(along((y) => roadX(y) + ROAD_HW - 2.2), "#D6D0C7", 1);
+  line(along(roadX, 2), "#EEE8E1", 1.3, [7, 7]);
+
+  // the river: green at its edges, a sandy bank, shallows, the deep middle, and the current
+  const band = (w0, w1, col) => {
+    g.fillStyle = col; g.beginPath();
+    for (let y = Y0 - 10; y <= Y1 + 10; y += 4) g.lineTo(riverX(y) + w0, y);
+    for (let y = Y1 + 10; y >= Y0 - 10; y -= 4) g.lineTo(riverX(y) + w1, y);
+    g.closePath(); g.fill();
+  };
+  const W1 = RIVER_HW + BANK + FRINGE;
+  if ("filter" in g) g.filter = "blur(1.2px)";
+  band(-W1, W1, FRINGE_C);
+  band(-(W1 - 1.6), W1 - 1.6, "#BEC57F");
+  band(-(RIVER_HW + BANK), RIVER_HW + BANK, SAND);
+  band(-(RIVER_HW + 1.8), RIVER_HW + 1.8, "#B9B3A6");
+  band(-RIVER_HW, RIVER_HW, SHALLOW);
+  band(-(RIVER_HW - 3), RIVER_HW - 3, "#4579AC");
+  band(-(RIVER_HW - 10), RIVER_HW - 10, DEEP);
+  if ("filter" in g) g.filter = "none";
+  for (let k = 0; k < 7; k++) {
+    const off = -RIVER_HW + 8 + k * 11 + R() * 4, ph = R() * 9;
+    line(along((y) => riverX(y) + off + 2.4 * Math.sin(y * 0.03 + ph), 3), k % 2 ? "rgba(98, 140, 196, 0.45)" : "rgba(52, 92, 140, 0.5)", 1.2, [30 + R() * 50, 20 + R() * 40]);
+  }
+  // the path across, over the bridge
+  g.fillStyle = PATH;
+  g.fillRect(riverX(BRIDGE_Y) - W1 - 2, BRIDGE_Y - PATH_HW, 2 * W1 + 4, PATH_HW * 2);
+
+  // the airfield: mown grass, the strip on it, its ends marked and numbered, and the apron
+  const rr = (x0, y0, x1, y1, r) => { g.beginPath(); g.roundRect(x0, y0, x1 - x0, y1 - y0, r); };
+  rr(FIELD.x0 - 2, FIELD.y0 - 2, FIELD.x1 + 2, FIELD.y1 + 2, 12); g.fillStyle = "#7DB85C"; g.fill();
+  rr(FIELD.x0, FIELD.y0, FIELD.x1, FIELD.y1, 10); g.fillStyle = GRASS; g.fill();
+  g.save(); g.clip();
+  for (let y = FIELD.y0, i = 0; y < FIELD.y1; y += 9, i++) { g.fillStyle = MOWN[i % 2]; g.fillRect(FIELD.x0, y, FIELD.x1 - FIELD.x0, 9); }
+  g.restore();
+  g.fillStyle = RUNWAY;
+  g.fillRect(RWY.x0 - 8, RWY.y - RWY.hw, RWY.x1 - RWY.x0 + 16, RWY.hw * 2);
+  for (let x = RWY.x0 - 8, i = 0; x < RWY.x1 + 8; x += 21, i++) { g.fillStyle = i % 2 ? "rgba(255, 255, 255, 0.07)" : "rgba(60, 110, 30, 0.05)"; g.fillRect(x, RWY.y - RWY.hw, 21, RWY.hw * 2); }
+  g.fillStyle = "rgba(255, 255, 255, 0.92)";
+  for (const [x, s] of [[RWY.x0, 1], [RWY.x1, -1]]) {
+    for (const o of [-16, -8, 0, 8, 16]) g.fillRect(s > 0 ? x + 3 : x - 19, RWY.y + o - 1.7, 16, 3.4);
+  }
+  g.font = "800 21px Nunito, ui-rounded, sans-serif";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  for (const [x, text] of [[RWY.x0 + 38, "09"], [RWY.x1 - 38, "27"]]) g.fillText(text, x, RWY.y + 1);
+  rr(APRON.x0, APRON.y0, APRON.x1, APRON.y1 + 3, 7); g.fillStyle = GRAVEL; g.fill();
+  for (let i = 0; i < 1400; i++) {
+    g.fillStyle = R() < 0.5 ? "rgba(150, 130, 100, 0.16)" : "rgba(255, 255, 255, 0.3)";
+    g.fillRect(APRON.x0 + 2 + R() * (APRON.x1 - APRON.x0 - 4), APRON.y0 + 2 + R() * (APRON.y1 - APRON.y0 - 3), 0.9, 0.9);
+  }
+  g.strokeStyle = "#EFC23A"; g.lineWidth = 1.2; g.setLineDash([]);
+  g.beginPath(); g.moveTo(TURNOFF, RWY.y - RWY.hw + 2); g.lineTo(TURNOFF, 416); g.quadraticCurveTo(TURNOFF, 394, 628, 394); g.lineTo(HANGAR.x + 6, 394); g.quadraticCurveTo(HANGAR.x, 394, HANGAR.x, 390); g.stroke();
+
+  // petals on the water round the cherry trees
+  for (const [tx, ty] of TREES) {
+    for (let i = 0; i < 210; i++) {
+      const a = R() * TAU, d = 20 + 46 * Math.sqrt(R());
+      const x = tx + Math.cos(a) * d + 12, y = ty + Math.sin(a) * d * 0.8 + 10;
+      if (onRoad(x, y) || onAirfield(x, y)) continue;
+      g.fillStyle = PETALS[(R() * PETALS.length) | 0];
+      g.globalAlpha = 0.8 + R() * 0.2;
+      g.beginPath(); g.roundRect(x, y, 2 + R() * 0.9, 1.5 + R() * 0.6, 0.6); g.fill();
+    }
+  }
+  g.globalAlpha = 1;
+  return c;
+}
+
+function block(g, R, x0, y0, x1, y1) {
+  let x = x0;
+  while (x < x1 - 4) {
+    let w = 29 + R() * 17;
+    if (x1 - (x + w) < 20) w = x1 - x;   // no sliver at the end
+    const cut = R() < 0.28 ? y0 + (y1 - y0) * (0.3 + R() * 0.4) : 0;   // now and then a strip is two paddies
+    if (cut) { paddy(g, R, x, y0, x + w, cut); paddy(g, R, x, cut, x + w, y1); }
+    else paddy(g, R, x, y0, x + w, y1);
+    x += w;
+  }
+}
+function paddy(g, R, x0, y0, x1, y1) {
+  const b = 1.55, X0 = x0 + b, Y0 = y0 + b, w = x1 - x0 - 2 * b, h = y1 - y0 - 2 * b;
+  if (w <= 0 || h <= 0) return;
+  const r = R(), type = r < 0.6 ? "water" : r < 0.9 ? "rice" : "soil";
+  PADDIES.push({ x0: X0, y0: Y0, x1: X0 + w, y1: Y0 + h, type });
+  if (type === "water") {
+    const base = WATER[(R() * WATER.length) | 0], gr = g.createLinearGradient(X0, Y0, X0 + w * 0.6, Y0 + h);
+    gr.addColorStop(0, tint(base, 0.1)); gr.addColorStop(0.55, base); gr.addColorStop(1, tint(base, -0.04));
+    g.fillStyle = gr; g.fillRect(X0, Y0, w, h);
+    g.save(); g.beginPath(); g.rect(X0, Y0, w, h); g.clip();
+    g.strokeStyle = "rgba(255, 255, 255, 0.08)"; g.lineWidth = 3 + R() * 5;
+    const s = Y0 + R() * h; g.beginPath(); g.moveTo(X0 - 5, s); g.lineTo(X0 + w + 5, s - w * 0.7); g.stroke();
+    g.restore();
+  } else {
+    const base = type === "rice" ? RICE[(R() * RICE.length) | 0] : SOIL[(R() * SOIL.length) | 0];
+    g.fillStyle = base; g.fillRect(X0, Y0, w, h);
+    g.fillStyle = tint(base, -0.085);
+    for (let x = X0 + 0.6; x < X0 + w - 0.4; x += 1.9) g.fillRect(x, Y0, 0.75, h);
+    if (type === "rice") { g.fillStyle = tint(base, 0.07); for (let x = X0 + 1.5; x < X0 + w - 0.4; x += 1.9) g.fillRect(x, Y0, 0.45, h); }
+  }
+}
+
+// ---------------------------------------------------------------- the day
+
+let G = null, state = "title", stateAt = 0, now = 0, selId = 0, lastInput = "mouse";
+let best = 0, prevBest = 0, newBest = false;
+try { best = Number(localStorage.getItem("tower.best")) || 0; } catch {}
+const pk = { s: "", sn: 0, inputAt: -1e9 };
+const puckSound = (s) => { pk.s = s; pk.sn++; };
+let flashFace = null, flashSub = null, hintFlash = null;
+
+const LOOKS = [
+  { body: "#F7F3EA", col: "#E8705A" }, { body: "#F7F3EA", col: "#4F8FD6" }, { body: "#F6F2E9", col: "#E3B23C" }, { body: "#F7F3EA", col: "#9A6BC4" },
+  { body: "#EEF2F6", col: "#D9534A" }, { body: "#F7F3EA", col: "#2E9C82" }, { body: "#F4EFE6", col: "#EE8E3B" }, { body: "#F7F3EA", col: "#3666AE" },
+];
+const NAMES = { strip: ["Kite", "Lark", "Wren", "Swift", "Finch", "Robin", "Martin", "Plover", "Linnet", "Dove", "Starling", "Swallow"],
+  river: ["Tern", "Heron", "Crane", "Grebe", "Teal"], pass: ["Falcon", "Osprey", "Hawk", "Eagle"] };
+
+function newDay(seed = (Math.random() * 1e9) | 0, demo = false) {
+  const R = seeded(seed);
+  return { R, seed, demo, t: 0, planes: [], pending: [], ids: 1, nextAt: 2.5, calls: 0,
+    wind: R() < 0.5 ? 27 : 9, windAt: [DAY * (0.36 + R() * 0.1), R() < 0.55 ? DAY * (0.72 + R() * 0.08) : Infinity], windTurnedAt: -99,
+    landed: 0, onRiver: 0, passed: 0, close: 0, diverted: 0, pairs: new Set(), events: [], over: false, duskSaid: false, swipes: 0, cleared: 0, steered: 0 };
+}
+const emit = (k, o = {}) => G.events.push({ k, ...o });
+const inAir = (p) => p.st === "air" || p.st === "circle" || p.st === "final";
+const steerable = (p) => !!p && (p.st === "air" || p.st === "circle");
+
+function callsign(kind) {
+  const R = G.R, list = NAMES[kind], used = new Set([...G.planes, ...G.pending.map((c) => c.p)].map((p) => p.name));
+  for (let i = 0; i < 30; i++) { const n = `${list[(R() * list.length) | 0]} ${1 + ((R() * 9) | 0)}`; if (!used.has(n)) return n; }
+  return `${list[0]} ${G.ids}`;
+}
+
+// A plane calling in: where it comes from (an edge, away from the others, not under the puck in the
+// corner), and where it's heading
+function makePlane(kind) {
+  const R = G.R, first = G.calls === 0;
+  let x, y, hdg, exit = null;
+  if (first) {   // the first comes in almost lined up, to show how
+    const e = G.wind === 27;
+    x = e ? MAP_W + 24 : -24; y = RWY.y + (e ? -62 : 62); hdg = e ? 260 : 80;
+  } else {
+    let ok = false;
+    const others = [...G.planes, ...G.pending.map((c) => c.p)];
+    for (let i = 0; i < 40 && !ok; i++) {
+      const r = R() * 3.9, side = r < 1.1 ? "t" : r < 1.9 ? "b" : r < 2.9 ? "l" : "r";
+      if (side === "t") { x = 90 + R() * (MAP_W - 180); y = -24; }
+      else if (side === "b") { x = 260 + R() * (MAP_W - 350); y = MAP_H + 24; }
+      else if (side === "l") { x = -24; y = 80 + R() * (MAP_H - 320); }
+      else { x = MAP_W + 24; y = 80 + R() * (MAP_H - 160); }
+      ok = !others.some((q) => Math.hypot(q.x - x, q.y - y) < 190);
+      if (ok && kind === "pass") {
+        const u = 0.15 + R() * 0.7;
+        exit = side === "t" ? { x: u * MAP_W, y: MAP_H + 60 } : side === "b" ? { x: u * MAP_W, y: -60 } : side === "l" ? { x: MAP_W + 60, y: u * MAP_H } : { x: -60, y: u * MAP_H };
+      }
+    }
+    if (!ok) return null;
+    const to = kind === "pass" ? exit : kind === "river" ? { x: riverX(MAP_H * 0.45), y: MAP_H * 0.45 } : { x: MID.x, y: RWY.y };
+    hdg = round5(bearing(x, y, to.x, to.y) + (kind === "pass" ? 0 : (R() - 0.5) * 40));
+  }
+  return { id: G.ids++, name: callsign(kind), kind, x, y, h: CRUISE, hdg, cmd: hdg, cmdRaw: hdg, spd: kind === "pass" ? SPEED.pass : SPEED.air,
+    st: "air", born: G.t + 3, exit, direct: kind === "pass", warn: 0, entered: false, rate: 0, look: (G.ids * 5) % LOOKS.length, fade: 1 };
+}
+
+const maxAir = () => (G.t < 110 ? 4 : G.t < 230 ? 5 : 6);
+function kindNext() {
+  if (G.calls < 2) return "strip";
+  const r = G.R();
+  if (G.t > 50 && r < 0.17) return "river";
+  if (G.t > 80 && r > 0.84) return "pass";
+  return "strip";
+}
+function schedule() {
+  for (const c of G.pending) if (G.t >= c.at) { G.planes.push(c.p); emit("call", { p: c.p }); c.done = true; }
+  G.pending = G.pending.filter((c) => !c.done);
+  if (G.t < G.nextAt || G.t > DAY - 40) return;
+  if (G.planes.filter(inAir).length + G.pending.length >= maxAir()) { G.nextAt = G.t + 3; return; }
+  const p = makePlane(kindNext());
+  if (!p) { G.nextAt = G.t + 2; return; }
+  G.pending.push({ p, at: G.t + 3 });
+  G.calls++;
+  G.nextAt = G.t + lerp(24, 10.5, smooth(20, 260, G.t)) * (0.8 + 0.4 * G.R()) + (G.t > DAY - 90 ? 5 : 0);
+}
+
+function step(dt) {
+  if (!G) return;
+  const live = state === "play" && !G.demo;
+  if (live) {
+    G.t += dt;
+    schedule();
+    if (G.t >= G.windAt[0]) { G.windAt.shift(); G.wind = G.wind === 27 ? 9 : 27; G.windTurnedAt = G.t; emit("wind"); }
+    if (!G.duskSaid && G.t > DAY * 0.86) { G.duskSaid = true; emit("dusk"); }
+  }
+  for (const p of G.planes) planeStep(p, dt);
+  G.planes = G.planes.filter((p) => !p.gone);
+  separation();
+  if (live && G.t >= DAY && !G.over) {
+    if (!G.planes.length && !G.pending.length) { G.over = true; return; }
+    if (G.t > DAY + 75) {
+      const up = G.planes.filter(inAir);
+      if (up.length) { G.diverted += up.length; emit("divert", { n: up.length }); for (const p of up) p.gone = true; }
+    }
+  }
+}
+
+const fly = (p, dt) => { const v = dirOf(p.hdg); p.x += v.x * p.spd * dt; p.y += v.y * p.spd * dt; };
+function turnToward(p, want, rate, dt) { p.hdg = norm(p.hdg + clamp(diff(p.hdg, want), -rate * dt, rate * dt)); }
+
+function planeStep(p, dt) {
+  const was = p.hdg;
+  if (p.st === "air") {
+    if (p.kind === "pass" && p.direct) p.cmd = p.cmdRaw = bearing(p.x, p.y, p.exit.x, p.exit.y);
+    turnToward(p, p.cmd, RATE.turn, dt);
+    fly(p, dt);
+    p.h += (CRUISE - p.h) * Math.min(1, dt * 0.5);
+    edges(p);
+  } else if (p.st === "circle") {
+    p.hdg = norm(p.hdg + RATE.circle * dt);
+    fly(p, dt);
+    edges(p);
+  } else if (p.st === "final") (p.kind === "river" ? riverFinal : stripFinal)(p, dt);
+  else if (p.st === "roll") roll(p, dt);
+  else if (p.st === "taxi") taxi(p, dt);
+  else if (p.st === "water") water(p, dt);
+  else if (p.st === "park") { p.fade -= dt / 1.2; if (p.fade <= 0) p.gone = true; }
+  p.rate = dt > 0 ? diff(was, p.hdg) / dt : 0;
+}
+
+// At the edge a plane turns back, unless it's only passing over; then it's gone on its way
+function edges(p) {
+  if (!p.entered) { if (p.x > 30 && p.x < MAP_W - 30 && p.y > 30 && p.y < MAP_H - 30) p.entered = true; return; }
+  if (p.kind === "pass") {
+    if (p.x < -50 || p.x > MAP_W + 50 || p.y < -50 || p.y > MAP_H + 50) { p.gone = true; G.passed++; emit("passed", { p }); }
+    return;
+  }
+  const m = 56, v = dirOf(p.hdg);
+  const out = (p.x < m ? -v.x : 0) + (p.x > MAP_W - m ? v.x : 0) + (p.y < m ? -v.y : 0) + (p.y > MAP_H - m ? v.y : 0);
+  if (out > 0.3 && G.t - (p.turnedAt ?? -99) > 6) {
+    p.cmd = p.cmdRaw = round5(bearing(p.x, p.y, MAP_W / 2, MAP_H / 2));
+    if (p.st === "circle") p.st = "air";
+    p.turnedAt = G.t;
+    if (!p.toldEdge) { p.toldEdge = true; emit("edge", { p }); }
+  }
+}
+
+// The strip: which end, how far out along its line, how far off it, and how far off its heading
+function approach(x, y, hdg, end) {
+  const lh = end * 10, u = dirOf(lh), tx = end === 9 ? RWY.x0 : RWY.x1, ty = RWY.y;
+  return { along: (tx - x) * u.x + (ty - y) * u.y, lat: (x - tx) * -u.y + (y - ty) * u.x, hd: diff(lh, hdg) };
+}
+const laneHalf = (along) => 16 + 0.3 * along;
+const fits = (a) => a.along >= 30 && a.along <= FUNNEL && Math.abs(a.lat) <= laneHalf(a.along) && Math.abs(a.hd) <= 35;
+
+// Why a plane can't be cleared to land yet, short (for the puck) and long (for the page); null if it can
+function whyNot(p, x = p.x, y = p.y, hdg = p.hdg) {
+  if (p.kind === "pass") return null;
+  if (p.kind === "river") {
+    const s = Math.abs(diff(180, hdg)) <= 35, n = Math.abs(diff(0, hdg)) <= 35;
+    if (Math.abs(x - riverX(y)) > 30) {
+      if (fits(approach(x, y, hdg, G.wind))) return { s: "It has floats", l: "It has floats: land it on the river" };
+      return { s: "Over the river first", l: "Bring it over the river first" };
+    }
+    if (!s && !n) return { s: "Along the river", l: "Turn it along the river" };
+    const td = y + (s ? 1 : -1) * GLIDE_W;
+    if (s ? td > LANE.y1 - 70 : td < LANE.y0 + 70) return { s: "Not enough river", l: "Not enough river left. Come round again" };
+    return null;
+  }
+  const a = approach(x, y, hdg, G.wind);
+  if (fits(a)) {
+    if (G.planes.some((q) => q !== p && q.kind === "strip" && (q.st === "final" || q.st === "roll") && q.end !== G.wind)) return { s: "Strip busy", l: "Wait: a plane is still landing the other way" };
+    return null;
+  }
+  if (fits(approach(x, y, hdg, G.wind === 27 ? 9 : 27))) return { s: "Other end: wind", l: "Into the wind: land it from the other end" };
+  if (a.along > FUNNEL) return { s: "Closer first", l: "Bring it closer to the strip first" };
+  if (a.along < -60) return { s: "Round to the arrows", l: "Fly it round to the arrows first" };
+  if (a.along < 30) return { s: "Too late: go round", l: "Too close to the strip. Come round again" };
+  if (Math.abs(a.lat) > laneHalf(a.along)) return { s: "Get in line", l: "Get it in line with the arrows" };
+  return { s: `Turn to ${hdgText(G.wind * 10)}`, l: `Turn it to ${hdgText(G.wind * 10)}` };
+}
+
+function stripFinal(p, dt) {
+  const u = dirOf(p.end * 10), tx = p.end === 9 ? RWY.x0 : RWY.x1, ty = RWY.y;
+  const along = (tx - p.x) * u.x + (ty - p.y) * u.y, aim = along - 70;
+  turnToward(p, bearing(p.x, p.y, tx - u.x * aim, ty - u.y * aim), RATE.final, dt);
+  p.spd += (SPEED.final - p.spd) * Math.min(1, dt * 0.8);
+  fly(p, dt);
+  const want = clamp((along + TD) * GLIDE, 0, CRUISE);
+  p.h += clamp(want - p.h, -16 * dt, 4 * dt);
+  if (along <= -TD) { p.st = "roll"; p.h = 0; G.landed++; emit("down", { p }); }
+}
+function roll(p, dt) {
+  turnToward(p, p.end * 10, 30, dt);
+  p.y += (RWY.y - p.y) * Math.min(1, dt * 2);
+  p.spd = Math.max(SPEED.taxi + 3, p.spd - 2.2 * dt);
+  fly(p, dt);
+  if (p.end === 27 ? p.x <= TURNOFF : p.x >= TURNOFF) { p.st = "taxi"; p.wp = 0; }
+}
+function taxi(p, dt) {
+  const w = TAXI_PATH[p.wp];
+  turnToward(p, bearing(p.x, p.y, w.x, w.y), 90, dt);
+  p.spd += (SPEED.taxi - p.spd) * Math.min(1, dt * 1.5);
+  const blocked = G.planes.some((q) => q !== p && q.id < p.id && (q.st === "taxi" || q.st === "park") && Math.hypot(q.x - p.x, q.y - p.y) < 30);
+  if (!blocked) fly(p, dt);
+  if (Math.hypot(w.x - p.x, w.y - p.y) < 7 && ++p.wp >= TAXI_PATH.length) p.gone = true;   // into the hangar
+}
+function riverFinal(p, dt) {
+  const ahead = p.y + p.lane * 80;
+  turnToward(p, bearing(p.x, p.y, riverX(ahead), ahead), RATE.final, dt);
+  p.spd += (SPEED.final - p.spd) * Math.min(1, dt * 0.8);
+  fly(p, dt);
+  const prog = clamp(((p.y - p.y0) * p.lane) / GLIDE_W, 0, 1);
+  p.h = p.h0 * (1 - prog);
+  if (prog >= 1) { p.st = "water"; p.h = 0; p.wet = 0; G.landed++; G.onRiver++; emit("splash", { p }); }
+}
+function water(p, dt) {
+  p.wet += dt;
+  p.spd = Math.max(SPEED.water, p.spd - 4 * dt);
+  const dx = riverX(DOCK_Y) - RIVER_HW + 13, dy = DOCK_Y;
+  if (p.wet > 2.5) turnToward(p, bearing(p.x, p.y, dx, dy), 40, dt);
+  else { const a = p.y + p.lane * 60; turnToward(p, bearing(p.x, p.y, riverX(a), a), 30, dt); }
+  fly(p, dt);
+  if (Math.hypot(dx - p.x, dy - p.y) < 8) { p.st = "park"; p.spd = 0; }
+}
+
+function separation() {
+  const air = G.planes.filter((p) => inAir(p) && p.entered);
+  for (const p of G.planes) p.warn = 0;
+  for (let i = 0; i < air.length; i++) for (let j = i + 1; j < air.length; j++) {
+    const a = air[i], b = air[j], d = Math.hypot(a.x - b.x, a.y - b.y), key = Math.min(a.id, b.id) + ":" + Math.max(a.id, b.id);
+    if (Math.abs(a.h - b.h) > STACK) { if (d > WARN + 24) G.pairs.delete(key); continue; }
+    if (d < WARN) { a.warn = Math.max(a.warn, 1); b.warn = Math.max(b.warn, 1); }
+    if (d < NEAR) {
+      a.warn = b.warn = 2;
+      if (!G.pairs.has(key)) { G.pairs.add(key); if (state === "play" && !G.demo) { G.close++; emit("close", { a, b }); } }
+    } else if (d > WARN + 24) G.pairs.delete(key);
+  }
+}
+
+// ---------------------------------------------------------------- picking and steering
+
+function selected() { return G ? G.planes.find((p) => p.id === selId) || null : null; }
+function select(p, quiet) {
+  if (!p || p.id === selId) return;
+  selId = p.id;
+  flashSub = null;
+  if (!quiet) { sound("select"); puckSound("click"); }
+}
+const waiting = () => G.planes.filter(steerable);
+const around = (p) => bearing(MID.x, MID.y, p.x, p.y);
+// A swipe picks the next plane round the field, clockwise one way, the other way back
+function cycle(d) {
+  if (state !== "play") return;
+  const list = waiting().sort((a, b) => around(a) - around(b));
+  if (!list.length) return;
+  const i = list.findIndex((p) => p.id === selId);
+  const next = i < 0 ? list[d > 0 ? 0 : list.length - 1] : list[(i + d + list.length) % list.length];
+  G.swipes++;
+  if (next.id === selId) { sound("step"); return; }
+  select(next);
+}
+// Nothing to steer picked: the plane that has waited longest
+function autoPick() {
+  const s = selected();
+  if (steerable(s)) return;
+  const list = waiting().sort((a, b) => a.born - b.born);
+  if (list.length) select(list[0], true);
+}
+
+function steer(deg, src) {
+  const p = selected();
+  if (state !== "play" || !steerable(p)) return;
+  if (p.st === "circle") { p.st = "air"; p.cmdRaw = p.hdg; }
+  if (p.kind === "pass") p.direct = false;
+  p.cmdRaw = norm(p.cmdRaw + deg);
+  const c = round5(p.cmdRaw);
+  if (c !== p.cmd) { p.cmd = c; if (src !== "puck") sound("step"); }
+  G.steered++;
+}
+function pointAt(p, x, y) {
+  if (!steerable(p)) return;
+  if (p.st === "circle") p.st = "air";
+  if (p.kind === "pass") p.direct = false;
+  const c = round5(bearing(p.x, p.y, x, y));
+  if (c !== p.cmd) sound("step");
+  p.cmd = p.cmdRaw = c;
+  G.steered++;
+}
+
+// A tap: clear the picked plane to land, or say why not; a plane passing over is sent on its way
+function press() {
+  if (state === "title" || state === "over") { if (now - stateAt > 700) start(); return; }
+  if (state !== "play") return;
+  const p = selected();
+  if (!steerable(p)) return;
+  if (p.kind === "pass") {
+    p.direct = true;
+    if (p.st === "circle") p.st = "air";
+    flashSub = { id: p.id, s: "On its way", until: now + 1500 };
+    sound("ok"); puckSound("ok");
+    return;
+  }
+  const r = whyNot(p);
+  if (r) {
+    flashSub = { id: p.id, s: r.s, until: now + 1800 };
+    hintFlash = { text: r.l, until: now + 2600 };
+    sound("no"); puckSound("no");
+    return;
+  }
+  p.st = "final";
+  if (p.kind === "river") { p.lane = Math.abs(diff(180, p.hdg)) <= 40 ? 1 : -1; p.y0 = p.y; p.h0 = p.h; }
+  else p.end = G.wind;
+  G.cleared++;
+  flashFace = { name: p.name, until: now + 1300 };
+  sound("ok"); puckSound("ok");
+}
+// A hold: circle where it is, or fly on
+function hold() {
+  if (state !== "play") { press(); return; }
+  const p = selected();
+  if (!steerable(p)) return;
+  if (p.st === "circle") { p.st = "air"; p.cmd = p.cmdRaw = round5(p.hdg); flashSub = { id: p.id, s: "Flying on", until: now + 1300 }; }
+  else { p.st = "circle"; if (p.kind === "pass") p.direct = false; flashSub = { id: p.id, s: "Circling", until: now + 1300 }; }
+  sound("select"); puckSound("click");
+}
+
+// Where a plane will be over the next few seconds, and whether it lines up on the way
+function predict(p, secs, dt = 0.25) {
+  const q = { x: p.x, y: p.y, hdg: p.hdg }, pts = [];
+  for (let t = 0; t < secs; t += dt) {
+    const want = p.kind === "pass" && p.direct ? bearing(q.x, q.y, p.exit.x, p.exit.y) : p.cmd;
+    q.hdg = norm(q.hdg + clamp(diff(q.hdg, want), -RATE.turn * dt, RATE.turn * dt));
+    const v = dirOf(q.hdg);
+    q.x += v.x * p.spd * dt; q.y += v.y * p.spd * dt;
+    pts.push({ x: q.x, y: q.y, ok: p.kind !== "pass" && !whyNot(p, q.x, q.y, q.hdg) });
+  }
+  return pts;
+}
+
+// ---------------------------------------------------------------- what the puck shows
+
+// 6:00 to 19:00 over the day, then the evening goes slowly
+const clockOf = (t) => { const m = Math.floor(6 * 60 + Math.min(t, DAY) / DAY * 13 * 60 + Math.max(0, t - DAY) * 0.4); return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`; };
+
+function faceNow() {
+  const day = G && !G.demo ? clamp(G.t / DAY, 0, 1) : 0;
+  const base = { p: Number(day.toFixed(3)), on: 0, det: Number((5 / GAIN).toFixed(2)) };
+  if (pk.sn) { base.s = pk.s; base.sn = pk.sn; }
+  if (state === "title") return { face: "panel", label: "Tower", params: { ...base, name: "Tower", msg: "Tap", sub: "to start the day" } };
+  if (state === "over") return { face: "panel", label: "Tower", params: { ...base, p: 1, name: "Dusk", msg: String(G.landed), sub: G.landed === 1 ? "plane down" : "planes down" } };
+  if (flashFace && now < flashFace.until) return { face: "panel", label: "Tower", params: { ...base, name: flashFace.name, msg: "Cleared", sub: "to land", ok: 1 } };
+  const p = selected();
+  if (!p) return { face: "panel", label: "Tower", params: { ...base, name: clockOf(G.t), msg: "Quiet", sub: G.pending.length ? "A plane is calling" : "Nothing in the air" } };
+  const can = steerable(p), ok = can && p.kind !== "pass" && !whyNot(p);
+  let sub;
+  if (flashSub && flashSub.id === p.id && now < flashSub.until) sub = flashSub.s;
+  else if (!can) sub = p.st === "final" ? "Cleared to land" : p.kind === "river" ? "On the river" : "Taxiing in";
+  else if (p.st === "circle") sub = "Circling";
+  else if (p.warn === 2) sub = "Too close";
+  else if (ok) sub = "Tap to land";
+  else if (p.kind === "pass") sub = p.direct ? "Passing over" : "Tap to send it on";
+  else if (p.kind === "river") sub = "Line up on the river";
+  else sub = `Line up with ${endText(G.wind)}`;
+  const params = { ...base, name: p.name, msg: can ? hdgText(p.cmd) : p.st === "final" ? "Landing" : "Down", nd: 1, a: Math.round(p.hdg), sub, ok: ok ? 1 : 0 };
+  if (can) { params.ta = p.cmd; params.tw = 16; }
+  return { face: "panel", label: "Tower", params };
+}
+
+// The puck on the page: the same face, drawn as the puck draws it. Drag round its rim to steer,
+// tap its middle to land, hold it to circle.
+const mirror = $("mirror"), rctx = mirror.getContext("2d");
+let mirrorSize = 148, mirrorDPR = 1, mirrorDrawn = "", lastFace = null;
+function drawMirror(f) {
+  const S = mirrorSize, k = S / 466, c = rctx, p = f.params;
+  c.setTransform(mirrorDPR, 0, 0, mirrorDPR, 0, 0);
+  c.clearRect(0, 0, S, S);
+  c.save();
+  c.translate(S / 2, S / 2);
+  c.fillStyle = "#000";
+  c.beginPath(); c.arc(0, 0, S / 2, 0, TAU); c.fill();
+  c.strokeStyle = "rgba(245, 245, 247, 0.16)";
+  c.lineWidth = 1;
+  c.beginPath(); c.arc(0, 0, S / 2 - 0.5, 0, TAU); c.stroke();
+  const rad = (deg) => ((deg - 90) * Math.PI) / 180;
+  if (typeof p.p === "number") {   // the day, on the ticks
+    const n = 50;
+    c.lineWidth = Math.max(1, 3 * k);
+    for (let i = 0; i <= n; i++) {
+      const a = rad(210 + (i / n) * 300), lit = i / n <= p.p + 1e-6, r0 = (i % 5 ? 199 : 188) * k, r1 = 214 * k;
+      c.strokeStyle = lit ? (p.on === 0 ? "#8E8E93" : Y) : "#2C2C2E";
+      c.beginPath(); c.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); c.lineTo(Math.cos(a) * r1, Math.sin(a) * r1); c.stroke();
+    }
+  }
+  if (p.tw > 0) {   // where it's been asked to go
+    c.lineWidth = 18 * k; c.lineCap = "round"; c.strokeStyle = Y;
+    c.shadowColor = p.ok ? "rgba(255, 214, 10, 0.6)" : "transparent"; c.shadowBlur = p.ok ? 8 : 0;
+    c.beginPath(); c.arc(0, 0, 178 * k, rad(p.ta - p.tw / 2), rad(p.ta + p.tw / 2)); c.stroke();
+    c.shadowBlur = 0;
+  }
+  if (p.nd) {   // where it points
+    const a = rad(p.a);
+    c.lineWidth = 8 * k; c.lineCap = "round"; c.strokeStyle = p.ok ? Y : "#F5F5F7";
+    c.beginPath(); c.moveTo(Math.cos(a) * 96 * k, Math.sin(a) * 96 * k); c.lineTo(Math.cos(a) * 186 * k, Math.sin(a) * 186 * k); c.stroke();
+  }
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  const text = (s, y, size, weight, col, maxW) => {
+    let fs = size;
+    c.font = `${weight} ${fs}px Nunito, sans-serif`;
+    while (c.measureText(s).width > maxW && fs > 7) { fs -= 0.5; c.font = `${weight} ${fs}px Nunito, sans-serif`; }
+    c.fillStyle = col;
+    c.fillText(s, 0, y);
+  };
+  if (p.name) text(p.name, -108 * k, Math.max(10, 28 * k), 700, "#8E8E93", 260 * k);
+  if (p.msg) text(p.msg, 4 * k, Math.max(13, 46 * k), 800, p.ok ? Y : "#F5F5F7", 170 * k);
+  if (p.sub) text(p.sub, 150 * k, Math.max(8.5, 18 * k), 700, "#7C7C82", 250 * k);
+  c.restore();
+}
+
+let mirrorHold = null, dial = null;
+mirror.addEventListener("pointerdown", (e) => {
+  e.stopPropagation();
+  unlockSound();
+  lastInput = e.pointerType === "touch" ? "touch" : "mouse";
+  if (state !== "play") { press(); return; }
+  const r = mirror.getBoundingClientRect(), x = e.clientX - r.left - r.width / 2, y = e.clientY - r.top - r.height / 2;
+  mirror.setPointerCapture?.(e.pointerId);
+  if (Math.hypot(x, y) / (r.width / 2) > 0.5) { dial = { a: Math.atan2(x, -y) / D }; return; }
+  mirrorHold = setTimeout(() => { mirrorHold = null; hold(); }, 450);
+});
+mirror.addEventListener("pointermove", (e) => {
+  if (!dial) return;
+  const r = mirror.getBoundingClientRect(), a = Math.atan2(e.clientX - r.left - r.width / 2, -(e.clientY - r.top - r.height / 2)) / D;
+  steer(diff(dial.a, a));
+  dial.a = a;
+});
+mirror.addEventListener("pointerup", () => { if (dial) { dial = null; return; } if (mirrorHold) { clearTimeout(mirrorHold); mirrorHold = null; press(); } });
+for (const ev of ["pointercancel", "lostpointercapture"]) mirror.addEventListener(ev, () => { dial = null; if (mirrorHold) { clearTimeout(mirrorHold); mirrorHold = null; } });
+
+// ---------------------------------------------------------------- the world
+
+// From straight above, a camera that sees the whole airfield; a sun that crosses the sky over the day
+// (in from the left in the morning, round the top, out to the right at dusk), a pale sky, soft
+// shadows. Planes fly at a height, so their shadows sit off to one side, closing in as they land.
+let renderer = null, scene = null, camera = null, sun = null, hemi = null, worldOk = false;
+const shared = { uTime: { value: 0 } };
+const fancy = !(matchMedia("(max-width: 700px)").matches || (navigator.hardwareConcurrency || 8) <= 4);
+const clayMat = (hex, o = {}) => new THREE.MeshStandardMaterial({ color: hex ?? "#FFFFFF", roughness: o.rough ?? 0.72, metalness: 0, vertexColors: !!o.vc, flatShading: !!o.flat });
+function solid(geo, mat, x = 0, h = 0, z = 0) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, h, z);
+  m.castShadow = m.receiveShadow = true;
+  return m;
+}
+const rbox = (w, h, d, r = 1, seg = 2) => new RoundedBoxGeometry(w, h, d, seg, Math.min(r, w / 2 - 0.01, h / 2 - 0.01, d / 2 - 0.01));
+
+// A lump of clay: balls melted together (a metaball surface), coloured by the nearest balls.
+// Each ball is [x, up, z, r, colour], in world units from the foot.
+let mcubes = null;
+function lump(balls, { res = 36, melt = 32 } = {}) {
+  if (!mcubes || mcubes.size !== res) mcubes = new MarchingCubes(res, new THREE.MeshBasicMaterial(), false, false, 90000);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, y, z, r] of balls) { x0 = Math.min(x0, x - r); x1 = Math.max(x1, x + r); y0 = Math.min(y0, y - r); y1 = Math.max(y1, y + r); z0 = Math.min(z0, z - r); z1 = Math.max(z1, z + r); }
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, cz = (z0 + z1) / 2, span = Math.max(x1 - x0, y1 - y0, z1 - z0) * 1.55;
+  const mc = mcubes;
+  mc.isolation = 80;
+  mc.reset();
+  for (const [x, y, z, r] of balls) { const rn = r / span; mc.addBall((x - cx) / span + 0.5, (y - cy) / span + 0.5, (z - cz) / span + 0.5, rn * rn * (80 + melt), melt); }
+  mc.update();
+  const n = mc.count, pos = new Float32Array(n * 3), nor = mc.normalArray.slice(0, n * 3), col = new Float32Array(n * 3);
+  const cs = balls.map((b) => new THREE.Color(b[4]));
+  for (let i = 0; i < n; i++) {
+    const px = cx + (mc.positionArray[i * 3] * span) / 2, py = cy + (mc.positionArray[i * 3 + 1] * span) / 2, pz = cz + (mc.positionArray[i * 3 + 2] * span) / 2;
+    pos[i * 3] = px; pos[i * 3 + 1] = py; pos[i * 3 + 2] = pz;
+    let r = 0, g = 0, b = 0, ws = 0;
+    for (let k = 0; k < balls.length; k++) {
+      const [bx, by, bz, br] = balls[k], d2 = ((px - bx) ** 2 + (py - by) ** 2 + (pz - bz) ** 2) / (br * br), w = 1 / (0.02 + d2 * d2 * d2);
+      r += cs[k].r * w; g += cs[k].g * w; b += cs[k].b * w; ws += w;
+    }
+    col[i * 3] = r / ws; col[i * 3 + 1] = g / ws; col[i * 3 + 2] = b / ws;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  geo.computeBoundingSphere();
+  return geo;
+}
+
+// Cherry trees in blossom: soft, a little faceted, lighter where the sun is
+function sakuraGeo(i) {
+  const R = seeded(101 + i * 13), balls = [], n = 9 + ((i * 3) % 4);
+  for (let k = 0; k < n; k++) {
+    const a = (k / n) * TAU + R() * 0.5, d = 9 + R() * 6, r = 7 + R() * 3.5, up = 16 + R() * 6;
+    balls.push([Math.cos(a) * d, up + 7, Math.sin(a) * d, r, k % 3 ? "#F2C2D0" : "#E9AEC1"]);
+  }
+  for (let k = 0; k < 4; k++) { const a = R() * TAU, d = R() * 5; balls.push([Math.cos(a) * d, 30 + R() * 3, Math.sin(a) * d, 8 + R() * 2, "#F9DCE5"]); }
+  return lump(balls, { res: 22, melt: 26 });
+}
+function cloudGeo(i) {
+  const R = seeded(61 + i * 7), balls = [];
+  for (let k = 0; k < 18; k++) { const a = R() * TAU, d = Math.sqrt(R()); balls.push([Math.cos(a) * 30 * d, R() * 10, Math.sin(a) * 22 * d, 9 + R() * 8, k % 4 ? "#FFFFFF" : "#E9EDF5"]); }
+  return lump(balls, { res: 32, melt: 30 });
+}
+
+let ground = null;
+function makeGround(base) {
+  const tex = new THREE.CanvasTexture(base);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const uni = { uSize: { value: new THREE.Vector2(MAP_W, MAP_H) }, uEdge: { value: EDGE }, uTime: shared.uTime };
+  const mat = new THREE.MeshLambertMaterial({ map: tex });
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, uni);
+    sh.vertexShader = "varying vec2 vMap;\n" + sh.vertexShader.replace("#include <project_vertex>", "#include <project_vertex>\n  vMap = (modelMatrix * vec4(transformed, 1.0)).xz;");
+    sh.fragmentShader = `uniform vec2 uSize; uniform float uEdge, uTime;
+varying vec2 vMap;
+float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+` + sh.fragmentShader.replace("#include <map_fragment>", `
+  vec2 w = vMap;
+  // the edge: frayed into the page, a spray of fine specks either side of it
+  float wob = 5.0 * sin(w.x * 0.037 + 1.7) * sin(w.y * 0.031 + 0.4) + 3.0 * sin((w.x + w.y) * 0.061) + 1.5 * sin(w.x * 0.17 - w.y * 0.13);
+  float past = max(max(-w.x, w.x - uSize.x), max(-w.y, w.y - uSize.y)) + wob;
+  float hh = hash2(floor(w / 1.15));
+  if (past > 0.0) { if (hh > 0.62 * pow(max(0.0, 1.0 - past / 17.0), 2.0)) discard; }
+  else if (past > -20.0) { if (hh < 0.85 * pow(1.0 + past / 20.0, 2.6)) discard; }
+  vec2 cuv = (clamp(w, vec2(1.0 - uEdge), uSize + uEdge - 1.0) + uEdge) / (uSize + 2.0 * uEdge);
+  cuv.y = 1.0 - cuv.y;
+  vec3 c = texture2D(map, cuv).rgb;
+  vec3 s = pow(max(c, vec3(0.0)), vec3(1.0 / 2.2));
+  float water = smoothstep(0.12, 0.26, s.b - s.r);
+  float uneven = sin(w.x * 0.045 + sin(w.y * 0.07) * 1.3) * sin(w.y * 0.04 + sin(w.x * 0.06) * 1.1);
+  c *= 1.0 + 0.05 * uneven * water;
+  // now and then a glint on the water
+  vec2 cell = floor(w / 2.3);
+  float tw = hash2(cell + floor(uTime * 0.6 + hash2(cell * 1.7) * 9.0) * 0.137);
+  c += water * step(0.9993, tw) * 0.5;
+  diffuseColor.rgb *= c;
+`);
+  };
+  const geo = new THREE.PlaneGeometry(MAP_W + 2 * EDGE, MAP_H + 2 * EDGE).rotateX(-Math.PI / 2).translate(MAP_W / 2, 0, MAP_H / 2);
+  ground = new THREE.Mesh(geo, mat);
+  ground.receiveShadow = true;
+  scene.add(ground);
+}
+
+// Everything that stands still (or nearly): trees, the dots of shrubs along the paths, the tower,
+// the hangar, the windsock, the strip's lights and arrows, the bridge, the jetty and the buoys
+const W8 = {};
+function glowTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, "rgba(255, 255, 255, 1)"); gr.addColorStop(0.22, "rgba(255, 255, 255, 0.6)"); gr.addColorStop(1, "rgba(255, 255, 255, 0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+function makeStatics() {
+  const treeMat = clayMat(null, { vc: true, flat: true, rough: 0.85 }), bark = clayMat("#7A5A48"), trunk = new THREE.CylinderGeometry(1.6, 2.2, 16, 8).translate(0, 8, 0);
+  TREES.forEach(([x, y], i) => {
+    const m = solid(sakuraGeo(i), treeMat, x, 0, y);
+    const tr = solid(trunk, bark); tr.castShadow = false; m.add(tr);
+    m.scale.setScalar(1.28 + ((i * 7) % 5) * 0.07);
+    m.rotation.y = i * 1.3;
+    scene.add(m);
+  });
+
+  // shrubs: small olive dots on the bunds by the paths
+  const R = seeded(5), dots = [];
+  const ok = (x, y) => x > 8 && x < MAP_W - 8 && y > 8 && y < MAP_H - 8 && !onRiver(x, y, 6) && !onRoad(x, y, 6) && !onAirfield(x, y, 14) && !TREES.some(([tx, ty]) => Math.hypot(tx - x, ty - y) < 30);
+  for (const x of VPATHS) for (let y = 20 + R() * 40; y < MAP_H; y += 44 + R() * 60) { const px = x + (R() < 0.5 ? -1 : 1) * (PATH_HW + 3.4); if (ok(px, y)) dots.push([px, y]); }
+  for (const y of HPATHS) for (let x = 20 + R() * 40; x < MAP_W; x += 44 + R() * 60) { const py = y + (R() < 0.5 ? -1 : 1) * (PATH_HW + 3.4); if (ok(x, py)) dots.push([x, py]); }
+  const dm = new THREE.InstancedMesh(new THREE.SphereGeometry(3.7, 12, 8), clayMat("#CFC488", { rough: 0.75 }), dots.length);
+  const M = new THREE.Matrix4();
+  dots.forEach(([x, y], i) => { const s = 0.8 + R() * 0.35; M.makeScale(s, s * 0.9, s).setPosition(x, 3 * s, y); dm.setMatrixAt(i, M); });
+  dm.castShadow = dm.receiveShadow = true;
+  scene.add(dm);
+
+  // the control tower: a cream column, its glass room and a white roof, a mast with a beacon
+  const tw = new THREE.Group();
+  tw.add(solid(rbox(18, 36, 18, 2), clayMat("#F3EEE4"), 0, 18, 0));
+  tw.add(solid(rbox(23, 9, 23, 2), clayMat("#3F6E84", { rough: 0.25 }), 0, 40.5, 0));
+  tw.add(solid(rbox(28, 3.2, 28, 1.3), clayMat("#FBF9F4"), 0, 46.6, 0));
+  tw.add(solid(new THREE.CylinderGeometry(0.7, 0.7, 10, 6), clayMat("#D9534A"), 6, 53, -6));
+  W8.beacon = new THREE.Mesh(new THREE.SphereGeometry(1.8, 12, 8), new THREE.MeshStandardMaterial({ color: "#FFFFFF", emissive: "#6CFF9E", emissiveIntensity: 0 }));
+  W8.beacon.position.set(6, 58.5, -6);
+  tw.add(W8.beacon);
+  tw.add(solid(rbox(30, 11, 16, 2), clayMat("#F1ECE2"), 1, 5.5, 22));
+  tw.add(solid(rbox(32, 1.6, 18, 0.8), clayMat("#E6DED0"), 1, 11.6, 22));
+  tw.position.set(TOWER.x, 0, TOWER.y);
+  scene.add(tw);
+
+  // the hangar: a long vault, in faded red
+  const vault = new THREE.CylinderGeometry(HANGAR.w / 2, HANGAR.w / 2, HANGAR.d, 14, 1, true, Math.PI / 2, Math.PI).rotateX(Math.PI / 2).scale(1, 0.78, 1);
+  const hg = new THREE.Group(), roofMat = clayMat("#C9614F", { flat: true, rough: 0.6 });
+  roofMat.side = THREE.DoubleSide;
+  hg.add(solid(vault, roofMat, 0, 5, 0));
+  for (const s of [-1, 1]) hg.add(solid(rbox(2, 5, HANGAR.d, 0.5), clayMat("#EDE6DA"), s * (HANGAR.w / 2 - 1), 2.5, 0));
+  const cap = new THREE.CircleGeometry(HANGAR.w / 2, 14, 0, Math.PI).scale(1, 0.78, 1);
+  hg.add(solid(cap, clayMat("#B9584A"), 0, 5, -HANGAR.d / 2));
+  hg.add(solid(new THREE.PlaneGeometry(HANGAR.w - 6, 4).rotateX(-Math.PI / 2), clayMat("#4A4038"), 0, 0.3, HANGAR.d / 2 - 2));
+  hg.position.set(HANGAR.x, 0, HANGAR.y);
+  scene.add(hg);
+
+  // the windsock: points the way the wind blows, so planes land the other way
+  const sock = new THREE.Group(), pole = solid(new THREE.CylinderGeometry(0.8, 1, 24, 8), clayMat("#F4F2EE"), 0, 12, 0);
+  const arm = new THREE.Group();
+  for (let i = 0; i < 4; i++) {
+    const r0 = 3.4 - i * 0.45, r1 = 3.4 - (i + 1) * 0.45;
+    const seg = solid(new THREE.CylinderGeometry(r1, r0, 4.4, 14, 1, true).rotateZ(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: i % 2 ? "#FFFFFF" : "#F07A3A", roughness: 0.7, side: THREE.DoubleSide }), 2.2 + i * 4.4, 0, 0);
+    arm.add(seg);
+  }
+  arm.position.y = 22.5;
+  sock.add(pole, arm);
+  sock.position.set(SOCK.x, 0, SOCK.y);
+  sock.scale.setScalar(1.35);
+  scene.add(sock);
+  W8.sock = sock; W8.sockArm = arm; W8.sockHdg = null;
+
+  // the strip's lights: little posts along its edges, and green or red across its ends; they glow at dusk
+  const posts = [], ends = [];
+  for (let x = RWY.x0; x <= RWY.x1 + 1; x += 42) for (const s of [-1, 1]) posts.push([x, RWY.y + s * (RWY.hw + 4)]);
+  for (const [x, e] of [[RWY.x0 - 5, 9], [RWY.x1 + 5, 27]]) for (const o of [-17, -6, 6, 17]) ends.push([x, RWY.y + o, e]);
+  const postMat = new THREE.MeshStandardMaterial({ color: "#F6F4EE", roughness: 0.6, emissive: "#FFD27A", emissiveIntensity: 0 });
+  const pm = new THREE.InstancedMesh(rbox(2.6, 3.2, 2.6, 0.6), postMat, posts.length + ends.length);
+  [...posts, ...ends].forEach(([x, y], i) => { M.makeTranslation(x, 1.6, y); pm.setMatrixAt(i, M); });
+  pm.castShadow = true;
+  scene.add(pm);
+  W8.postMat = postMat;
+  const glowMat = new THREE.MeshBasicMaterial({ map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, opacity: 0 });
+  const gm = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), glowMat, posts.length + ends.length);
+  const warm = new THREE.Color("#FFC870");
+  [...posts, ...ends].forEach(([x, y], i) => { M.makeScale(i < posts.length ? 13 : 12, 1, i < posts.length ? 13 : 12).setPosition(x, 4, y); gm.setMatrixAt(i, M); gm.setColorAt(i, warm); });
+  scene.add(gm);
+  W8.glow = gm; W8.glowMat = glowMat; W8.posts = posts.length; W8.ends = ends; W8.endsFor = 0;
+
+  // the arrows in to the strip, at whichever end planes land: they light in turn towards it
+  W8.arrows = {};
+  const chev = new THREE.Shape();
+  chev.moveTo(0, 0); chev.lineTo(-9, 10); chev.lineTo(-14, 10); chev.lineTo(-5, 0); chev.lineTo(-14, -10); chev.lineTo(-9, -10); chev.closePath();
+  const cg = new THREE.ShapeGeometry(chev).rotateX(-Math.PI / 2);
+  for (const e of [9, 27]) {
+    const grp = new THREE.Group(), list = [];
+    for (let i = 0; i < 5; i++) {
+      const m = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({ color: "#FFFFFF", transparent: true, opacity: 0, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+      const d = 46 + i * 52;
+      m.position.set(e === 9 ? RWY.x0 - d : RWY.x1 + d, 0.5, RWY.y);
+      m.rotation.y = e === 9 ? 0 : Math.PI;
+      grp.add(m); list.push(m);
+    }
+    scene.add(grp);
+    W8.arrows[e] = { list, on: 0 };
+  }
+
+  // the bridge over the river, in red
+  const bx = riverX(BRIDGE_Y), span = 2 * (RIVER_HW + BANK) + 14;
+  const arch = (geo, lift) => { const p = geo.attributes.position; for (let i = 0; i < p.count; i++) { const u = p.getX(i) / (span / 2); p.setY(i, p.getY(i) + lift * (1 - u * u)); } geo.computeVertexNormals(); return geo; };
+  const red = clayMat("#E0644A", { rough: 0.55 }), dark = clayMat("#A93A2C", { rough: 0.55 });
+  const br = new THREE.Group();
+  br.add(solid(arch(rbox(span, 2.4, 11, 1, 8), 5), red, 0, 2.2, 0));
+  for (const s of [-1, 1]) {
+    br.add(solid(arch(rbox(span, 1.6, 1.4, 0.5, 8), 5), dark, 0, 7.4, s * 5.8));
+    for (let i = -3; i <= 3; i++) { const x = (i / 3.4) * (span / 2), m = solid(rbox(1.6, 5, 1.6, 0.4), dark, x, 5 + 5 * (1 - (x / (span / 2)) ** 2) - 0.6, s * 5.8); m.castShadow = false; br.add(m); }
+  }
+  br.position.set(bx, 0, BRIDGE_Y);
+  scene.add(br);
+
+  // the jetty, where seaplanes tie up, and the buoys at the ends of their stretch of river
+  const jx = riverX(DOCK_Y) - RIVER_HW - BANK + 16;
+  const wood = clayMat("#A9825F", { rough: 0.85 });
+  scene.add(solid(rbox(34, 1.8, 9, 0.6), wood, jx, 1.6, DOCK_Y - 9));
+  for (const o of [-14, 0, 14]) scene.add(solid(new THREE.CylinderGeometry(1, 1, 5, 8), clayMat("#7E5D42"), jx + o, 2.5, DOCK_Y - 13.5));
+  const buoy = clayMat("#F07A3A", { rough: 0.5 });
+  for (const y of [LANE.y0, LANE.y1]) for (const s of [-1, 1]) scene.add(solid(new THREE.SphereGeometry(2.4, 12, 8), buoy, riverX(y) + s * 24, 1.2, y));
+}
+
+// Things that move by themselves: cars on the road, egrets in the paddies, clouds on the wind
+const CARS = [], EGRETS = [], CLOUDS = [];
+function makeLife() {
+  const R = seeded(77);
+  [["#F4F1EA", 1, 130, 13], ["#7FB3E3", -1, 560, 11], ["#E7C35A", 1, 690, 12]].forEach(([col, dir, y, v]) => {
+    const g = new THREE.Group();
+    g.add(solid(rbox(14, 4.4, 8, 1.6), clayMat(col, { rough: 0.45 }), 0, 3, 0));
+    g.add(solid(rbox(7.5, 3.4, 7, 1.4), clayMat("#3A4A58", { rough: 0.3 }), -1, 6.4, 0));
+    g.add(solid(rbox(7.6, 1, 7.2, 0.4), clayMat(col, { rough: 0.45 }), -1, 8.2, 0));
+    g.children.slice(1).forEach((m) => { m.castShadow = false; });
+    const lamp = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: W8.glowMat.map, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, color: "#FFE2A8", opacity: 0 }));
+    lamp.scale.set(26, 1, 16); lamp.position.set(14, 1.5, 0);
+    g.add(lamp);
+    scene.add(g);
+    CARS.push({ g, lamp, dir, y, v });
+  });
+  const pools = PADDIES.filter((p) => p.type === "water" && (p.x1 - p.x0) > 18 && (p.y1 - p.y0) > 30 && !onAirfield((p.x0 + p.x1) / 2, (p.y0 + p.y1) / 2, 40)
+    && !onRiver((p.x0 + p.x1) / 2, (p.y0 + p.y1) / 2, 20) && p.x0 > 10 && p.x1 < MAP_W - 10 && p.y0 > 10 && p.y1 < MAP_H - 10);
+  const spot = () => { const p = pools[(R() * pools.length) | 0]; return { x: lerp(p.x0 + 5, p.x1 - 5, R()), y: lerp(p.y0 + 8, p.y1 - 8, R()) }; };
+  for (let i = 0; i < 7; i++) {
+    const s = spot(), o = egretGroup();
+    scene.add(o.g);
+    EGRETS.push({ ...o, x: s.x, y: s.y, h: 0, hdg: R() * 360, st: "stand", next: 12 + R() * 50, seed: R() * 10, spot });
+  }
+  for (let i = 0; i < 2; i++) {
+    const m = solid(cloudGeo(i), clayMat(null, { vc: true, rough: 0.95 }), 0, 0, 0);
+    m.receiveShadow = false;
+    m.scale.setScalar(1.1 + i * 0.2);
+    scene.add(m);
+    CLOUDS.push({ m, x: 260 + i * 640 + R() * 100, y: 160 + i * 380 + R() * 80, h: 175 + i * 18, v: 0 });
+  }
+}
+function egretGroup() {
+  const g = new THREE.Group(), white = clayMat("#FBFBF8", { rough: 0.6 });
+  const body = solid(new THREE.SphereGeometry(1, 14, 10).scale(6, 3.1, 3.1), white, 0, 7, 0);
+  const neck = solid(new THREE.CapsuleGeometry(0.85, 4.5, 3, 8).rotateZ(-0.5), white, 5.4, 9.6, 0);
+  const head = solid(new THREE.SphereGeometry(1.7, 10, 8), white, 7, 12.4, 0);
+  const beak = solid(new THREE.ConeGeometry(0.55, 4.2, 8).rotateZ(-Math.PI / 2), clayMat("#E8B53A", { rough: 0.5 }), 9.9, 12.2, 0);
+  const neckG = new THREE.Group();
+  neckG.add(neck, head, beak);
+  for (const m of [neck, head, beak]) m.castShadow = false;
+  const wings = [];
+  for (const s of [-1, 1]) {
+    const w = new THREE.Group(), m = solid(new THREE.SphereGeometry(1, 12, 6).scale(4.2, 0.5, 9.5).translate(0, 0, s * 9.5), white, 0, 0, 0);
+    w.add(m); w.position.set(0, 8, 0); w.visible = false;
+    wings.push(w);
+  }
+  g.add(body, neckG, ...wings);
+  return { g, neckG, wings };
+}
+
+// A plane in clay: a white body, coloured wings and tail, a spinning propeller; floats on a
+// seaplane, two engines and a low wing on one passing over
+const PLANES = new Map();
+function planeMesh(p) {
+  const g = new THREE.Group(), inner = new THREE.Group();
+  g.add(inner);
+  const look = p.kind === "pass" ? { body: "#EEF1F5", col: "#34558C" } : LOOKS[p.look];
+  const body = clayMat(look.body, { rough: 0.5 }), acc = clayMat(p.kind === "river" ? "#F2C230" : look.col, { rough: 0.55 }), dark = clayMat("#33414D", { rough: 0.3 });
+  const big = p.kind === "pass", L = big ? 25 : 19, R = big ? 3.8 : 3.2, span = big ? 54 : 42, Y0 = 4.6;
+  inner.add(solid(new THREE.CapsuleGeometry(R, L, 6, 14).rotateZ(Math.PI / 2), body, 0, Y0, 0));
+  inner.add(solid(rbox(big ? 9 : 7.6, 1.5, span, 0.7), acc, big ? 1 : 1.6, big ? Y0 - 1.4 : Y0 + R + 0.4, 0));
+  inner.add(solid(rbox(5.4, 1.1, big ? 18 : 15, 0.5), acc, -(L / 2 + 1.6), Y0 + 1, 0));
+  inner.add(solid(rbox(6.4, 6.6, 1.1, 0.5), acc, -(L / 2 + 2), Y0 + 4.2, 0));
+  const shield = solid(rbox(4.2, 2.4, R * 1.6, 1.1), dark, L / 2 - 2.4, Y0 + R - 0.7, 0);
+  shield.castShadow = false;
+  inner.add(shield);
+  const props = [];
+  const prop = (x, y, z) => {
+    const sp = solid(new THREE.ConeGeometry(1.5, 3.2, 10).rotateZ(-Math.PI / 2), body, x, y, z);
+    sp.castShadow = false;
+    inner.add(sp);
+    const b = new THREE.Mesh(rbox(0.5, 12, 1.3, 0.25), dark);
+    b.position.set(x - 1.3, y, z);
+    inner.add(b); props.push(b);
+  };
+  if (big) for (const z of [-11.5, 11.5]) { inner.add(solid(new THREE.CapsuleGeometry(2.1, 8, 4, 10).rotateZ(Math.PI / 2), body, 3, Y0 - 0.8, z)); prop(10.6, Y0 - 0.8, z); }
+  else prop(L / 2 + R + 1.2, Y0, 0);
+  if (p.kind === "river") for (const z of [-7, 7]) inner.add(solid(new THREE.CapsuleGeometry(1.8, 20, 4, 10).rotateZ(Math.PI / 2), body, 0.5, Y0 - 5.6, z));
+  const mats = [body, acc, dark];
+  return { g, inner, props, mats, faded: false };
+}
+
+function initWorld() {
+  try { renderer = new THREE.WebGLRenderer({ canvas: gcv, antialias: true, alpha: true, powerPreference: "high-performance" }); } catch (err) { console.warn("Tower: no WebGL", err); return; }
+  renderer.setClearColor(0x000000, 0);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.NoToneMapping;   // the paddies as painted: the light is set to add up to it
+  renderer.toneMappingExposure = 1;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.VSMShadowMap;
+  renderer.shadowMap.autoUpdate = false;   // redrawn every other frame: everything moves slowly
+  scene = new THREE.Scene();
+  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 10, 3000);
+  hemi = new THREE.HemisphereLight("#EEF4FF", "#A8C79A", 1.4);
+  sun = new THREE.DirectionalLight("#FFF4E6", 1.8);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(fancy ? 2048 : 1024, fancy ? 2048 : 1024);
+  sun.shadow.radius = 5;
+  sun.shadow.blurSamples = 8;
+  sun.shadow.bias = -0.0005;
+  sun.shadow.intensity = 0.7;
+  const sc = sun.shadow.camera;
+  sc.left = sc.bottom = -820; sc.right = sc.top = 820; sc.near = 100; sc.far = 3600;
+  sun.target.position.set(MAP_W / 2, 0, MAP_H / 2);
+  scene.add(hemi, sun, sun.target);
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, fancy ? 1.5 : 1.25));   // the tags and rings over it are drawn at full sharpness
+  worldOk = true;
+}
+
+// The light over the day: [part of the day, the sun's direction (x, up, y), its colour and
+// strength, the sky's colour, the ground's, their strength, the page]
+const SUN_FLAT = 1.75, SKY_FLAT = 1.6;   // the sun on flat ground, and the sky: together the paddies as painted
+const LIGHT = [
+  [0.0, [-0.80, 0.60, -0.30], "#FFE4CB", 1, "#EDF2FF", "#B4C7A0", 1, "#F5F2EE"],
+  [0.25, [-0.55, 0.70, -0.45], "#FFF6EA", 1, "#F2F6FF", "#A8C79A", 1, "#F4F3EF"],
+  [0.55, [0.05, 0.78, -0.62], "#FFF8EE", 1, "#F3F7FF", "#A8C79A", 1, "#F4F3EF"],
+  [0.8, [0.55, 0.72, -0.44], "#FFE8CC", 0.98, "#F0EEFB", "#AFC49B", 0.98, "#F4F1EE"],
+  [1.0, [0.80, 0.52, -0.40], "#FFBE92", 0.85, "#E2DAF2", "#A9AF9C", 0.88, "#EFE9E8"],
+  [1.2, [0.86, 0.42, -0.40], "#FFA286", 0.45, "#C3C5EA", "#8E98A6", 0.68, "#E6E4EC"],
+].map(([f, d, s, si, sky, gnd, hi, bg]) => ({ f, d: new THREE.Vector3(...d).normalize(), s: new THREE.Color(s), si, sky: new THREE.Color(sky), gnd: new THREE.Color(gnd), hi, bg: new THREE.Color(bg) }));
+const _v = new THREE.Vector3(), _c = new THREE.Color();
+let bgShown = "";
+function light() {
+  const f = !G || G.demo || state === "title" ? 0.12 : G.t / DAY;
+  let i = 0;
+  while (i < LIGHT.length - 2 && f > LIGHT[i + 1].f) i++;
+  const a = LIGHT[i], b = LIGHT[i + 1], u = clamp((f - a.f) / (b.f - a.f), 0, 1);
+  _v.copy(a.d).lerp(b.d, u).normalize();
+  sun.position.set(MAP_W / 2 + _v.x * 1500, _v.y * 1500, MAP_H / 2 + _v.z * 1500);
+  sun.color.copy(a.s).lerp(b.s, u);
+  sun.intensity = (SUN_FLAT / Math.max(0.3, _v.y)) * lerp(a.si, b.si, u);
+  hemi.color.copy(a.sky).lerp(b.sky, u);
+  hemi.groundColor.copy(a.gnd).lerp(b.gnd, u);
+  hemi.intensity = SKY_FLAT * lerp(a.hi, b.hi, u);
+  const bg = "#" + _c.copy(a.bg).lerp(b.bg, u).getHexString();
+  if (bg !== bgShown) { bgShown = bg; document.documentElement.style.setProperty("--bg", bg); }
+  return f;
+}
+
+// The camera sees the whole airfield, under the bar along the top
+let K = 1, OX = 0, OY = 0;
+const sx = (x) => OX + x * K, sy = (y) => OY + y * K;
+const toWorld = (px, py) => ({ x: (px - OX) / K, y: (py - OY) / K });
+function fit() {
+  const small = W < 700;
+  const padL = small ? 6 : 24, padR = small ? 6 : 24, padT = small ? 62 : 72, padB = small ? 136 : 18;
+  const aw = W - padL - padR, ah = H - padT - padB;
+  K = Math.min(aw / (MAP_W + EDGE), ah / (MAP_H + EDGE));
+  OX = padL + (aw - MAP_W * K) / 2;
+  OY = padT + (ah - MAP_H * K) / 2;
+  if (!worldOk) return;
+  const cx = (W / 2 - OX) / K, cy = (H / 2 - OY) / K, hw = W / 2 / K, hh = H / 2 / K;
+  camera.left = -hw; camera.right = hw; camera.top = hh; camera.bottom = -hh;
+  camera.position.set(cx, 1200, cy);
+  camera.up.set(0, 0, -1);
+  camera.lookAt(cx, 0, cy);
+  camera.near = 10; camera.far = 2400;
+  camera.updateProjectionMatrix();
+}
+
+let lastT = 0;
+function syncWorld(t) {
+  const dt = Math.min(0.1, (t - lastT) / 1000 || 0);
+  lastT = t;
+  shared.uTime.value = t / 1000;
+  const f = light();
+  const dusk = state === "title" ? 0 : smooth(0.84, 0.98, f);
+  syncPlanes(t, dt);
+  syncCars(dt, dusk);
+  syncEgrets(t, dt);
+  syncClouds(dt);
+  // the windsock swings round when the wind turns, and flutters
+  const want = G && G.wind === 9 ? 270 : 90;
+  W8.sockHdg = W8.sockHdg == null ? want : norm(W8.sockHdg + clamp(diff(W8.sockHdg, want), -40 * dt, 40 * dt));
+  W8.sock.rotation.y = (90 - W8.sockHdg) * D + Math.sin(t / 340) * 0.06;
+  W8.sockArm.rotation.z = -0.08 + Math.sin(t / 210) * 0.03;
+  // dusk: the strip's lights, the tower's beacon
+  W8.postMat.emissiveIntensity = dusk * 1.6;
+  W8.glowMat.opacity = dusk * 0.85;
+  W8.beacon.material.emissiveIntensity = dusk * (Math.sin(t / 260) > 0.3 ? 2.4 : 0.15);
+  const endsFor = G ? G.wind : 27;
+  if (W8.endsFor !== endsFor) {
+    W8.endsFor = endsFor;
+    const green = new THREE.Color("#6DFF9A"), red = new THREE.Color("#FF3B30");
+    W8.ends.forEach(([, , e], i) => W8.glow.setColorAt(W8.posts + i, e === endsFor ? green : red));
+    W8.glow.instanceColor.needsUpdate = true;
+  }
+  syncArrows(t, dt);
+}
+
+// The arrows in to the strip: at the end planes land from, lighting in turn towards the strip;
+// yellow while the picked plane is lined up
+function syncArrows(t, dt) {
+  const p = state === "play" ? selected() : null, lined = steerable(p) && p.kind === "strip" && !whyNot(p);
+  for (const e of [9, 27]) {
+    const A = W8.arrows[e], want = G && G.wind === e && state !== "title" ? 1 : G && state === "title" && G.wind === e ? 0.6 : 0;
+    A.on += clamp(want - A.on, -dt * 0.7, dt * 0.7);
+    A.list.forEach((m, i) => {
+      const phase = ((t / 1000) * 1.1 - (4 - i) * 0.18) % 1, pulse = Math.exp(-phase * 5);
+      m.material.opacity = A.on * (0.38 + 0.4 * pulse);
+      m.material.color.set(lined && G.wind === e ? Y : "#FFFFFF");
+    });
+  }
+}
+
+function syncPlanes(t, dt) {
+  if (!G) return;
+  for (const p of G.planes) {
+    let o = PLANES.get(p);
+    if (!o) { o = planeMesh(p); PLANES.set(p, o); scene.add(o.g); }
+    const bob = inAir(p) && p.h > 20 ? Math.sin(t / 900 + p.id) * 0.8 : 0;
+    o.g.position.set(p.x, p.h + bob, p.y);
+    o.g.rotation.y = (90 - p.hdg) * D;
+    const bank = clamp(p.rate * 0.7, -24, 24) * D * (p.h > 6 ? 1 : 0);
+    o.inner.rotation.x += (bank - o.inner.rotation.x) * Math.min(1, dt * 4);
+    o.g.scale.setScalar(PLANE_S * (1 + p.h * 0.0016));
+    for (const b of o.props) b.rotation.x += dt * (p.st === "park" ? 3 : 48);
+    if (p.fade < 1) {
+      if (!o.faded) { o.faded = true; for (const m of o.mats) m.transparent = true; o.g.traverse((m) => { m.castShadow = false; }); }
+      for (const m of o.mats) m.opacity = Math.max(0, p.fade);
+    }
+  }
+  for (const [p, o] of PLANES) if (!G.planes.includes(p)) {
+    scene.remove(o.g);
+    o.g.traverse((m) => m.geometry?.dispose());
+    for (const m of o.mats) m.dispose();
+    PLANES.delete(p);
+  }
+}
+
+function syncCars(dt, dusk) {
+  for (const c of CARS) {
+    c.y += c.dir * c.v * dt;
+    if (c.y > MAP_H + 60) c.y = -60;
+    if (c.y < -60) c.y = MAP_H + 60;
+    const x = roadX(c.y) + c.dir * 5.5, x2 = roadX(c.y + c.dir * 4) + c.dir * 5.5;
+    c.g.position.set(x, 0, c.y);
+    c.g.rotation.y = (90 - bearing(x, c.y, x2, c.y + c.dir * 4)) * D;
+    c.g.visible = c.y > -14 && c.y < MAP_H + 14;
+    c.lamp.material.opacity = dusk * 0.9;
+  }
+}
+
+// Egrets stand in the flooded paddies, look about, and now and then fly off to another
+function syncEgrets(t, dt) {
+  for (const e of EGRETS) {
+    if (e.st === "stand") {
+      e.next -= dt;
+      e.neckG.rotation.z = Math.max(0, Math.sin(t / 700 + e.seed * 3)) * -0.5;
+      if (e.next < 0) {
+        const s = e.spot();
+        if (Math.hypot(s.x - e.x, s.y - e.y) > 160) { e.st = "fly"; e.tx = s.x; e.ty = s.y; e.from = Math.hypot(s.x - e.x, s.y - e.y); }
+        else e.next = 5;
+      }
+    } else {
+      const d = Math.hypot(e.tx - e.x, e.ty - e.y), want = bearing(e.x, e.y, e.tx, e.ty);
+      e.hdg = norm(e.hdg + clamp(diff(e.hdg, want), -90 * dt, 90 * dt));
+      const v = dirOf(e.hdg), sp = 22;
+      e.x += v.x * sp * dt; e.y += v.y * sp * dt;
+      e.h = Math.min(34, (e.from - d) * 0.5, d * 0.45);
+      const flap = Math.sin(t / 95) * 0.55;
+      e.wings[0].rotation.x = -flap; e.wings[1].rotation.x = flap;
+      if (d < 4) { e.st = "stand"; e.h = 0; e.next = 25 + Math.random() * 70; }
+    }
+    for (const w of e.wings) w.visible = e.st === "fly";
+    e.neckG.visible = true;
+    e.g.position.set(e.x, Math.max(0, e.h) - (e.st === "fly" ? 6 : 0), e.y);
+    e.g.rotation.y = (90 - e.hdg) * D;
+    e.g.scale.setScalar(1.25);
+  }
+}
+
+// Clouds drift with the wind, the way the windsock points
+function syncClouds(dt) {
+  const want = (G && G.wind === 9 ? -1 : 1) * 5;
+  for (const c of CLOUDS) {
+    c.v += clamp(want - c.v, -dt, dt);
+    c.x += c.v * dt;
+    if (c.x > MAP_W + 260) c.x = -260;
+    if (c.x < -260) c.x = MAP_W + 260;
+    c.m.position.set(c.x, c.h, c.y);
+  }
+}
+
+// ---------------------------------------------------------------- over the world
+
+const fx = [];
+let aimMark = null;
+function draw(t) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (!G) return;
+  // planes about to call in: a mark at the edge they'll come from
+  for (const c of G.pending) {
+    const x = sx(clamp(c.p.x, 10, MAP_W - 10)), y = sy(clamp(c.p.y, 10, MAP_H - 10)), a = 0.55 + 0.45 * Math.sin(t / 180);
+    ctx.save(); ctx.translate(x, y); ctx.rotate((c.p.hdg - 90) * D);
+    ctx.fillStyle = `rgba(255, 255, 255, ${a})`; ctx.strokeStyle = "rgba(30, 50, 70, 0.25)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-5, -7); ctx.lineTo(-2, 0); ctx.lineTo(-5, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  // touchdowns: dust on the strip, rings on the water
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const f = fx[i], age = (t - f.at) / 1000;
+    if (age > 1.6) { fx.splice(i, 1); continue; }
+    for (let r = 0; r < 2; r++) {
+      const a = age - r * 0.3;
+      if (a < 0) continue;
+      ctx.strokeStyle = f.k === "ripple" ? `rgba(255, 255, 255, ${0.75 * (1 - a / 1.3)})` : `rgba(246, 236, 210, ${0.8 * (1 - a / 1.3)})`;
+      ctx.lineWidth = f.k === "ripple" ? 1.4 : 3;
+      ctx.beginPath(); ctx.arc(sx(f.x), sy(f.y), (6 + a * 22) * K, 0, TAU); ctx.stroke();
+    }
+  }
+  const air = G.planes.filter((p) => inAir(p));
+  // too close: rings that touch when two planes are too near each other
+  for (const p of air) if (p.warn && p.entered) {
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = p.warn === 2 ? 2 : 1.4;
+    ctx.strokeStyle = p.warn === 2 ? "rgba(240, 92, 56, 0.95)" : "rgba(255, 214, 10, 0.95)";
+    ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), (WARN / 2) * K, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  const sel = state === "play" ? selected() : null;
+  if (steerable(sel)) {
+    // where it will go: dots ahead of it, yellow where it would be lined up
+    if (sel.st !== "circle") {
+      const pts = predict(sel, 10);
+      for (let i = 1; i < pts.length; i += 2) {
+        const q = pts[i], a = 0.95 * (1 - i / pts.length) + 0.1;
+        ctx.fillStyle = q.ok ? `rgba(255, 214, 10, ${Math.min(1, a + 0.2)})` : `rgba(255, 255, 255, ${a})`;
+        ctx.strokeStyle = `rgba(25, 45, 65, ${a * 0.3})`; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(sx(q.x), sy(q.y), q.ok ? 2.4 : 1.9, 0, TAU); ctx.fill(); ctx.stroke();
+      }
+    }
+    if (aimMark && now < aimMark.until) {
+      const a = (aimMark.until - now) / 900;
+      ctx.strokeStyle = `rgba(255, 214, 10, ${a})`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(sx(aimMark.x), sy(aimMark.y), 5, 0, TAU); ctx.stroke();
+    }
+  }
+  if (sel && inAir(sel)) ring(sel, t);
+  ctx.textBaseline = "middle";
+  if (state === "title") return;
+  // the tags: the picked plane's first, the others out of its way and each other's, drawn under it
+  const placed = [], tags = [];
+  if (sel && inAir(sel)) tags.push(tagBox(sel, true, placed));
+  for (const p of air) if (p !== sel) tags.push(tagBox(p, false, placed));
+  for (let i = tags.length - 1; i >= 0; i--) drawTag(tags[i]);
+}
+
+// The picked plane's ring, the puck in small: a tick where it points, a yellow arc where it's going
+function ring(p) {
+  const x = sx(p.x), y = sy(p.y), r = 34 * K + 8, can = steerable(p);
+  const ok = can && p.kind !== "pass" && !whyNot(p);
+  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = ok ? "rgba(255, 214, 10, 0.95)" : "rgba(255, 255, 255, 0.9)";
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
+  if (can) {
+    const a = (p.cmd - 90) * D;
+    ctx.lineWidth = 4.5; ctx.lineCap = "round"; ctx.strokeStyle = Y;
+    ctx.beginPath(); ctx.arc(x, y, r, a - 0.2, a + 0.2); ctx.stroke();
+  }
+  const h = (p.hdg - 90) * D;
+  ctx.lineWidth = 2.2; ctx.lineCap = "round"; ctx.strokeStyle = "#FFFFFF";
+  ctx.beginPath(); ctx.moveTo(x + Math.cos(h) * (r - 6), y + Math.sin(h) * (r - 6)); ctx.lineTo(x + Math.cos(h) * (r + 6), y + Math.sin(h) * (r + 6)); ctx.stroke();
+  ctx.lineCap = "butt";
+}
+
+// A plane's tag: its name, and the heading it's been given (or what it's doing); above it if
+// there's room, else below, else further off
+function tagBox(p, sel, placed) {
+  const can = steerable(p), fin = p.st === "final";
+  const extra = sel && can ? hdgText(p.cmd) : fin ? "landing" : p.st === "circle" ? "circling" : p.kind === "river" ? "floats" : p.kind === "pass" ? "passing" : "";
+  const xf = sel && can ? "500 11.5px 'Roboto Mono', ui-monospace, monospace" : "700 11.5px Nunito, ui-rounded, sans-serif";
+  ctx.font = "800 12.5px Nunito, ui-rounded, sans-serif";
+  const w1 = ctx.measureText(p.name).width;
+  ctx.font = xf;
+  const w2 = extra ? ctx.measureText(extra).width : 0;
+  const w = Math.ceil(18 + w1 + (extra ? 7 + w2 : 0)), h = 22, cx = sx(p.x), cy = sy(p.y), r = sel ? 34 * K + 8 : 30 * K;
+  const x = Math.round(clamp(cx - w / 2, 6, W - w - 6));
+  let y = 0;
+  for (const ty of [cy - r - h - 4, cy + r + 4, cy - r - 2 * h - 10, cy + r + h + 10]) {
+    y = Math.round(clamp(ty, 64, H - h - 6));
+    if (!placed.some((q) => x < q.x + q.w + 4 && x + w + 4 > q.x && y < q.y + q.h + 3 && y + h + 3 > q.y)) break;
+  }
+  placed.push({ x, y, w, h });
+  p.tag = { x, y, w, h };
+  return { p, sel, fin, extra, xf, w1, x, y, w, h };
+}
+function drawTag({ p, sel, fin, extra, xf, w1, x, y, w, h }) {
+  ctx.globalAlpha = fin && !sel ? 0.75 : 1;
+  ctx.shadowColor = "rgba(30, 45, 60, 0.18)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
+  ctx.fillStyle = sel ? Y : "rgba(255, 255, 255, 0.95)";
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 11); ctx.fill();
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  if (p.warn === 2) { ctx.fillStyle = "#F05C38"; ctx.beginPath(); ctx.arc(x + w - 3, y + 3, 3.5, 0, TAU); ctx.fill(); }
+  ctx.textAlign = "left";
+  ctx.font = "800 12.5px Nunito, ui-rounded, sans-serif";
+  ctx.fillStyle = "#1D1D1F";
+  ctx.fillText(p.name, x + 9, y + h / 2 + 0.5);
+  if (extra) { ctx.font = xf; ctx.fillStyle = sel ? "rgba(0, 0, 0, 0.62)" : "rgba(29, 29, 31, 0.5)"; ctx.fillText(extra, x + 9 + w1 + 7, y + h / 2 + 0.5); }
+  ctx.globalAlpha = 1;
+}
+
+// ---------------------------------------------------------------- around the map
+
+const shown = {};
+function put(id, v) { if (shown[id] !== v) { shown[id] = v; $(id).textContent = v; } }
+function bump(el) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+let lastLanded = 0, lastClose = 0;
+function hud() {
+  if (!G) return;
+  put("clock", clockOf(state === "title" ? 0 : G.t));
+  put("landed", String(G.landed));
+  put("close", String(G.close));
+  put("rwy", endText(G.wind));
+  if (G.landed > lastLanded && state === "play") bump($("s-landed"));
+  if (G.close > lastClose && state === "play") bump($("s-close"));
+  lastLanded = G.landed; lastClose = G.close;
+  $("s-close").classList.toggle("warn", G.close > 0 && state === "play" && now - (G.closeAt || -1e9) < 2500);
+  const rot = `rotate(${G.wind * 10}deg)`;
+  if (shown.windRot !== rot) { shown.windRot = rot; $("windArrow").style.transform = rot; }
+  document.body.classList.toggle("playing", state === "play");
+  document.body.classList.toggle("title", state === "title");
+  const h = hintText(), hint = $("hint");
+  if (shown.hint !== h.text || shown.hintNo !== h.no) { shown.hint = h.text; shown.hintNo = h.no; hint.textContent = h.text; hint.classList.toggle("no", !!h.no); }
+}
+
+const coarse = matchMedia("(pointer: coarse)").matches;
+function hintText() {
+  if (state !== "play") return { text: "" };
+  if (hintFlash && now < hintFlash.until) return { text: hintFlash.text, no: true };
+  const p = selected(), by = lastInput === "puck" ? "puck" : lastInput === "touch" || (coarse && lastInput !== "keys") ? "touch" : "mouse";
+  const say = (o) => ({ text: o[by] });
+  if (!p) return { text: G.planes.length ? "" : G.t < 6 ? "Morning. The first plane is calling in." : "" };
+  if (!steerable(p)) return { text: "" };
+  if (p.warn === 2 || p.warn === 1) return say({ puck: "Too close. Steer one away, or hold to circle.", touch: "Too close. Steer one away, or press and hold it to circle.", mouse: "Too close. Steer one away, or press H to circle." });
+  if (p.st === "circle") return say({ puck: "Circling. Turn the puck to fly on.", touch: "Circling. Tap where it should fly on.", mouse: "Circling. Steer it to fly on." });
+  if (p.kind === "pass") return { text: G.t < 160 ? "This one only passes over. Steer it clear of the others if they get close." : "" };
+  const why = whyNot(p);
+  if (!why) return say({ puck: "Lined up. Tap to land.", touch: "Lined up. Tap it to land.", mouse: "Lined up. Press Enter, or click it, to land." });
+  if (why.s === "Strip busy") return { text: why.l };
+  if (G.landed < 2 && G.cleared < 2) return say({ puck: "Turn the puck to steer it onto the arrows by the strip, then tap.", touch: "Tap where it should fly, onto the arrows by the strip.",
+    mouse: "Click where it should fly, or steer with the arrow keys, onto the arrows by the strip." });
+  if (p.kind === "river" && G.onRiver < 1) return { text: "A seaplane: bring it down on the river, between the buoys." };
+  if (waiting().length > 1 && G.swipes < 2) return say({ puck: "Swipe to pick the next plane.", touch: "Tap another plane to pick it.", mouse: "Tab picks the next plane." });
+  return { text: "" };
+}
+
+// Toasts: what just happened; a click picks the plane
+function toast(text, subject, kind) {
+  const box = $("toasts"), el = document.createElement("div");
+  el.className = "toast" + (kind ? " " + kind : "");
+  el.innerHTML = "<i></i>";
+  el.append(text);
+  el.addEventListener("click", () => { if (state === "play" && subject && steerable(subject)) select(subject); });
+  box.prepend(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  while (box.children.length > 3) box.lastChild.remove();
+  setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.remove(), 500); }, 3400);
+}
+
+function takeEvents() {
+  if (!G) return;
+  const live = state === "play";
+  for (const ev of G.events) {
+    if (!live) continue;
+    switch (ev.k) {
+      case "call":
+        sound("call");
+        if (G.calls <= 2 || ev.p.kind !== "strip") toast(`${ev.p.name} is calling in${ev.p.kind === "river" ? ", on floats" : ev.p.kind === "pass" ? ", passing over" : ""}`, ev.p);
+        break;
+      case "down": sound("down"); fx.push({ k: "dust", x: ev.p.x, y: ev.p.y, at: now }); toast(`${ev.p.name} is down`, null, "good"); break;
+      case "splash": sound("splash"); fx.push({ k: "ripple", x: ev.p.x, y: ev.p.y, at: now }); toast(`${ev.p.name} is down on the river`, null, "good"); break;
+      case "close": sound("close"); puckSound("no"); G.closeAt = now; toast(`Close call: ${ev.a.name} and ${ev.b.name}`, ev.a, "warn"); break;
+      case "edge": toast(`${ev.p.name} turned back at the edge`, ev.p); break;
+      case "wind": sound("wind"); toast("The wind has turned. Land the other way now.", null, "warn"); break;
+      case "dusk": sound("dusk"); toast("Dusk. The strip lights are on."); break;
+      case "divert": toast(`${ev.n === 1 ? "One plane" : ev.n + " planes"} went on to another field`, null, "warn"); break;
+    }
+  }
+  G.events.length = 0;
+}
+
+const PANELS = {
+  title: () => `<h1>Tower</h1>
+    <p>A grass airstrip among flooded rice paddies, from morning to dusk. Bring each plane down gently, and <b>keep them apart.</b></p>
+    <p class="how">${bridge.up ? "Swipe on the puck to pick a plane, and turn the puck to steer it. When it lines up with the arrows by the strip, tap to land it. Hold to make it circle."
+      : coarse ? "Tap a plane, then tap where it should fly. When it lines up with the arrows by the strip, tap it again to land it. Press and hold a plane to make it circle."
+      : "Click a plane, then click where it should fly, or steer it with the arrow keys. When it lines up with the arrows by the strip, click it again or press Enter to land it. Tab picks the next plane, H makes it circle."}</p>
+    ${best ? `<p class="how">Best day: ${best} plane${best === 1 ? "" : "s"} down</p>` : ""}
+    ${worldOk ? "" : `<p class="how">This browser has WebGL turned off, and Tower needs it to draw the airfield.</p>`}
+    <div class="go"><button class="btn" type="button" data-go>Start the day</button>${bridge.up ? `<span class="or">or tap the puck</span>` : coarse ? "" : `<span class="or">or press Enter</span>`}</div>`,
+  over: () => {
+    const strip = G.landed - G.onRiver, parts = [`${strip} on the strip`];
+    if (G.onRiver) parts.push(`${G.onRiver} on the river`);
+    if (G.passed) parts.push(`${G.passed} passed over`);
+    return `<h1>Dusk</h1>
+    <p>${G.landed} plane${G.landed === 1 ? "" : "s"} down${newBest ? ", a new best." : prevBest ? `. Best ${prevBest}.` : "."}</p>
+    <p class="how">${parts.join(", ")}. ${G.close ? `${G.close} close call${G.close === 1 ? "" : "s"}.` : "No close calls."}${G.diverted ? ` ${G.diverted} went on to another field.` : ""}</p>
+    <div class="go"><button class="btn" type="button" data-go>Another day</button><a class="btn quiet" href="../">More games</a></div>`;
+  },
+};
+function showPanel() {
+  const make = PANELS[state];
+  $("panel").classList.toggle("show", !!make);
+  $("panel").inert = !make;  // hidden, its buttons can't be pressed: space would start the day again
+  if (!make) { document.activeElement?.blur?.(); return; }
+  $("card").innerHTML = make();
+  $("card").querySelector("[data-go]")?.addEventListener("click", (e) => { e.stopPropagation(); unlockSound(); start(); });
+}
+
+// ---------------------------------------------------------------- playing
+
+function start() {
+  G = newDay();
+  state = "play";
+  stateAt = now;
+  selId = 0;
+  flashFace = flashSub = hintFlash = null;
+  lastLanded = lastClose = 0;
+  $("toasts").replaceChildren();
+  showPanel();
+  sound("begin");
+  count("game_start", { game: "tower", input: lastInput });
+}
+function finish() {
+  state = "over";
+  stateAt = now;
+  prevBest = best;
+  newBest = !!prevBest && G.landed > prevBest;
+  if (G.landed > best) { best = G.landed; try { localStorage.setItem("tower.best", String(best)); } catch {} }
+  sound("evening");
+  setTimeout(() => { if (state === "over") showPanel(); }, 900);
+  count("game_end", { game: "tower", landed: G.landed, close: G.close });
+}
+// The title: the same morning behind it, two planes circling
+function backdrop() {
+  G = newDay(11, true);
+  G.wind = 27;
+  for (const [kind, x, y, h] of [["strip", 960, 210, 40], ["river", 300, 600, 250]]) {
+    const p = { id: G.ids++, name: "", kind, x, y, h: CRUISE, hdg: h, cmd: h, cmdRaw: h, spd: SPEED.air, st: "circle", born: 0, warn: 0, entered: true, rate: 0, look: (G.ids * 3) % LOOKS.length, fade: 1 };
+    G.planes.push(p);
+  }
+}
+
+// ---------------------------------------------------------------- the puck, through Watt
+
+const bridge = { ws: null, up: false, sent: "", sentAt: 0, retry: 3000, heard: -1e9 };
+function connect() {
+  let ws;
+  try { ws = new WebSocket(BRIDGE); } catch { setTimeout(connect, bridge.retry); return; }
+  ws.onopen = () => {
+    bridge.ws = ws;
+    bridge.up = true;
+    bridge.retry = 3000;
+    bridge.sent = "";
+    send({ type: "hello", kind: "game", name: "Tower" });
+    presence();
+    if (state === "title") showPanel();
+  };
+  ws.onmessage = (e) => {
+    let m;
+    try { m = JSON.parse(e.data); } catch { return; }
+    if (m.type !== "input") return;
+    const t = performance.now();
+    bridge.heard = t;
+    pk.inputAt = t;
+    lastInput = "puck";
+    if (m.input === "tap") press();
+    else if (m.input === "hold") hold();
+    else if (m.input === "swipe") { if (state === "play") cycle(m.value === "r" || m.value === "d" ? 1 : -1); }
+    else if (m.input === "turn" && typeof m.value === "number") steer(m.value * GAIN, "puck");
+  };
+  ws.onclose = () => {
+    const was = bridge.up;
+    bridge.ws = null;
+    bridge.up = false;
+    if (was && state === "title") showPanel();
+    setTimeout(connect, bridge.retry);
+    bridge.retry = Math.min(bridge.retry * 1.5, 15000);  // Watt isn't open: ask less often
+  };
+}
+function send(o) { if (bridge.ws && bridge.ws.readyState === 1) bridge.ws.send(JSON.stringify(o)); }
+
+// Watt gives the puck to the page you're looking at
+function presence() { send({ type: "presence", visible: !document.hidden, focused: document.hasFocus(), title: document.title }); }
+addEventListener("focus", presence);
+addEventListener("blur", presence);
+document.addEventListener("visibilitychange", presence);
+setInterval(presence, 2000);
+
+// The face goes when it changes: quickly right after the puck is used, at most every 100 ms otherwise
+function face(t) {
+  const f = faceNow();
+  lastFace = f;
+  const s = JSON.stringify(f);
+  if (s !== mirrorDrawn) { mirrorDrawn = s; drawMirror(f); }
+  if (!bridge.up) return;
+  const gap = t - pk.inputAt < 400 ? 40 : 100;
+  if (s === bridge.sent || t - bridge.sentAt < gap) return;
+  bridge.sent = s;
+  bridge.sentAt = t;
+  send(f);
+}
+function connState() {
+  const puck = bridge.up && performance.now() - bridge.heard < 4000;
+  $("conn").classList.toggle("puck", puck);
+  put("connText", puck ? "Puck" : bridge.up ? "Watt is on: try the puck" : "Mouse");
+}
+
+// ---------------------------------------------------------------- mouse, touch, keys
+
+// A plane under a point of the screen: by its tag, or near the plane itself
+function hit(px, py, reach) {
+  let best = null, bd = reach;
+  for (const p of G.planes) {
+    if (!inAir(p)) continue;
+    const r = p.tag;
+    if (r && px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) return p;
+    const d = Math.hypot(sx(p.x) - px, sy(p.y) - py);
+    if (d < bd) { bd = d; best = p; }
+  }
+  return best;
+}
+let aiming = false;
+function aimAt(e) {
+  const p = selected(), w = toWorld(e.clientX, e.clientY);
+  pointAt(p, w.x, w.y);
+  aimMark = { x: w.x, y: w.y, until: now + 900 };
+}
+cv.addEventListener("pointerdown", (e) => {
+  unlockSound();
+  if (state !== "play" || e.button === 2) return;
+  lastInput = e.pointerType === "touch" ? "touch" : "mouse";
+  const h = hit(e.clientX, e.clientY, e.pointerType === "touch" ? 34 : 24);
+  if (h) {
+    if (h.id === selId && steerable(h)) press();
+    else if (steerable(h)) select(h);
+    return;
+  }
+  if (steerable(selected())) { aiming = true; aimAt(e); cv.setPointerCapture?.(e.pointerId); }
+});
+cv.addEventListener("pointermove", (e) => {
+  if (state !== "play") return;
+  if (aiming) { aimAt(e); return; }
+  if (e.pointerType === "mouse") document.body.classList.toggle("over-plane", !!hit(e.clientX, e.clientY, 24));
+});
+const stopAim = () => { aiming = false; };
+cv.addEventListener("pointerup", stopAim);
+cv.addEventListener("pointercancel", stopAim);
+cv.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  if (state !== "play") return;
+  const h = hit(e.clientX, e.clientY, 24);
+  if (h && steerable(h)) select(h, true);
+  hold();
+});
+let wheelAcc = 0, wheelAt = 0;
+cv.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  if (state !== "play") return;
+  const t = performance.now();
+  if (t - wheelAt > 400) wheelAcc = 0;
+  wheelAcc += e.deltaMode ? e.deltaY * 30 : e.deltaY;
+  if (Math.abs(wheelAcc) >= 40 && t - wheelAt > 60) { steer(Math.sign(wheelAcc) * 5); wheelAcc = 0; wheelAt = t; lastInput = "mouse"; }
+}, { passive: false });
+
+// Enter or space: a press is a tap, held a moment it's a hold
+let keyHeld = false, keyTimer = 0;
+addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.code;
+  if ((k === "Space" || k === "Enter") && e.target.closest && e.target.closest("a, button")) return;
+  if (k === "Space" || k === "Enter") {
+    e.preventDefault();
+    unlockSound();
+    lastInput = "keys";
+    if (e.repeat) return;
+    if (state !== "play") { press(); return; }
+    keyHeld = true;
+    clearTimeout(keyTimer);
+    keyTimer = setTimeout(() => { if (keyHeld) { keyHeld = false; hold(); } }, 450);
+    return;
+  }
+  if (state !== "play") return;
+  if (["Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(k)) e.preventDefault();
+  unlockSound();
+  lastInput = "keys";
+  const by = e.shiftKey ? 15 : 5;
+  if (k === "Tab") cycle(e.shiftKey ? -1 : 1);
+  else if (k === "ArrowLeft" || k === "KeyA") steer(-by);
+  else if (k === "ArrowRight" || k === "KeyD") steer(by);
+  else if (k === "ArrowDown" || k === "KeyE") cycle(1);
+  else if (k === "ArrowUp" || k === "KeyQ") cycle(-1);
+  else if (k === "KeyH") hold();
+});
+addEventListener("keyup", (e) => {
+  if ((e.code === "Space" || e.code === "Enter") && keyHeld) { keyHeld = false; clearTimeout(keyTimer); press(); }
+});
+addEventListener("blur", () => { keyHeld = false; clearTimeout(keyTimer); });
+
+// ---------------------------------------------------------------- sound (once the page has been clicked or a key pressed)
+
+let audio = null;
+function unlockSound() {
+  if (!audio) { try { audio = new AudioContext(); } catch { audio = null; } }
+  audio?.resume?.();
+}
+function sound(kind, vol = 1) {
+  if (!audio || audio.state !== "running") return;
+  const t = audio.currentTime;
+  const tone = (f, at, len, gain, type = "sine", to) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f, t + at);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + at + len);
+    g.gain.setValueAtTime(0, t + at);
+    g.gain.linearRampToValueAtTime(gain * vol, t + at + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + at + len);
+    o.connect(g);
+    g.connect(audio.destination);
+    o.start(t + at);
+    o.stop(t + at + len + 0.02);
+  };
+  if (kind === "select") { tone(1180, 0, 0.06, 0.035); tone(1770, 0.02, 0.07, 0.018); }
+  else if (kind === "step") tone(2300, 0, 0.022, 0.014, "triangle");
+  else if (kind === "ok") { tone(660, 0, 0.09, 0.04); tone(990, 0.06, 0.16, 0.035); }
+  else if (kind === "no") tone(220, 0, 0.14, 0.05, "triangle", 150);
+  else if (kind === "call") { tone(1320, 0, 0.05, 0.022); tone(1760, 0.08, 0.07, 0.02); }
+  else if (kind === "down") { tone(170, 0, 0.14, 0.05, "triangle", 110); tone(784, 0.06, 0.24, 0.028); }
+  else if (kind === "splash") { tone(900, 0, 0.12, 0.022, "sine", 320); tone(523, 0.08, 0.26, 0.026); }
+  else if (kind === "close") { tone(520, 0, 0.12, 0.04, "triangle"); tone(440, 0.15, 0.2, 0.04, "triangle"); }
+  else if (kind === "wind") { tone(620, 0, 0.6, 0.02, "sine", 380); tone(930, 0.1, 0.5, 0.012, "sine", 600); }
+  else if (kind === "begin") { tone(392, 0, 0.5, 0.03); tone(523, 0.15, 0.6, 0.03); }
+  else if (kind === "dusk") { [523, 659, 784].forEach((f, i) => tone(f, i * 0.16, 1.1 - i * 0.15, 0.03)); }
+  else if (kind === "evening") { [784, 659, 523, 392].forEach((f, i) => tone(f, i * 0.14, 1.2 - i * 0.1, 0.035)); }
+}
+
+function count(name, params) { gtag("event", name, params); }
+
+// ---------------------------------------------------------------- the frame
+
+let W = innerWidth, H = innerHeight, DPR = 1;
+function resize() {
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth;
+  H = innerHeight;
+  cv.width = Math.round(W * DPR);
+  cv.height = Math.round(H * DPR);
+  const mr = mirror.getBoundingClientRect();
+  mirrorSize = Math.round(mr.width) || 148;
+  mirrorDPR = DPR;
+  mirror.width = Math.round(mirrorSize * DPR);
+  mirror.height = Math.round(mirrorSize * DPR);
+  mirrorDrawn = "";
+  if (worldOk) renderer.setSize(W, H, false);
+  fit();
+}
+
+let last = performance.now(), acc = 0, frames = 0;
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000);
+  last = t;
+  now = t;
+  acc += dt;
+  let n = 0;
+  while (acc >= STEP && n < 4) { step(STEP); acc -= STEP; n++; }
+  if (n === 4) acc = 0;
+  if (state === "play") autoPick();
+  takeEvents();
+  if (state === "play" && G.over) finish();
+  if (worldOk) { syncWorld(t); renderer.shadowMap.needsUpdate = (frames++ & 1) === 0; renderer.render(scene, camera); }
+  draw(t);
+  hud();
+  face(t);
+  connState();
+  requestAnimationFrame(frame);
+}
+
+// The painted ground needs the font for the strip's numbers
+await Promise.race([document.fonts.load("800 21px Nunito"), new Promise((r) => setTimeout(r, 1500))]).catch(() => {});
+const base = makeBase();
+initWorld();
+if (worldOk) { makeGround(base); makeStatics(); makeLife(); }
+addEventListener("resize", resize);
+backdrop();
+resize();
+showPanel();
+connect();
+requestAnimationFrame(frame);
+
+// For tests: the day's state and a few of its moves, from the browser's console or a script
+window.tower = {
+  get G() { return G; }, get state() { return state; }, get world() { return worldOk; },
+  get three() { return { renderer, scene, camera, sun, hemi }; },
+  start, select, selected, steer, pointAt, press, hold, cycle, whyNot, approach, makePlane, base, PADDIES, sx, sy,
+  run: (s) => { for (let i = 0; i < s * 60; i++) { step(STEP); if (state === "play") autoPick(); } takeEvents(); },
+  skip: (s) => { G.t += s; },
+};
+</script>
+</body>
+</html>
